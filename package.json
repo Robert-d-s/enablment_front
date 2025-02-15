@@ -1,6 +1,7 @@
 {
-  "name": "enablment_front",
-  "version": "0.1.0",
+  "name": "enablement-front",
+  "version": "1.0.0",
+  "type": "module",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
