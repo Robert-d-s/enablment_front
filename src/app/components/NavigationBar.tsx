@@ -1,9 +1,9 @@
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { logout } from "../src/app/lib/apolloClient";
-import { currentUserVar } from "../src/app/lib/apolloClient";
-import { useRouter } from "next/router";
+import { logout } from "../lib/apolloClient";
+import { currentUserVar } from "../lib/apolloClient";
+// import { useRouter } from "next/router";
 
 // NavigationBar component
 const NavigationBar: React.FC = () => {

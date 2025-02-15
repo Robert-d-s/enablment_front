@@ -3,11 +3,11 @@ import { useState, useEffect } from "react";
 import { ApolloError } from "@apollo/client";
 import { logout } from "../lib/apolloClient";
 import NavigationBar from "../components/NavigationBar";
-import TotalTimeSpent from "./time";
-import RatesManager from "./ratesManager";
-import TeamSyncAndFetch from "./teamSync";
-import InvoiceDashboard from "./invoice";
-import { useRouter } from "next/router";
+import TotalTimeSpent from "../time/page";
+import RatesManager from "../ratesManager/page";
+import TeamSyncAndFetch from "../teamSync/page";
+import InvoiceDashboard from "../invoice/page";
+import { useRouter } from "next/navigation";
 
 enum UserRole {
   ADMIN = "ADMIN",

@@ -40,9 +40,9 @@ const aboutContent: IAboutContent = {
 };
 
 // Function to insert line breaks in text to ensure each line does not exceed the max length
-const formatText = (text: string, maxLength: number): JSX.Element[] => {
+const formatText = (text: string, maxLength: number) => {
   const words = text.split(" ");
-  const formattedLines: JSX.Element[] = [];
+  const formattedLines: React.ReactNode[] = [];
   let currentLine = "";
 
   words.forEach((word, index) => {
