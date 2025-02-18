@@ -3,6 +3,22 @@ import { useQuery } from "@apollo/client";
 import gql from "graphql-tag";
 import ProjectSelector from "../components/ProjectSelector";
 
+interface Rate {
+  rateId: string;
+  rateName: string;
+  hours: number;
+  cost: number;
+  ratePerHour: number;
+}
+
+interface InvoiceData {
+  projectId: string;
+  projectName: string;
+  totalHours: number;
+  totalCost: number;
+  rates: Rate[];
+}
+
 // GraphQL queries
 const GET_PROJECTS = gql`
   query {
@@ -37,7 +53,7 @@ const GET_INVOICE_FOR_PROJECT = gql`
       projectId
       projectName
       totalHours
-      totalCost
+  const [invoiceData, setInvoiceData] = useState<InvoiceData | null>(null);
       rates {
         rateId
         rateName
@@ -53,7 +69,7 @@ const InvoiceDashboard: React.FC = () => {
   const [selectedProject, setSelectedProject] = useState<string>("");
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
-  const [invoiceData, setInvoiceData] = useState<any>(null);
+  const [invoiceData, setInvoiceData] = useState<InvoiceData | null>(null);
 
   const { data: projectsData } = useQuery(GET_PROJECTS);
   const { data: teamsData } = useQuery(GET_ALL_TEAMS);
@@ -84,8 +100,19 @@ const InvoiceDashboard: React.FC = () => {
     }
   }, [selectedProject, startDate, endDate, refetch]);
 
+  interface Team {
+    id: string;
+    name: string;
+  }
+
+  interface Project {
+    id: string;
+    name: string;
+    teamId: string;
+  }
+
   const teamIdToNameMap = teamsData?.getAllSimpleTeams.reduce(
-    (acc: Record<string, string>, team: any) => {
+    (acc: Record<string, string>, team: Team) => {
       acc[team.id] = team.name;
       return acc;
     },
@@ -93,18 +120,17 @@ const InvoiceDashboard: React.FC = () => {
   );
 
   const projectTeamName = projectsData?.projects.find(
-    (project: any) => project.id === invoiceData?.projectId
+    (project: Project) => project.id === invoiceData?.projectId
   )?.teamId;
-  const teamName = teamIdToNameMap
-    ? teamIdToNameMap[projectTeamName]
-    : "Unknown Team";
 
-  const projectsWithTeamNames = projectsData?.projects.map((project: any) => ({
-    ...project,
-    teamName: teamIdToNameMap
-      ? teamIdToNameMap[project.teamId]
-      : "Unknown Team",
-  }));
+  const projectsWithTeamNames = projectsData?.projects.map(
+    (project: Project) => ({
+      ...project,
+      teamName: teamIdToNameMap
+        ? teamIdToNameMap[project.teamId]
+        : "Unknown Team",
+    })
+  );
 
   useEffect(() => {
     console.log("teamIdToNameMap", teamIdToNameMap);
@@ -123,7 +149,7 @@ const InvoiceDashboard: React.FC = () => {
     invoiceData,
   ]);
 
-  const formatCurrency = (value: any) => {
+  const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "DKK",
@@ -191,7 +217,7 @@ const InvoiceDashboard: React.FC = () => {
           <div className="mt-4">
             <h5 className="font-semibold bg-slate-200">Rates Applied:</h5>
             <ul>
-              {invoiceData.rates.map((rate: any) => (
+              {invoiceData.rates.map((rate: Rate) => (
                 <li
                   className="border-b border-gray-200 shadow-sm"
                   key={rate.rateId}

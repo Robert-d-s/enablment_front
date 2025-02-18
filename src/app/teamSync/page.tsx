@@ -1,25 +1,4 @@
-import React, { useState, useEffect } from "react";
-
-// interface User {
-//   id: string;
-//   name: string;
-// }
-
-// interface Team {
-//   id: string;
-//   name: string;
-//   createdAt: string;
-//   timezone: string;
-//   members: User[];
-// }
-
-// interface FetchTeamsFromLinearResponse {
-//   data: {
-//     fetchTeamsFromLinear: {
-//       nodes: Team[];
-//     };
-//   };
-// }
+import React, { useEffect } from "react";
 
 const TeamSyncAndFetch: React.FC = () => {
   // const [teams, setTeams] = useState<Team[]>([]);
@@ -45,28 +24,6 @@ const TeamSyncAndFetch: React.FC = () => {
       console.error("Error during sync:", error);
     }
   };
-
-  // const fetchTeams = async () => {
-  //   const token = localStorage.getItem("token");
-
-  //   try {
-  //     const response = await fetch("/api/fetchTeamsFromLinear", {
-  //       headers: {
-  //         Authorization: `Bearer ${token}`,
-  //       },
-  //     });
-
-  //     const data: FetchTeamsFromLinearResponse = await response.json();
-
-  //     if (data && data.data && data.data.fetchTeamsFromLinear) {
-  //       setTeams(data.data.fetchTeamsFromLinear.nodes);
-  //     } else {
-  //       console.error("Unexpected data structure", data);
-  //     }
-  //   } catch (error) {
-  //     console.error("An error occurred while fetching data:", error);
-  //   }
-  // };
 
   useEffect(() => {
     const fetchDataAndSync = async () => {

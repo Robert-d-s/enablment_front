@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import Image from "next/image";
-import { fetchUserProfile } from "@/lib/apolloClient";
+import { fetchUserProfile } from "@/app/lib/apolloClient";
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState<string>("");

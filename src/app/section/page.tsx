@@ -1,9 +1,9 @@
 import { motion, useAnimation } from "framer-motion";
 import React, { useEffect } from "react";
 import { ContentWrapper } from "../components/contentWrapper";
-import PeopleSection from "./people";
-import AboutComponent from "./about";
-import ServicesComponent from "./services";
+import PeopleSection from "@/app/people/page";
+import AboutComponent from "@/app/about/page";
+import ServicesComponent from "@/app/services/page";
 
 interface SectionProps {
   id: string;

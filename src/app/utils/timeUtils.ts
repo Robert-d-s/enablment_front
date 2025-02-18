@@ -25,7 +25,7 @@ export const formatTimeFromISOString = (isoString: string): string => {
 export const formatElapsedTime = (milliseconds: number): string => {
   let seconds = Math.floor(milliseconds / 1000);
   let minutes = Math.floor(seconds / 60);
-  let hours = Math.floor(minutes / 60);
+  const hours = Math.floor(minutes / 60);
 
   seconds %= 60;
   minutes %= 60;
