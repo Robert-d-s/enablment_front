@@ -1,3 +1,27 @@
+// ====== FILE: components.json ======
+
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "style": "new-york",
+  "rsc": true,
+  "tsx": true,
+  "tailwind": {
+    "config": "",
+    "css": "src/app/globals.css",
+    "baseColor": "neutral",
+    "cssVariables": true,
+    "prefix": ""
+  },
+  "aliases": {
+    "components": "@/components",
+    "utils": "@/lib/utils",
+    "ui": "@/components/ui",
+    "lib": "@/lib",
+    "hooks": "@/hooks"
+  },
+  "iconLibrary": "lucide"
+}
+
 // ====== FILE: next.config.ts ======
 
 import type { NextConfig } from "next";
@@ -23,20 +47,26 @@ export default nextConfig;
   },
   "dependencies": {
     "@apollo/client": "^3.12.9",
+    "@radix-ui/react-slot": "^1.1.2",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "framer-motion": "^12.3.1",
     "graphql": "^16.10.0",
+    "lucide-react": "^0.475.0",
     "next": "15.1.6",
     "react": "^19.0.0",
     "react-datepicker": "^8.0.0",
     "react-dom": "^19.0.0",
+    "tailwind-merge": "^3.0.1",
+    "tailwindcss-animate": "^1.0.7",
     "zustand": "^5.0.3"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4.0.0",
     "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
+    "@types/react": "^19.0.8",
+    "@types/react-dom": "^19.0.3",
     "eslint": "^9",
     "eslint-config-next": "15.1.6",
     "postcss": "^8.5.2",
@@ -78,6 +108,14 @@ export default nextConfig;
 // ====== FILE: src/app/globals.css ======
 
 @import 'tailwindcss';
+/*
+  ---break---
+*/
+@plugin 'tailwindcss-animate';
+/*
+  ---break---
+*/
+@custom-variant dark (&:is(.dark *));
 
 @theme {
   --color-background: var(--background);
@@ -101,29 +139,122 @@ export default nextConfig;
     border-color: var(--color-gray-200, currentColor);
   }
 }
-
+/*
+  ---break---
+*/
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: hsl(0 0% 100%);
+  --foreground: hsl(0 0% 3.9%);
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(0 0% 3.9%);
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(0 0% 3.9%);
+  --primary: hsl(0 0% 9%);
+  --primary-foreground: hsl(0 0% 98%);
+  --secondary: hsl(0 0% 96.1%);
+  --secondary-foreground: hsl(0 0% 9%);
+  --muted: hsl(0 0% 96.1%);
+  --muted-foreground: hsl(0 0% 45.1%);
+  --accent: hsl(0 0% 96.1%);
+  --accent-foreground: hsl(0 0% 9%);
+  --destructive: hsl(0 84.2% 60.2%);
+  --destructive-foreground: hsl(0 0% 98%);
+  --border: hsl(0 0% 89.8%);
+  --input: hsl(0 0% 89.8%);
+  --ring: hsl(0 0% 3.9%);
+  --chart-1: hsl(12 76% 61%);
+  --chart-2: hsl(173 58% 39%);
+  --chart-3: hsl(197 37% 24%);
+  --chart-4: hsl(43 74% 66%);
+  --chart-5: hsl(27 87% 67%);
+  --radius: 0.6rem;
 }
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/*
+  ---break---
+*/
+.dark {
+  --background: hsl(0 0% 3.9%);
+  --foreground: hsl(0 0% 98%);
+  --card: hsl(0 0% 3.9%);
+  --card-foreground: hsl(0 0% 98%);
+  --popover: hsl(0 0% 3.9%);
+  --popover-foreground: hsl(0 0% 98%);
+  --primary: hsl(0 0% 98%);
+  --primary-foreground: hsl(0 0% 9%);
+  --secondary: hsl(0 0% 14.9%);
+  --secondary-foreground: hsl(0 0% 98%);
+  --muted: hsl(0 0% 14.9%);
+  --muted-foreground: hsl(0 0% 63.9%);
+  --accent: hsl(0 0% 14.9%);
+  --accent-foreground: hsl(0 0% 98%);
+  --destructive: hsl(0 62.8% 30.6%);
+  --destructive-foreground: hsl(0 0% 98%);
+  --border: hsl(0 0% 14.9%);
+  --input: hsl(0 0% 14.9%);
+  --ring: hsl(0 0% 83.1%);
+  --chart-1: hsl(220 70% 50%);
+  --chart-2: hsl(160 60% 45%);
+  --chart-3: hsl(30 80% 55%);
+  --chart-4: hsl(280 65% 60%);
+  --chart-5: hsl(340 75% 55%);
+}
+/*
+  ---break---
+*/
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+/*
+  ---break---
+*/
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
   }
-}
-
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  body {
+    @apply bg-background text-foreground;
+  }
 }
 
 // ====== FILE: src/app/layout.tsx ======
 
+import { ApolloProvider } from "@apollo/client/react";
+import client from "../app/lib/apolloClient";
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import {
+  Geist,
+  Geist_Mono,
+  Roboto_Condensed,
+  PT_Sans,
+  Rubik,
+} from "next/font/google";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -136,22 +267,47 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const robotoCondensed = Roboto_Condensed({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "800"],
+  variable: "--font-roboto-condensed",
+});
+
+const ptSans = PT_Sans({
+  weight: ["400", "700"],
+  subsets: ["latin"],
+  variable: "--font-pt-sans",
+});
+
+const rubik = Rubik({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700", "800", "900"],
+  variable: "--font-rubik",
+});
+
 export const metadata: Metadata = {
-  title: "Create Next App",
-  description: "Generated by create next app",
+  title: "Enablment",
+  description: "Project Management Platform",
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        {children}
+    <html
+      lang="en"
+      className={`
+      ${geistSans.variable}
+      ${geistMono.variable}
+      ${robotoCondensed.variable}
+      ${ptSans.variable}
+      ${rubik.variable}
+    `}
+    >
+      <body className="antialiased">
+        <ApolloProvider client={client}>{children}</ApolloProvider>
       </body>
     </html>
   );
@@ -159,104 +315,4351 @@ export default function RootLayout({
 
 // ====== FILE: src/app/page.tsx ======
 
+"use client";
+
+import React from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import type { NextPage } from "next";
+import { useState, useEffect } from "react";
+import Navbar from "@/app/nav/page";
+import Section from "@/app/section/page";
+import { BackgroundBeams } from "@/app/components/ui/background-beams";
+import ContactForm from "@/app/contact/page";
+import ServiceTable from "@/app/table/page";
+import FooterComponent from "@/app/footer/page";
+
+const Home: NextPage = () => {
+  const sections = [
+    "Home",
+    "About",
+    "Services",
+    "People",
+    "Contact",
+    "Client-Portal",
+  ];
+
+  const [activeSection, setActiveSection] = useState<string>(sections[0]);
+  const isContactActive = activeSection === "Contact";
+  const backgroundFadeVariants = {
+    hidden: { opacity: 1 },
+    visible: {
+      opacity: 0.5,
+      transition: { duration: 0.4, delay: 0.2, ease: "easeOut" },
+    },
+  };
+  const closeContactForm = () => {
+    setActiveSection("Home");
+  };
+
+  // Initialize sectionProps with all sections and their default properties
+  interface SectionProps {
+    [key: string]: { zIndex: number; opacity: number };
+  }
+
+  const [sectionProps, setSectionProps] = useState<SectionProps>(
+    sections.reduce((acc, section, index) => {
+      acc[section as keyof SectionProps] = {
+        zIndex: sections.length - index, // Stack sections with initial z-index
+        opacity: section === "Home" ? 1 : 0.5, // Only the Home section is fully opaque initially
+      };
+      return acc;
+    }, {} as SectionProps)
+  );
+
+  const sectionColors = ["bg-gray-200"];
+
+  useEffect(() => {
+    console.log("Component re-rendered");
+    // Update sectionProps when activeSection changes
+    const updatedProps = {
+      ...sectionProps,
+      [activeSection]: {
+        ...sectionProps[activeSection],
+        zIndex: sections.length,
+        opacity: 1,
+      }, // Bring active section to front and make it fully opaque
+    };
+
+    // Update the zIndex and opacity for inactive sections
+    sections.forEach((section) => {
+      if (section !== activeSection) {
+        updatedProps[section] = {
+          ...updatedProps[section],
+          zIndex: updatedProps[section].zIndex - 1, // Move back
+          opacity: 0.5, // Fade
+        };
+      }
+    });
+  }, [activeSection]);
+
+  const handleFormSubmit = (data: {
+    name: string;
+    email: string;
+    message: string;
+  }) => {
+    console.log("Form Data:", data);
+
+    setActiveSection("Home");
+  };
+  const isActiveSectionCorrectlySet = (section: string) =>
+    activeSection === section;
+
+  return (
+    <>
+      <BackgroundBeams />
+      <div className="relative overflow-hidden" style={{ minHeight: "100vh" }}>
+        <Navbar
+          sections={sections}
+          setActiveSection={setActiveSection}
+          activeSection={activeSection}
+        />
+
+        <div className="sections-container flex flex-col st-top">
+          <AnimatePresence>
+            {isContactActive && (
+              <motion.div
+                className="fixed inset-0 z-40 flex justify-center items-center"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                key="contactOverlay"
+              >
+                <div
+                  className="absolute inset-0 bg-black bg-opacity-50"
+                  onClick={closeContactForm}
+                ></div>
+                <div className="z-50">
+                  <ContactForm
+                    onSubmit={handleFormSubmit}
+                    onClose={closeContactForm}
+                  />
+                </div>
+              </motion.div>
+            )}
+
+            <div className="flex pt-6">
+              {activeSection === "Home" && (
+                <div className="flex justify-center items-start client-table">
+                  <ServiceTable
+                    onContactClick={() => setActiveSection("Contact")}
+                  />
+                </div>
+              )}
+
+              {sections
+                .filter(
+                  (section) =>
+                    section !== "Contact" &&
+                    isActiveSectionCorrectlySet(section)
+                )
+                .map((section, index) => {
+                  // Determine the videoSrc based on the section name
+                  let videoSrc;
+                  if (section === "Home") {
+                    videoSrc = "/video/136259 (1080p).mp4";
+                  }
+
+                  return (
+                    <Section
+                      key={section}
+                      id={section}
+                      content={section}
+                      isActive={activeSection === section}
+                      color={sectionColors[index % sectionColors.length]}
+                      zIndex={
+                        activeSection === section
+                          ? sections.length
+                          : sections.length - index
+                      }
+                      videoSrc={videoSrc}
+                      isContactFormActive={isContactActive}
+                    />
+                  );
+                })}
+            </div>
+          </AnimatePresence>
+        </div>
+      </div>
+      <FooterComponent />
+    </>
+  );
+};
+
+export default Home;
+
+// ====== FILE: src/lib/utils.ts ======
+
+import { clsx, type ClassValue } from "clsx"
+import { twMerge } from "tailwind-merge"
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
+
+// ====== FILE: src/app/about/page.tsx ======
+
+import React from "react";
+
+interface IDefinition {
+  term: string;
+  description: string;
+}
+
+interface IAboutContent {
+  definitions: IDefinition[];
+  transparency: string[];
+  organization: string[];
+}
+
+const aboutContent: IAboutContent = {
+  definitions: [
+    {
+      term: "Collaborator",
+      description:
+        "Is a client company, who is subject to a collaboration with Enablment.",
+    },
+    {
+      term: "Enabler",
+      description:
+        "Conventionally known as a consultant, but we enable Collaborators. We exist because we are Enablers who love to devise and create delightful technical solutions with Collaborators.",
+    },
+  ],
+  transparency: [
+    "We demystify the conventional consultancy-client relationship.",
+    "We want transparency. In the sense that we have structurally implemented it in our professional relationship with Collaborators.",
+    "We want to communicate openly with Collaborators whether an Enabler is experienced in the given tech or needs to learn new components.",
+    "Consequently, we deploy varied rates for varied tasks, supported by a decision tree and a detailed invoice report.",
+  ],
+  organization: [
+    "We place decision-making where it is due.",
+    "Enablment is expanding on the idea of a flat hierarchy and is transitioning towards an organization with distributed leadership.",
+    "We have a passion for rethinking and refining processes, why we deploy slim and execution-oriented project teams. That means we have redefined the project manager as a role that is shared by Collaborators and Enablers, but it is structured by a system landscape.",
+    "We have added what we call work groups. These are diverse groups of Enablers which only exist to support each other in their decision-making.",
+    "At Enablement, everyone is passionate about digitization and capable to execute on it.",
+  ],
+};
+
+// Function to insert line breaks in text to ensure each line does not exceed the max length
+const formatText = (text: string, maxLength: number) => {
+  const words = text.split(" ");
+  const formattedLines: React.ReactNode[] = [];
+  let currentLine = "";
+
+  words.forEach((word, index) => {
+    if ((currentLine + word).length > maxLength) {
+      formattedLines.push(
+        <span key={index}>
+          {currentLine.trim()}
+          <br />
+        </span>
+      );
+      currentLine = word + " ";
+    } else {
+      currentLine += word + " ";
+    }
+  });
+
+  // Add the last line
+  if (currentLine) {
+    formattedLines.push(<span key={words.length}>{currentLine.trim()}</span>);
+  }
+
+  return formattedLines;
+};
+
+// Your AboutComponent, modified to render formatted text
+const AboutComponent: React.FC = () => {
+  return (
+    <div className="space-y-8 p-6">
+      <h2 className="text-3xl mb-4 font-pt-sans-bold-900">About Enablment</h2>
+      <div style={{ maxHeight: "calc(100vh - 300px)", overflowY: "auto" }}>
+        <section className="pb-4">
+          <h3 className="text-2xl font-semibold mb-2">Definitions</h3>
+          {aboutContent.definitions.map((def, index) => (
+            <div key={index} className="mb-3">
+              <p style={{ lineHeight: "1.4" }} className="text-lg">
+                <span className="font-bold">{def.term}:</span>{" "}
+                {/* {formatText(def.description, 75)} */}
+                {def.description}
+              </p>
+            </div>
+          ))}
+        </section>
+
+        <section className="flex flex-col md:flex-row space-y-4 gap-4">
+          <div className="md:w-1/2">
+            <h3 className="text-2xl font-semibold mb-2">Transparency</h3>
+            {aboutContent.transparency.map((item, index) => (
+              <div key={index} className="mb-3">
+                {/* <p className="text-lg font-roboto">{formatText(item, 75)}</p> */}
+                <p
+                  style={{ lineHeight: "1.4" }}
+                  className="text-lg font-roboto"
+                >
+                  {item}
+                </p>
+              </div>
+            ))}
+          </div>
+          <div className="md:w-1/2 flex justify-center shadow-md">
+            <video
+              className="rounded-lg lazy h-full w-full object-cover"
+              autoPlay
+              loop
+              muted
+              playsInline
+              preload="metadata"
+            >
+              <source src="/video/transparancy.mp4" type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
+          </div>
+        </section>
+
+        <section className="flex flex-col md:flex-row-reverse mt-6 gap-4">
+          <div className="md:w-1/2 mt-6">
+            <h3 className="text-2xl font-semibold mb-2">Organization</h3>
+            {aboutContent.organization.map((item, index) => (
+              <div key={index} className="mb-3">
+                {/* <p className="text-lg font-roboto">{formatText(item, 75)}</p> */}
+                <p
+                  style={{ lineHeight: "1.4" }}
+                  className="text-lg font-roboto"
+                >
+                  {item}
+                </p>
+              </div>
+            ))}
+          </div>
+          <div className="md:w-1/2 flex justify-center">
+            <video
+              className="rounded-lg lazy h-full w-full object-cover"
+              autoPlay
+              loop
+              muted
+              playsInline
+              preload="metadata"
+            >
+              <source src="/video/meeting.mp4" type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+};
+
+export default AboutComponent;
+
+// ====== FILE: src/app/adminPage/page.tsx ======
+
+import { useQuery, useMutation, gql } from "@apollo/client";
+import { useState, useEffect } from "react";
+import { ApolloError } from "@apollo/client";
+import { logout } from "../lib/apolloClient";
+import NavigationBar from "../components/NavigationBar";
+import TotalTimeSpent from "../time/page";
+import RatesManager from "../ratesManager/page";
+import TeamSyncAndFetch from "../teamSync/page";
+import InvoiceDashboard from "../invoice/page";
+import { useRouter } from "next/navigation";
+
+enum UserRole {
+  ADMIN = "ADMIN",
+  ENABLER = "ENABLER",
+  COLLABORATOR = "COLLABORATOR",
+  PENDING = "PENDING",
+}
+
+type User = {
+  id: number;
+  email: string;
+  role: UserRole;
+  teams: {
+    id: string;
+    name: string;
+  }[];
+};
+
+type Team = {
+  id: string;
+  name: string;
+};
+
+const GET_USERS = gql`
+  query GetUsers {
+    users {
+      id
+      email
+      role
+      teams {
+        id
+        name
+      }
+    }
+  }
+`;
+
+// const GET_TEAMS = gql`
+//   query FetchTeamsFromLinear {
+//     fetchTeamsFromLinear {
+//       nodes {
+//         id
+//         name
+//       }
+//     }
+//   }
+// `;
+
+const GET_SIMPLE_TEAMS = gql`
+  query GetAllSimpleTeams {
+    getAllSimpleTeams {
+      id
+      name
+    }
+  }
+`;
+
+const UPDATE_USER_ROLE = gql`
+  mutation UpdateUserRole($userId: Int!, $newRole: UserRole!) {
+    updateUserRole(userId: $userId, newRole: $newRole) {
+      id
+      role
+    }
+  }
+`;
+
+const ADD_USER_TO_TEAM = gql`
+  mutation AddUserToTeam($userId: Int!, $teamId: String!) {
+    addUserToTeam(userId: $userId, teamId: $teamId) {
+      id
+      email
+    }
+  }
+`;
+
+const REMOVE_USER_FROM_TEAM = gql`
+  mutation RemoveUserFromTeam($userId: Int!, $teamId: String!) {
+    removeUserFromTeam(userId: $userId, teamId: $teamId) {
+      id
+      email
+      teams {
+        id
+        name
+      }
+    }
+  }
+`;
+
+const AdminPage = () => {
+  const [users, setUsers] = useState<User[]>([]);
+  const [selectedTeam, setSelectedTeam] = useState<{
+    [userId: number]: string;
+  }>({});
+  const [errorMessage, setErrorMessage] = useState("");
+  const router = useRouter();
+
+  const {
+    loading: loadingUsers,
+    error: errorUsers,
+    data: dataUsers,
+    refetch: refetchUsers,
+  } = useQuery(GET_USERS, {
+    // fetchPolicy: "network-only",
+  });
+  // console.log("Datausers", dataUsers);
+  const { loading: loadingTeams, data: dataTeams } = useQuery(
+    GET_SIMPLE_TEAMS,
+    {
+      // fetchPolicy: "network-only",
+    }
+  );
+  console.log("DataTeams", dataTeams);
+  const [updateUserRole] = useMutation(UPDATE_USER_ROLE);
+  const [addUserToTeam] = useMutation(ADD_USER_TO_TEAM, {
+    onCompleted: () => refetchUsers(),
+  });
+
+  const [removeUserFromTeam, { error }] = useMutation(REMOVE_USER_FROM_TEAM, {
+    onCompleted: () => refetchUsers(),
+    onError: (error) => {
+      // Handle error
+      console.error("Error removing user from team:", error);
+      // Potentially set an error state here
+    },
+  });
+
+  useEffect(() => {
+    if (dataUsers) {
+      const usersWithTeams = dataUsers.users.map((user: User) => ({
+        ...user,
+        teams: user.teams || [],
+      }));
+      setUsers(usersWithTeams);
+    }
+  }, [dataUsers]);
+
+  console.log("user data: ", dataUsers);
+  console.log("error data: ", errorUsers);
+  if (loadingUsers || loadingTeams) return <p>Loading...</p>;
+  if (errorUsers) {
+    const graphQLError = errorUsers.graphQLErrors[0];
+    const message = graphQLError
+      ? graphQLError.message
+      : errorUsers.networkError
+      ? "Network error, please try again."
+      : "An error occurred.";
+
+    // Specific handling based on error type
+    if (graphQLError && graphQLError.extensions?.code === "FORBIDDEN") {
+      // Handle Forbidden error
+      return <p>You do not have permission to view this resource.</p>;
+    } else if (
+      graphQLError &&
+      graphQLError.extensions?.code === "UNAUTHENTICATED"
+    ) {
+      // Handle Unauthorized error
+      logout();
+      return;
+    }
+
+    // return <p>Error: {message}</p>;
+    return (
+      <div className="flex flex-col items-center justify-center h-screen">
+        <div
+          className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative"
+          role="alert"
+        >
+          <strong className="font-bold">Permission Denied!</strong>
+          <span className="block sm:inline mr-8">
+            {" "}
+            You do not have permission to view this resource.
+          </span>
+          <button
+            onClick={() => router.push("/login")} // Use router from 'next/router' to navigate
+            className="absolute top-0 bottom-0 right-0 px-4 py-3"
+          >
+            <svg
+              className="fill-current h-6 w-6 text-red-500"
+              role="button"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+            >
+              <title>Close</title>
+              <path d="M14.348 14.849a1.2 1.2 0 0 1-1.697 0L10 12.196 7.349 14.849a1.2 1.2 0 1 1-1.697-1.697L8.196 10 5.652 7.349a1.2 1.2 0 1 1 1.697-1.697L10 7.804l2.651-2.652a1.2 1.2 0 1 1 1.697 1.697L11.804 10l2.544 2.651a1.2 1.2 0 0 1 0 1.698z" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    );
+  }
+  const handleAddUserToTeam = (userId: number) => () => {
+    console.log(`Adding user ${userId} to team`);
+    console.log(`Selected team for user ${userId}: ${selectedTeam[userId]}`);
+
+    const teamId = selectedTeam[userId];
+    console.log(`Attempting to add user ${userId} to team ${teamId}`);
+    if (!teamId) {
+      console.error("No team selected for user:", userId);
+      return;
+    }
+
+    addUserToTeam({ variables: { userId, teamId } })
+      .then(() => refetchUsers())
+      .catch((error) => console.error("Error adding user to team:", error));
+  };
+
+  const handleRemoveUserFromTeam = (userId: number, teamId: string) => {
+    removeUserFromTeam({
+      variables: { userId, teamId },
+    })
+      .then(() => refetchUsers())
+      .catch((error) => console.error("Error removing user from team:", error));
+  };
+
+  const handleTeamSelection = (userId: number, teamId: string) => {
+    console.log(`Selected team for user ${userId}: ${teamId}`);
+    setSelectedTeam((prev) => ({ ...prev, [userId]: teamId }));
+  };
+
+  const handleRoleChange = async (userId: number, newRole: UserRole) => {
+    console.log(`Updating role for user ${userId} to ${newRole}`);
+    try {
+      await updateUserRole({ variables: { userId, newRole } });
+      setErrorMessage("");
+    } catch (error) {
+      if (error instanceof ApolloError) {
+        const message =
+          error.graphQLErrors[0]?.message ||
+          "An error occurred while updating user role";
+        setErrorMessage(message);
+      } else {
+        console.error("Error updating user role:", error);
+        setErrorMessage("An unexpected error occurred");
+      }
+    }
+  };
+
+  const handleError = (error: ApolloError) => {
+    const graphQLError = error.graphQLErrors[0];
+    return graphQLError
+      ? graphQLError.message
+      : error.networkError
+      ? "Network error, please try again."
+      : "An error occurred.";
+  };
+
+  if (loadingUsers || loadingTeams) return <p>Loading...</p>;
+  if (errorUsers) return <p>Error: {handleError(errorUsers)}</p>;
+
+  return (
+    <>
+      <NavigationBar />
+      <div className="container mx-auto p-4 font-roboto-condensed">
+        <div className="container mx-auto p-4 font-roboto-condensed">
+          <div className="mb-3">
+            <UserTable
+              users={users}
+              // teams={dataTeams?.fetchTeamsFromLinear.nodes}
+              teams={dataTeams?.getAllSimpleTeams}
+              onTeamSelect={handleTeamSelection}
+              onAddToTeam={(userId) => handleAddUserToTeam(userId)()}
+              onRemoveFromTeam={handleRemoveUserFromTeam}
+              onRoleChange={handleRoleChange}
+            />
+            {errorMessage && <p className="text-red-500">{errorMessage}</p>}
+          </div>
+          <div className="mb-3 shadow-md">
+            <TotalTimeSpent />
+          </div>
+          <div className="mb-3 shadow-md">
+            <RatesManager />
+          </div>
+          <div className="shadow-md">
+            <InvoiceDashboard />
+          </div>
+          <div className="mt-3 float-right">
+            <TeamSyncAndFetch />
+          </div>
+        </div>
+      </div>
+    </>
+  );
+};
+
+type UserTableProps = {
+  users: User[];
+  teams: Team[];
+  onTeamSelect: (userId: number, teamId: string) => void;
+  onAddToTeam: (userId: number) => void;
+  onRemoveFromTeam: (userId: number, teamId: string) => void;
+  onRoleChange: (userId: number, newRole: UserRole) => void;
+};
+
+const UserTable: React.FC<UserTableProps> = ({
+  users,
+  teams,
+  onTeamSelect,
+  onAddToTeam,
+  onRemoveFromTeam,
+  onRoleChange,
+}) => (
+  <table className="min-w-full table-auto">
+    <thead className="bg-black">
+      <tr>
+        <th className="px-6 py-3 text-left text-lg font-medium text-white uppercase tracking-wider">
+          User
+        </th>
+        <th className="px-6 py-3 text-left text-lg font-medium text-white uppercase tracking-wider">
+          Teams
+        </th>
+        <th className="px-6 py-3 text-left text-lg font-medium text-white uppercase tracking-wider">
+          Assigned
+        </th>
+        <th className="px-6 py-3 text-left text-lg font-medium text-white uppercase tracking-wider">
+          Role
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      {users.map((user: User) => (
+        <UserRow
+          key={user.id}
+          user={user}
+          teams={teams}
+          onTeamSelect={onTeamSelect}
+          onAddToTeam={onAddToTeam}
+          onRemoveFromTeam={onRemoveFromTeam}
+          onRoleChange={onRoleChange}
+        />
+      ))}
+    </tbody>
+  </table>
+);
+type UserRowProps = {
+  user: User;
+  teams: Team[];
+  onTeamSelect: (userId: number, teamId: string) => void;
+  onAddToTeam: (userId: number) => void;
+  onRemoveFromTeam: (userId: number, teamId: string) => void;
+  onRoleChange: (userId: number, newRole: UserRole) => void;
+};
+const UserRow: React.FC<UserRowProps> = ({
+  user,
+  teams,
+  onTeamSelect,
+  onAddToTeam,
+  onRemoveFromTeam,
+  onRoleChange,
+}) => {
+  console.log("Teams for user:", user.id, user.teams);
+  const safeTeams = teams || [];
+
+  return (
+    <tr>
+      <td className="px-6 py-4 whitespace-nowrap border-b border-gray-200 shadow-md">
+        {user.email}
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap border-b border-gray-200 shadow-md">
+        <TeamSelect
+          teams={safeTeams}
+          onTeamSelect={(teamId) => onTeamSelect(user.id, teamId)}
+        />
+        <button
+          className="ml-20 bg-black hover:bg-green-700 text-white font-bold py-1 px-2 rounded"
+          onClick={() => onAddToTeam(user.id)}
+        >
+          Add to Team
+        </button>
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap border-b border-gray-200 shadow-md">
+        {user.teams && user.teams.length > 0 ? (
+          <ul className="list-disc list-inside space-y-2">
+            {user.teams.map((team) => (
+              <li
+                key={team.id}
+                className="flex items-center justify-between border-b border-gray-200"
+              >
+                {team.name}
+                <button
+                  onClick={() => onRemoveFromTeam(user.id, team.id)}
+                  className="ml-4 bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded border-b border-gray-200"
+                >
+                  Remove
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p>No teams assigned</p>
+        )}
+      </td>
+      <td className="border-b border-gray-200 shadow-md">
+        <UserRoleSelect
+          currentRole={user.role}
+          onRoleChange={(newRole) => onRoleChange(user.id, newRole)}
+        />
+      </td>
+    </tr>
+  );
+};
+
+type TeamSelectProps = {
+  teams: Team[];
+  onTeamSelect: (teamId: string) => void;
+};
+const TeamSelect: React.FC<TeamSelectProps> = ({ teams, onTeamSelect }) => (
+  <select onChange={(e) => onTeamSelect(e.target.value)}>
+    <option value="">Select team...</option>
+    {teams.map((team: Team) => (
+      <option key={team.id} value={team.id}>
+        {team.name}
+      </option>
+    ))}
+  </select>
+);
+
+type UserRoleSelectProps = {
+  currentRole: UserRole;
+  onRoleChange: (newRole: UserRole) => void;
+};
+const UserRoleSelect: React.FC<UserRoleSelectProps> = ({
+  currentRole,
+  onRoleChange,
+}) => (
+  <select
+    defaultValue={currentRole}
+    onChange={(e) => onRoleChange(e.target.value as UserRole)}
+  >
+    {Object.values(UserRole).map((role) => (
+      <option key={role} value={role}>
+        {role}
+      </option>
+    ))}
+  </select>
+);
+
+export default AdminPage;
+
+// ====== FILE: src/app/components/NavigationBar.tsx ======
+
+import React from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { logout } from "../lib/apolloClient";
+import { currentUserVar } from "../lib/apolloClient";
+// import { useRouter } from "next/router";
+
+// NavigationBar component
+const NavigationBar: React.FC = () => {
+  const loggedInUser = currentUserVar();
+  const handleLogout = () => {
+    logout();
+  };
+  return (
+    <nav className="flex items-center justify-between p-4 bg-white shadow font-roboto-condensed uppercase">
+      <Link href="/">
+        <Image
+          src="/logo.svg"
+          alt="Enablment-tt Logo"
+          width={200}
+          height={40}
+          style={{ cursor: "pointer" }}
+        />
+      </Link>
+      <div className="flex-grow font-semibold text-lg mx-4 flex items-center justify-center">
+        <Link href="/issues2" className="mr-4">
+          Issues
+        </Link>
+        <Link href="/adminPage" className="mr-4">
+          Admin
+        </Link>
+        <Link href="/timeKeeper2">Timekeeper</Link>
+      </div>
+      <div>
+        <div>
+          {loggedInUser ? (
+            <h2
+              className="bg-gray-800 text-white px-4  m-1 rounded"
+              // style={{ fontSize: "16px" }}
+            >
+              {loggedInUser.email}
+            </h2>
+          ) : (
+            <p className="text-md text-gray-500">Loading user data...</p>
+          )}
+        </div>
+        <button
+          className="bg-black text-white rounded hover:bg-gray-800 font-bold py-1 px-4 float-right font-roboto-condensed uppercase"
+          style={{ fontSize: "12px" }}
+          onClick={handleLogout}
+        >
+          Logout
+        </button>
+      </div>
+    </nav>
+  );
+};
+
+export default NavigationBar;
+
+// ====== FILE: src/app/components/ProjectSelector.tsx ======
+
+import React from "react";
+
+type ProjectSelectorProps = {
+  projects: { id: string; name: string; teamName: string }[];
+  selectedProject: string;
+  onProjectChange: (projectId: string) => void;
+  className?: string;
+};
+
+const ProjectSelector: React.FC<ProjectSelectorProps> = ({
+  projects,
+  selectedProject,
+  onProjectChange,
+}) => {
+  return (
+    <select
+      value={selectedProject}
+      onChange={(e) => onProjectChange(e.target.value)}
+      className="form-input block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+    >
+      <option value="" disabled>
+        Select a project
+      </option>
+      {projects.map((project) => (
+        <option key={project.id} value={project.id}>
+          {project.name} (Team: {project.teamName})
+        </option>
+      ))}
+    </select>
+  );
+};
+
+export default ProjectSelector;
+
+// ====== FILE: src/app/components/RateSelector.tsx ======
+
+import React from "react";
+
+type RateSelectorProps = {
+  rates: { id: string; name: string; rate: number }[];
+  selectedRate: string;
+  onRateChange: (rateId: string) => void;
+};
+
+const RateSelector: React.FC<RateSelectorProps> = ({
+  rates,
+  selectedRate,
+  onRateChange,
+}) => {
+  return (
+    <select
+      value={selectedRate}
+      onChange={(e) => onRateChange(e.target.value)}
+      className="form-input block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+    >
+      <option value="" disabled>
+        Select a rate
+      </option>
+      {rates.map((rate) => (
+        <option key={rate.id} value={rate.id}>
+          {rate.name} ({rate.rate})
+        </option>
+      ))}
+    </select>
+  );
+};
+
+export default RateSelector;
+
+// ====== FILE: src/app/components/UserSelector.tsx ======
+
+const UserSelector: React.FC<{
+  users: { id: string; email: string }[];
+  selectedUser: string;
+  onUserChange: (userId: string) => void;
+}> = ({ users, selectedUser, onUserChange }) => {
+  return (
+    <select
+      value={selectedUser}
+      onChange={(e) => onUserChange(e.target.value)}
+      className="form-input block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+    >
+      <option value="" disabled>
+        Select a user
+      </option>
+      {users.map((user) => (
+        <option key={user.id} value={user.id}>
+          {user.email}
+        </option>
+      ))}
+    </select>
+  );
+};
+export default UserSelector;
+
+// ====== FILE: src/app/components/contentWrapper.tsx ======
+
+"use-client";
+
+import { motion, useAnimation } from "framer-motion";
+import React, { useEffect, PropsWithChildren } from "react";
+
+interface ContentWrapperProps {
+  isActive: boolean;
+}
+
+export const ContentWrapper: React.FC<
+  PropsWithChildren<ContentWrapperProps>
+> = ({ isActive, children }) => {
+  const controls = useAnimation();
+
+  useEffect(() => {
+    controls.start(isActive ? "visible" : "hidden");
+  }, [isActive, controls]);
+
+  const contentVariants = {
+    visible: {
+      opacity: 1,
+      maxHeight: "1000px", // Adjust as needed
+      overflow: "hidden",
+      transition: { duration: 0.5 },
+    },
+    hidden: {
+      opacity: 0,
+      maxHeight: 0, // Collapse content area when hidden
+      overflow: "hidden",
+      transition: { duration: 0.5 },
+    },
+  };
+
+  return (
+    <motion.div variants={contentVariants} animate={controls} initial="hidden">
+      {children}
+    </motion.div>
+  );
+};
+
+// ====== FILE: src/app/contact/page.tsx ======
+
+"use client";
+
+import React, { useState } from "react";
 import Image from "next/image";
 
-export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded-sm font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+interface ContactFormProps {
+  onSubmit: (data: { name: string; email: string; message: string }) => void;
+  onClose: () => void;
+  className?: string;
+}
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+const ContactForm: React.FC<ContactFormProps> = ({
+  onSubmit,
+  onClose,
+  className,
+}) => {
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    message: "",
+  });
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit(formData);
+  };
+
+  return (
+    <div
+      className={`fixed inset-0 flex justify-center items-center ${className}`}
+    >
+      <div className="bg-white flex gap-4 rounded-lg shadow-lg p-8 m-4 lg:w-10/12 max-h-full overflow-y-auto contact-form-container">
+        <div>
+          <video
+            width="100%"
+            height="auto"
+            className="rounded-lg lazy"
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="metadata"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+            <source src="/video/email.mp4" type="video/mp4" />
+            Your browser does not support the video tag.
+          </video>
+          <div className="flex justify-between ">
+            <div className="text-sm mt-4 w-1/2">
+              <p>Øster Allé 56 6. sal</p>
+              <p>2100 København Ø</p>
+              <p>CVR: 42309648</p>
+              <div className="lg:mt-6 flex flex-col space-y-2 lg:flex-row sm:mt-2 sm:space-y-0 lg:space-x-2 CandP">
+                <a href="#" className="text-blue-700 hover:underline">
+                  Cookie policy
+                </a>
+                <span className="hidden lg:inline">•</span>
+                <a href="#" className="text-blue-700 hover:underline">
+                  Privacy policy
+                </a>
+              </div>
+            </div>
+            <div className="flex flex-col items-end gap-2">
+              <div className="flex mt-4">
+                <span className="mr-3">
+                  <Image
+                    src="/icons/instagram.svg"
+                    alt="instagram"
+                    width={24}
+                    height={24}
+                  />
+                </span>
+                <span className="mr-3">
+                  <Image
+                    src="/icons/facebook.svg"
+                    alt="facebook"
+                    width={24}
+                    height={24}
+                  />
+                </span>
+                <span className="mr-4">
+                  <Image
+                    src="/icons/linkedin.svg"
+                    alt="linkedin"
+                    width={24}
+                    height={24}
+                  />
+                </span>
+                <span>
+                  <Image
+                    src="/icons/twitter.svg"
+                    alt="twitter"
+                    width={24}
+                    height={24}
+                  />
+                </span>
+              </div>
+              <div className="flex gap-1 items-center mt-4">
+                <span className="text-green-700">(+45) 22 92 67 80</span>
+                <Image
+                  src="/icons/phone.svg"
+                  alt="call"
+                  width={24}
+                  height={24}
+                  className="align-middle"
+                />
+              </div>
+              <div className="flex gap-1 items-center ">
+                <span className="text-green-700 mb-1">gd@enablment.com</span>
+                <Image
+                  src="/icons/mail.svg"
+                  alt="email"
+                  width={24}
+                  height={24}
+                  className="align-middle"
+                />
+              </div>
+            </div>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+        <div>
+          <div className="flex flex-col justify-between h-full">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg text-gray-900">
+                To: <span className="text-green-600 font-bold">Enablment</span>
+              </h2>
+              <button
+                className="flex-none w-12 h-12 bg-black text-xl text-white rounded-full hover:bg-red-500 hover:scale-105 transition transform duration-200 ease-in-out"
+                onClick={onClose}
+              >
+                ✕
+              </button>
+            </div>
+            <form onSubmit={handleSubmit} className="flex flex-col flex-grow">
+              <div className="flex-grow">
+                <input
+                  type="text"
+                  name="name"
+                  placeholder="Name"
+                  className="w-full mb-4 p-2 border border-gray-500 rounded"
+                  onChange={handleChange}
+                  required
+                />
+                <input
+                  type="email"
+                  name="email"
+                  placeholder="E-mail"
+                  className="w-full mb-4 p-2 border border-gray-500 rounded"
+                  onChange={handleChange}
+                  required
+                />
+                <textarea
+                  name="message"
+                  placeholder="Your message"
+                  className="w-full mb-4 p-2 border border-gray-500 rounded"
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+              <div className="flex items-center mt-4 sm:mt-0">
+                <div className="text-xs text-gray-500 flex-grow">
+                  This site is protected by reCAPTCHA and the Google
+                  <a href="#" className="text-blue-700 hover:underline">
+                    {" "}
+                    Privacy Policy
+                  </a>{" "}
+                  and
+                  <a href="#" className="text-blue-700 hover:underline">
+                    {" "}
+                    Terms of Service
+                  </a>{" "}
+                  apply.
+                </div>
+                <button
+                  type="submit"
+                  className="flex-none flex items-center justify-center w-12 h-12 bg-black text-white p-2 rounded-full hover:bg-green-500 hover:scale-105 transition transform duration-200 ease-in-out"
+                  aria-label="Send"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    className="w-6 h-6 text-white"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M14 5l7 7m0 0l-7 7m7-7H3"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default ContactForm;
+
+// ====== FILE: src/app/dashboard/page.tsx ======
+
+import React from "react";
+import TimeKeeper from "@/app/timeKeeper/page";
+import TotalTimeSpent from "@/app/time/page";
+import RatesManager from "@/app/ratesManager/page";
+import IssuesComponent from "@/app/issues/page";
+import { logout } from "../lib/apolloClient";
+
+const handleLogout = () => {
+  logout();
+};
+export default function Dashboard() {
+  return (
+    <div>
+      <div className="dashboard-container px-4 sm:px-6 lg:px-8">
+        <h1 className="text-2xl font-semibold text-gray-900 mb-4">Dashboard</h1>
+        <button onClick={handleLogout}>Logout</button>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <div>
+            <TimeKeeper />
+          </div>
+          <div>
+            <TotalTimeSpent />
+          </div>
+          <div>
+            <RatesManager />
+          </div>
+        </div>
+        <div className="flex flex-col gap-4">
+          <IssuesComponent />
+        </div>
+      </div>
     </div>
   );
 }
+
+// ====== FILE: src/app/footer/page.tsx ======
+
+// FooterComponent.tsx
+import React from "react";
+import Image from "next/image";
+
+const FooterComponent: React.FC = () => {
+  return (
+    <div className="flex justify-between px-4 bg-gray-100 text-sm text-gray-600 mb-2">
+      <div className="mt-4 w-1/2">
+        <p>Øster Allé 56 6. sal</p>
+        <p>2100 København Ø</p>
+        <p>CVR: 42309648</p>
+        <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2 mt-4">
+          <a href="#" className="text-blue-600 hover:underline">
+            Cookie policy
+          </a>
+          <span className="hidden sm:inline">•</span>
+          <a href="#" className="text-blue-600 hover:underline">
+            Privacy policy
+          </a>
+        </div>
+      </div>
+      <div className="flex flex-col items-end gap-2 ">
+        <div className="flex mt-2">
+          <span className="mr-3">
+            <Image
+              src="/icons/instagram.svg"
+              alt="instagram"
+              width={24}
+              height={24}
+            />
+          </span>
+          <span className="mr-3">
+            <Image
+              src="/icons/facebook.svg"
+              alt="facebook"
+              width={24}
+              height={24}
+            />
+          </span>
+          <span className="mr-4">
+            <Image
+              src="/icons/linkedin.svg"
+              alt="linkedin"
+              width={24}
+              height={24}
+            />
+          </span>
+          <span>
+            <Image
+              src="/icons/twitter.svg"
+              alt="twitter"
+              width={24}
+              height={24}
+            />
+          </span>
+        </div>
+        <div className="flex gap-1 items-center mt-4">
+          <span className="text-black">(+45) 22 92 67 80</span>
+          <Image src="/icons/phone.svg" alt="Call" width={24} height={24} />
+        </div>
+        <div className="flex gap-1 items-center">
+          <span className="text-black mb-1">gd@enablment.com</span>
+          <Image src="/icons/mail.svg" alt="Email" width={24} height={24} />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default FooterComponent;
+
+// ====== FILE: src/app/invoice/page.tsx ======
+
+import React, { useState, useEffect } from "react";
+import { useQuery } from "@apollo/client";
+import gql from "graphql-tag";
+import ProjectSelector from "../components/ProjectSelector";
+
+interface Rate {
+  rateId: string;
+  rateName: string;
+  hours: number;
+  cost: number;
+  ratePerHour: number;
+}
+
+interface InvoiceData {
+  projectId: string;
+  projectName: string;
+  totalHours: number;
+  totalCost: number;
+  rates: Rate[];
+}
+
+// GraphQL queries
+const GET_PROJECTS = gql`
+  query {
+    projects {
+      id
+      name
+      teamId
+    }
+  }
+`;
+
+const GET_ALL_TEAMS = gql`
+  query {
+    getAllSimpleTeams {
+      id
+      name
+    }
+  }
+`;
+
+const GET_INVOICE_FOR_PROJECT = gql`
+  query InvoiceForProject(
+    $projectId: String!
+    $startDate: DateTime!
+    $endDate: DateTime!
+  ) {
+    invoiceForProject(
+      projectId: $projectId
+      startDate: $startDate
+      endDate: $endDate
+    ) {
+      projectId
+      projectName
+      totalHours
+  const [invoiceData, setInvoiceData] = useState<InvoiceData | null>(null);
+      rates {
+        rateId
+        rateName
+        hours
+        cost
+        ratePerHour
+      }
+    }
+  }
+`;
+
+const InvoiceDashboard: React.FC = () => {
+  const [selectedProject, setSelectedProject] = useState<string>("");
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
+  const [invoiceData, setInvoiceData] = useState<InvoiceData | null>(null);
+
+  const { data: projectsData } = useQuery(GET_PROJECTS);
+  const { data: teamsData } = useQuery(GET_ALL_TEAMS);
+
+  const {
+    loading: loadingInvoice,
+    error: errorInvoice,
+    data: invoiceDataResponse,
+    refetch,
+  } = useQuery(GET_INVOICE_FOR_PROJECT, {
+    variables: {
+      projectId: selectedProject,
+      startDate: startDate ? new Date(startDate).toISOString() : null,
+      endDate: endDate ? new Date(endDate).toISOString() : null,
+    },
+    skip: !selectedProject || !startDate || !endDate,
+  });
+
+  useEffect(() => {
+    if (invoiceDataResponse) {
+      setInvoiceData(invoiceDataResponse.invoiceForProject);
+    }
+  }, [invoiceDataResponse]);
+
+  useEffect(() => {
+    if (selectedProject && startDate && endDate) {
+      refetch();
+    }
+  }, [selectedProject, startDate, endDate, refetch]);
+
+  interface Team {
+    id: string;
+    name: string;
+  }
+
+  interface Project {
+    id: string;
+    name: string;
+    teamId: string;
+  }
+
+  const teamIdToNameMap = teamsData?.getAllSimpleTeams.reduce(
+    (acc: Record<string, string>, team: Team) => {
+      acc[team.id] = team.name;
+      return acc;
+    },
+    {}
+  );
+
+  const projectTeamName = projectsData?.projects.find(
+    (project: Project) => project.id === invoiceData?.projectId
+  )?.teamId;
+
+  const projectsWithTeamNames = projectsData?.projects.map(
+    (project: Project) => ({
+      ...project,
+      teamName: teamIdToNameMap
+        ? teamIdToNameMap[project.teamId]
+        : "Unknown Team",
+    })
+  );
+
+  useEffect(() => {
+    console.log("teamIdToNameMap", teamIdToNameMap);
+    console.log("invoiceData", invoiceData);
+    console.log("Invoice Data Rates:", invoiceData?.rates);
+
+    if (selectedProject && startDate && endDate) {
+      refetch();
+    }
+  }, [
+    selectedProject,
+    startDate,
+    endDate,
+    refetch,
+    teamIdToNameMap,
+    invoiceData,
+  ]);
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "DKK",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+      // Use 'group' option for space as thousands separator
+      currencyDisplay: "code",
+      notation: "compact",
+    })
+      .format(value)
+      .replace("DKK", "")
+      .trim();
+  };
+
+  return (
+    <div className="p-6 bg-black shadow-md ">
+      <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0 md:space-x-4">
+        <h3 className="text-lg font-bold text-white">Invoice Summary</h3>
+
+        <div className="flex-grow">
+          <ProjectSelector
+            projects={projectsWithTeamNames || []}
+            selectedProject={selectedProject}
+            onProjectChange={setSelectedProject}
+          />
+        </div>
+
+        <div className="flex-grow md:flex md:space-x-4">
+          <input
+            type="date"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            className="w-full p-2 bg-white text-black border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+          />
+          <input
+            type="date"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            className="w-full p-2 bg-white text-black border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+          />
+        </div>
+      </div>
+
+      {/* Handling loading, error, and invoice data display */}
+      {loadingInvoice && <p>Loading...</p>}
+      {errorInvoice && (
+        <div className="bg-red-50 border-l-8 border-red-400 p-4 mb-4">
+          <p className="text-sm text-red-600">{errorInvoice.message}</p>
+        </div>
+      )}
+      {invoiceData && (
+        <div className="mt-4 p-6 bg-white shadow-md rounded-lg">
+          <h4 className="text-md font-bold bg-slate-200">
+            Project: {invoiceData.projectName} - Team:{" "}
+            {teamIdToNameMap && projectTeamName
+              ? teamIdToNameMap[projectTeamName] || "Team Not Found"
+              : "Loading Teams..."}
+          </h4>
+          <p className="border-b border-gray-200 shadow-sm">
+            Total Hours: {invoiceData.totalHours.toFixed(2)}
+          </p>
+          <p className="border-b border-gray-200 shadow-sm">
+            Total Cost: {formatCurrency(invoiceData.totalCost)}
+          </p>
+          <div className="mt-4">
+            <h5 className="font-semibold bg-slate-200">Rates Applied:</h5>
+            <ul>
+              {invoiceData.rates.map((rate: Rate) => (
+                <li
+                  className="border-b border-gray-200 shadow-sm"
+                  key={rate.rateId}
+                >
+                  {rate.rateName}: {rate.hours.toFixed(2)} hours at{" "}
+                  {formatCurrency(rate.cost)} (
+                  {formatCurrency(rate.ratePerHour)} DKK / h)
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default InvoiceDashboard;
+
+// ====== FILE: src/app/issues/page.tsx ======
+
+import React, { useMemo, useState, useEffect } from "react";
+import { gql, useQuery, useSubscription } from "@apollo/client";
+// import { useQuery } from "@apollo/client";
+import NavigationBar from "../components/NavigationBar";
+import { formatDateForDisplay } from "@/app/utils/timeUtils";
+
+type Label = {
+  id: string;
+  name: string;
+  color: string;
+  parentId: string;
+};
+
+type Issue = {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  title: string;
+  dueDate: string;
+  projectId: string;
+  priorityLabel: string;
+  identifier: string;
+  assigneeName: string;
+  projectName: string;
+  state: string;
+  teamKey: string;
+  teamName: string;
+  labels: Label[];
+};
+
+type GroupedIssues = {
+  [key: string]: Issue[];
+};
+
+const GET_ISSUES = gql`
+  query GetIssues {
+    issues {
+      id
+      createdAt
+      updatedAt
+      title
+      dueDate
+      projectId
+      priorityLabel
+      identifier
+      assigneeName
+      projectName
+      state
+      teamKey
+      teamName
+      labels {
+        id
+        name
+        color
+        parentId
+      }
+    }
+  }
+`;
+
+const ISSUE_UPDATED_SUBSCRIPTION = gql`
+  subscription OnIssueUpdated {
+    issueUpdated {
+      id
+      createdAt
+      updatedAt
+      title
+      dueDate
+      projectId
+      priorityLabel
+      identifier
+      assigneeName
+      projectName
+      state
+      teamKey
+      teamName
+      labels {
+        id
+        name
+        color
+        parentId
+      }
+    }
+  }
+`;
+
+const IssuesComponent: React.FC = () => {
+  const { loading, error, data, refetch } = useQuery<{ issues: Issue[] }>(
+    GET_ISSUES
+  );
+  const { data: subscriptionData, error: subscriptionError } = useSubscription(
+    ISSUE_UPDATED_SUBSCRIPTION
+  );
+
+  const [selectedAssignee, setSelectedAssignee] = useState<string | null>(null);
+
+  const handleSelectAssignee = (assignee: string) => {
+    setSelectedAssignee(assignee);
+  };
+
+  const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
+
+  const handleSelectTeam = (team: string) => {
+    setSelectedTeam(team);
+  };
+
+  const handleClearFilters = () => {
+    setSelectedTeam(null);
+    setSelectedAssignee(null);
+  };
+  const uniqueTeams = useMemo(() => {
+    const teams = new Set<string>();
+    data?.issues.forEach((issue) => teams.add(issue.teamName));
+    return Array.from(teams);
+  }, [data?.issues]);
+
+  const uniqueAssignees = useMemo(() => {
+    const assignees = new Set<string>();
+    data?.issues.forEach((issue) => assignees.add(issue.assigneeName));
+    return Array.from(assignees);
+  }, [data?.issues]);
+
+  const filteredIssues = useMemo(() => {
+    return (
+      data?.issues.filter((issue) => {
+        return (
+          (!selectedTeam || issue.teamName === selectedTeam) &&
+          (!selectedAssignee || issue.assigneeName === selectedAssignee)
+        );
+      }) || []
+    );
+  }, [data?.issues, selectedTeam, selectedAssignee]);
+
+  const groupedIssues: GroupedIssues = useMemo(() => {
+    const groups: GroupedIssues = {};
+    filteredIssues.forEach((issue) => {
+      if (!groups[issue.state]) {
+        groups[issue.state] = [];
+      }
+      groups[issue.state].push(issue);
+    });
+    return groups;
+  }, [filteredIssues]);
+
+  useEffect(() => {
+    if (subscriptionData) {
+      console.log("Subscription data received:", subscriptionData);
+      refetch();
+    }
+    if (subscriptionError) {
+      console.error("Subscription error:", subscriptionError);
+    }
+  }, [subscriptionData, subscriptionError, refetch]);
+
+  //   console.log("GraphQL Response:", { loading, error, data });
+
+  if (loading) return <p>Loading issues...</p>;
+  if (error) {
+    console.error("Error loading issues:", error);
+    return <p>Error loading issues: {error.message}</p>;
+  }
+  const handleRefresh = () => {
+    refetch();
+  };
+  return (
+    <>
+      <NavigationBar />
+      <div className="container mx-auto p-4 font-roboto-condensed">
+        <div className="flex">
+          <div>
+            <div className="flex flex-wrap mb-1">
+              {uniqueTeams.map((team) => (
+                <button
+                  key={team}
+                  onClick={() => handleSelectTeam(team)}
+                  className={`p-1 m-1 uppercase ${
+                    selectedTeam === team ? "bg-green-500" : "bg-black"
+                  } text-white rounded hover:bg-gray-800`}
+                  style={{ fontSize: "12px" }}
+                >
+                  {team}
+                </button>
+              ))}
+            </div>
+            <div className="flex flex-wrap mb-1">
+              {uniqueAssignees.map((assignee) => (
+                <button
+                  key={assignee}
+                  onClick={() => handleSelectAssignee(assignee)}
+                  className={`p-1 m-1 uppercase ${
+                    selectedAssignee === assignee ? "bg-green-500" : "bg-black"
+                  } text-white rounded hover:bg-gray-800`}
+                  style={{ fontSize: "12px" }}
+                >
+                  {assignee}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={handleClearFilters}
+              className="p-1 m-1 bg-gray-300 text-black rounded hover:bg-gray-400"
+              style={{ fontSize: "12px" }}
+            >
+              Clear Filters
+            </button>
+          </div>
+          <div style={{ position: "fixed", bottom: "20px", right: "20px" }}>
+            <button
+              onClick={handleRefresh}
+              className="p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600"
+              style={{ width: "40px", height: "40px" }}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                x="0px"
+                y="0px"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
+                <path d="M16 15L24 15 20 20zM8 9L0 9 4 4z"></path>
+                <path d="M21 6c0-1.654-1.346-3-3-3H7.161l1.6 2H18c.551 0 1 .448 1 1v10h2V6zM3 18c0 1.654 1.346 3 3 3h10.839l-1.6-2H6c-.551 0-1-.448-1-1V8H3V18z"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+        {Object.keys(groupedIssues).length > 0 ? (
+          Object.entries(groupedIssues)
+            .filter(([state, issues]) => {
+              if (selectedTeam) {
+                return issues.some((issue) => issue.teamName === selectedTeam);
+              }
+              return true;
+            })
+            .map(([state, issues]) => (
+              <div key={state}>
+                <h2 className="text-2xl text-white font-bold mb-4 bg-black p-2">
+                  {state}
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {issues.map((issue) => (
+                    <div
+                      key={issue.id}
+                      className="border border-gray-200 rounded p-4 shadow-md "
+                    >
+                      <h3 className="text-xl font-semibold">{issue.title}</h3>
+                      <p className="text-sm text-gray-800 bg-slate-200">
+                        Project: {issue.projectName}
+                      </p>
+                      <div className="flex flex-wrap mt-2">
+                        {issue.labels.map((label) => (
+                          <span
+                            key={label.id}
+                            style={{ backgroundColor: label.color }}
+                            className="text-white text-xs font-semibold mr-2 mb-2 px-2 py-1 rounded"
+                          >
+                            {label.name}
+                          </span>
+                        ))}
+                      </div>
+                      <div className="mt-2 text-sm text-gray-500">
+                        <p className="border-b border-gray-200">
+                          Priority: {issue.priorityLabel}
+                        </p>
+                        <p className="border-b border-gray-200">
+                          State: {issue.state}
+                        </p>
+                        <p className="border-b border-gray-200">
+                          Team Key: {issue.teamKey}
+                        </p>
+                        <p className="border-b border-gray-200">
+                          Team: {issue.teamName}
+                        </p>
+                        <p className="border-b border-gray-200">
+                          Assignee: {issue.assigneeName}
+                        </p>
+                        <p className="border-b border-gray-200">
+                          Identifier: {issue.identifier}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))
+        ) : (
+          <div>No issues found.</div>
+        )}
+      </div>
+    </>
+  );
+};
+
+export default IssuesComponent;
+
+// ====== FILE: src/app/lib/apolloClient.ts ======
+
+import {
+  ApolloClient,
+  InMemoryCache,
+  createHttpLink,
+  from,
+  makeVar,
+  split,
+} from "@apollo/client";
+import { setContext } from "@apollo/client/link/context";
+import { onError } from "@apollo/client/link/error";
+
+interface User {
+  id: string;
+  email: string;
+}
+
+// Authentication link for setting headers
+const authLink = setContext((_, { headers }) => {
+  const token: string | null = localStorage.getItem("token");
+  if (token) {
+    fetchUserProfile(token);
+  }
+  return {
+    headers: {
+      ...headers,
+      "content-type": "application/json",
+      "x-apollo-operation-name": "GraphQLQueriesAndMutations",
+      authorization: token ? `Bearer ${token}` : "",
+    },
+  };
+});
+
+// Error handling link
+const errorLink = onError(
+  ({ graphQLErrors, networkError, forward, operation }) => {
+    if (graphQLErrors) {
+      graphQLErrors.forEach(({ message, extensions }) => {
+        if (message.includes("Invalid or expired token")) {
+          localStorage.removeItem("token");
+          window.location.href = "/login";
+        } else if (extensions?.code === "FORBIDDEN") {
+          isForbiddenVar(true); // Update the reactive variable on forbidden error
+        }
+      });
+    }
+    if (networkError) {
+      console.log(`[Network error]: ${networkError}`);
+    }
+    return forward(operation);
+  }
+);
+
+export const isForbiddenVar = makeVar(false);
+export const currentUserVar = makeVar<User | null>(null);
+
+// `${process.env.NEXT_PUBLIC_BACKEND_URL}/graphql`
+
+const client = new ApolloClient({
+  link: from([
+    errorLink,
+    authLink,
+    createHttpLink({
+      uri: (operation) =>
+        operation.getContext().useLinearApi
+          ? `https://api.linear.app/graphql`
+          : `http://localhost:8080/graphql`,
+      fetchOptions: {
+        method: "POST",
+      },
+    }),
+  ]),
+  cache: new InMemoryCache({
+    typePolicies: {
+      Query: {
+        fields: {
+          isForbidden: {
+            read() {
+              return isForbiddenVar();
+            },
+          },
+        },
+      },
+    },
+  }),
+});
+
+export default client;
+
+export const fetchUserProfile = async (token: string) => {
+  try {
+    const response = await fetch("/api/profile", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!response.ok) throw new Error("Failed to fetch user data");
+    const userData: User = await response.json();
+    currentUserVar(userData); // Update the reactive variable
+  } catch (error) {
+    console.error("Error fetching user profile:", error);
+    // Handle error appropriately
+  }
+};
+
+export const logout = () => {
+  localStorage.removeItem("token");
+  client.resetStore();
+  window.location.href = "/login";
+};
+
+// ====== FILE: src/app/lib/store.ts ======
+
+// src/lib/store.ts
+import { create } from "zustand";
+
+type User = { id: string; email: string };
+type Store = {
+  users: any[];
+  projects: any[];
+  rates: any[];
+  selectedUser: string;
+  selectedProject: string;
+  selectedRate: string;
+  setUsers: (users: any[]) => void;
+  setProjects: (projects: any[]) => void;
+  setRates: (rates: any[]) => void;
+  setSelectedUser: (selectedUser: string) => void;
+  setSelectedProject: (selectedProject: string) => void;
+  setSelectedRate: (selectedRate: string) => void;
+
+  teamId: string | null;
+  setTeamId: (teamId: string | null) => void;
+};
+
+// loggedInUser: User | null;
+// setLoggedInUser: (user: User | null) => void;
+
+const useStore = create<Store>((set) => ({
+  users: [],
+  projects: [],
+  rates: [],
+  selectedUser: "",
+  selectedProject: "",
+  selectedRate: "",
+  setUsers: (users) => set({ users }),
+  setProjects: (projects) => set({ projects }),
+  setRates: (rates) => set({ rates }),
+  setSelectedUser: (selectedUser) => set({ selectedUser }),
+  setSelectedProject: (selectedProject) => set({ selectedProject }),
+  setSelectedRate: (selectedRate) => set({ selectedRate }),
+
+  teamId: null,
+  setTeamId: (teamId) => set({ teamId }),
+}));
+
+// loggedInUser: null,
+//   setLoggedInUser: (user) => set({ loggedInUser: user }),
+
+export default useStore;
+
+// ====== FILE: src/app/lib/utils.ts ======
+
+import { type ClassValue, clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+
+// ====== FILE: src/app/login/page.tsx ======
+
+import React, { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/router";
+import Image from "next/image";
+import { fetchUserProfile } from "@/app/lib/apolloClient";
+
+const Login: React.FC = () => {
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const router = useRouter();
+  const handleLogin = async () => {
+    try {
+      const response = await fetch(`http://localhost:8080/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      });
+
+      const data = await response.json();
+      if (data && data.access_token) {
+        localStorage.setItem("token", data.access_token);
+        await fetchUserProfile(data.access_token);
+        router.push("/timeKeeper2");
+      } else if (data && data.error) {
+        setErrorMessage(data.error);
+      }
+    } catch (error) {
+      // Handle fetch errors
+      setErrorMessage("An error occurred while logging in. Please try again.");
+    }
+  };
+
+  return (
+    <div className="flex flex-col items-center justify-center h-screen bg-gray-100">
+      <div className="p-8 bg-white rounded shadow-md w-96">
+        <p className="text-gray-600 mb-1 text-center">WELCOME BACK</p>
+        <h1 className="text-center text-2xl font-bold mb-4">
+          Log In To Your Account
+        </h1>
+
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleLogin();
+          }}
+        >
+          <input
+            className="mb-2 p-2 w-full border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Email"
+          />
+
+          <input
+            className="mb-4 p-2 w-full border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Password"
+          />
+
+          <button
+            type="submit"
+            className="w-full bg-black text-white p-2 rounded focus:outline-none hover:bg-gray-700 mb-4"
+          >
+            CONTINUE
+          </button>
+
+          <div className="text-center">
+            <p className=" cursor-pointer ">
+              New User ?{" "}
+              <Link href="/signup" className="text-blue-500">
+                SIGN UP HERE
+              </Link>
+            </p>
+          </div>
+
+          {errorMessage && <p className="mt-4 text-red-500">{errorMessage}</p>}
+        </form>
+        <div className="flex justify-end items-end mt-20">
+          <Image
+            src="/logo.svg"
+            alt="Enablment-tt Logo"
+            width={150}
+            height={40}
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Login;
+
+// ====== FILE: src/app/nav/page.tsx ======
+
+"use client";
+
+import React, { useState } from "react";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
+
+interface NavbarProps {
+  sections: string[];
+  setActiveSection: (section: string) => void;
+  activeSection: string;
+}
+
+const Navbar: React.FC<NavbarProps> = ({
+  sections = [],
+  setActiveSection,
+  activeSection,
+}) => {
+  const [hoveredSection, setHoveredSection] = useState<string | null>(null);
+  const router = useRouter();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  const handleSectionClick = (section: string) => {
+    if (section === "Client-Portal") {
+      router.push("/login");
+    } else {
+      setActiveSection(section);
+    }
+    setIsMenuOpen(false);
+  };
+
+  const menuIconVariants = {
+    opened: {
+      rotate: 90,
+      scale: 1.2,
+    },
+    closed: {
+      rotate: 0,
+      scale: 1,
+    },
+  };
+
+  const menuVariants = {
+    opened: {
+      opacity: 1,
+      y: "90%",
+      transition: {
+        y: { stiffness: 1000, velocity: -100 },
+        duration: 0.3,
+      },
+      // Explicitly define display property for the opened state to ensure visibility
+      display: "flex",
+    },
+    closed: {
+      opacity: [1, 0],
+      y: "-50%",
+      transition: {
+        y: { stiffness: 1000 },
+        opacity: { duration: 0.3 },
+        duration: 0.3,
+      },
+      transitionEnd: {
+        // Keep display as "none" only for small screens; adjust as necessary based on your design
+        display: "none",
+      },
+    },
+  };
+
+  return (
+    <nav
+      className="relative flex items-center justify-center content-center p-4"
+      style={{ minHeight: "64px" }}
+    >
+      <div className="absolute left-0 pl-4">
+        <Image
+          src="/icons/logo.svg"
+          alt="Logo"
+          width={100}
+          height={50}
+          priority
+          // className="filter invert"
+        />
+      </div>
+      <motion.div
+        className="lg:hidden z-20 absolute right-4 "
+        onClick={() => setIsMenuOpen(!isMenuOpen)}
+        variants={menuIconVariants}
+        animate={isMenuOpen ? "opened" : "closed"}
+      >
+        <svg
+          className="w-6 h-6"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+            d={isMenuOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"}
+          ></path>
+        </svg>
+      </motion.div>
+      <motion.div
+        variants={menuVariants}
+        initial="closed"
+        animate={isMenuOpen ? "opened" : "closed"}
+        className={`menu-container absolute md:top-auto md:relative md:flex md:flex-row md:items-center md:space-x-4 `}
+      >
+        {sections.map((section) => (
+          <div
+            key={section}
+            className="flex items-center"
+            onMouseEnter={() => setHoveredSection(section)}
+            onMouseLeave={() => setHoveredSection(null)}
+          >
+            <div
+              className={`h-4 w-4 rounded-full  cursor-pointer transition duration-800 ease-in-out ${
+                activeSection === section
+                  ? "bg-green-500"
+                  : hoveredSection === section
+                  ? "bg-gray-500"
+                  : "bg-transparent border-2 border-black"
+              }`}
+              onClick={() => handleSectionClick(section)}
+            />
+            <button
+              // className="text-black py-2 px-4"
+              className={`py-2 px-4 ${
+                section === "Contact"
+                  ? "text-white font-bold rounded-lg  px-2 mx-2 py-0 bg-green-700"
+                  : "text-black"
+              }`}
+              onClick={() => handleSectionClick(section)}
+            >
+              {section}
+            </button>
+          </div>
+        ))}
+      </motion.div>
+    </nav>
+  );
+};
+
+export default Navbar;
+
+// ====== FILE: src/app/people/page.tsx ======
+
+import React from "react";
+import Image from "next/image";
+
+interface Person {
+  name: string;
+  roles: string[];
+  images: [string, string];
+}
+
+const peopleData: Person[] = [
+  {
+    name: "Gustav Duus",
+    images: ["/members/ceo_1.jpg", "/members/ceo_2.jpg"],
+    roles: ["CEO", "Co-Founder"],
+  },
+  {
+    name: "Joakim Larsen",
+    images: ["/members/m_1.jpg", "/members/m_2.jpg"],
+    roles: ["Co-Founder"],
+  },
+  {
+    name: "George Aftincai",
+    images: ["/members/gerorge_1.jpg", "/members/gerorge_2.jpg"],
+    roles: ["Front-end"],
+  },
+  {
+    name: "Riccardo Conti",
+    images: ["/members/ricardo_1.jpg", "/members/ricardo_2.jpg"],
+    roles: ["Front-end", "Mobile"],
+  },
+  {
+    name: "Sam Hakimane",
+    images: ["/members/sam_1.jpg", "/members/sam_2.jpg"],
+    roles: ["Back-end"],
+  },
+  {
+    name: "Jedrzej Lagodzinski",
+    images: ["/members/j_1.jpg", "/members/j_2.jpg"],
+    roles: ["Front-end"],
+  },
+  {
+    name: "David Lin",
+    images: ["/members/david_1.jpg", "/members/david_2.jpg"],
+    roles: ["Front-end", "Design"],
+  },
+];
+
+interface PeopleSectionProps {
+  isActive: boolean;
+}
+
+const PeopleSection: React.FC<PeopleSectionProps> = ({ isActive }) => {
+  if (!isActive) return null;
+  return (
+    <div className="p-4">
+      <h2 className="text-3xl font-pt-sans-bold-900 mb-4 mx-4">People</h2>
+      <div className="people-section grid grid-cols-1 sm:grid-cols-3 gap-4 p-4">
+        {peopleData.map((person, index) => (
+          <PersonCard key={index} person={person} />
+        ))}
+      </div>
+    </div>
+  );
+};
+
+interface PersonCardProps {
+  person: Person;
+}
+
+// Define the type for the mapping object
+type RoleIconMappingType = {
+  [roleName: string]: string;
+};
+
+// Define the mapping from role names to icon filenames
+const roleIconMapping: RoleIconMappingType = {
+  CEO: "ceo.svg",
+  "Co-Founder": "founder.svg",
+  "Front-end": "front.svg",
+  Mobile: "mobile.svg",
+  "Back-end": "back.svg",
+  Design: "design.svg",
+};
+
+// Function to return the icon path based on the role, with a fallback
+const getIconPath = (role: string): string => {
+  return `/icons/${roleIconMapping[role] || "default-icon.svg"}`;
+};
+
+const PersonCard: React.FC<PersonCardProps> = ({ person }) => {
+  const [isHovered, setIsHovered] = React.useState(false);
+  return (
+    <div
+      className="person-card cursor-pointer overflow-hidden relative w-full h-auto shadow-lg"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <div
+        className="relative w-full md:w-auto lg:w-full aspect-w-1 aspect-h-1"
+        style={{ paddingTop: "calc(512 / 342 * 100%)" }}
+      >
+        <div
+          className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
+            isHovered ? "opacity-0" : "opacity-100"
+          }`}
+          style={{ paddingTop: "calc(512 / 342 * 100%)" }}
+        >
+          <Image
+            src={person.images[0]}
+            alt={`${person.name} - Base`}
+            fill
+            sizes="(max-width: 768px) 100vw, 50vw"
+            className="rounded-lg"
+          />
+        </div>
+        <div
+          className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
+            isHovered ? "opacity-100" : "opacity-0"
+          }`}
+          style={{ paddingTop: "calc(512 / 342 * 100%)" }}
+        >
+          <Image
+            src={person.images[1]}
+            alt={`${person.name} - Hover`}
+            fill
+            sizes="(max-width: 768px) 100vw, 50vw"
+            className="rounded-lg"
+          />
+        </div>
+      </div>
+      <div className="absolute inset-0 flex flex-col justify-end p-4 rounded-lg">
+        <div
+          style={{ width: "fit-content" }}
+          className="bg-black bg-opacity-40 lg:p-2 sm:p-1"
+        >
+          <h3 className="text-white lg:text-xl md:text-sm font-bold">
+            {person.name}
+          </h3>
+        </div>
+        {person.roles.map((role, index) => (
+          <div key={index} style={{ width: "fit-content" }}>
+            <div className="bg-black bg-opacity-40 flex items-center">
+              <div className="relative mr-1 flex justify-center items-center w-8 h-8 sm:w-[3vw] sm:h-[3vw] lg:w-[2vw] lg:h-[2vw] md:w-[3vw] md:h-[3vw]">
+                <Image
+                  src={getIconPath(role)}
+                  alt={`${role} icon`}
+                  fill
+                  className="filter invert"
+                />
+              </div>
+              <span className="text-white lg:text-lg md:text-sm mr-2">
+                {role}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export default PeopleSection;
+
+// ====== FILE: src/app/projects/page.tsx ======
+
+import React, { useState, useEffect, FC } from "react";
+
+const Projects: FC = () => {
+  const [projects, setProjects] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchProjects = async () => {
+      const token = localStorage.getItem("token");
+
+      try {
+        const response = await fetch(`http://localhost:8080/graphql`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            query: `
+              query {
+                projects {
+                  id
+                  name
+                  teamId
+                }
+              }
+            `,
+          }),
+        });
+
+        if (response.status !== 200) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log("Server Response:", data);
+
+        if (data && data.data && data.data.projects) {
+          setProjects(data.data.projects);
+        } else if (data.errors && data.errors.length > 0) {
+          alert(`Error: ${data.errors[0].message}`);
+        } else {
+          alert("An unexpected error occurred.");
+        }
+      } catch (error: any) {
+        alert(
+          `Network error: ${error.message || "Cannot connect to the server."}`
+        );
+      }
+    };
+
+    fetchProjects();
+  }, []);
+
+  return (
+    <div className="bg-gray-50 min-h-screen p-4">
+      <h2 className="text-2xl text-stone-950 font-semibold mb-4">Projects</h2>
+      <ul className="bg-white shadow rounded p-4">
+        {projects.map((project) => (
+          <li key={project.id} className="border-b border-gray-200 py-2">
+            <span className="font-medium text-stone-700">
+              Project Name: {project.name}
+            </span>{" "}
+            (<span className="text-green-800">Team ID:</span>{" "}
+            <span className="text-stone-700">{project.teamId}</span>)
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+};
+
+export default Projects;
+
+// ====== FILE: src/app/ratesManager/page.tsx ======
+
+// RatesManager.jsx
+import React, { useState } from "react";
+import { useQuery, useMutation, gql, ApolloError } from "@apollo/client";
+
+interface Team {
+  id: string;
+  name: string;
+}
+
+interface Rate {
+  id: number;
+  name: string;
+  teamId: string;
+  rate: number;
+}
+
+// GraphQL Queries and Mutations
+const GET_ALL_SIMPLE_TEAMS = gql`
+  query GetAllSimpleTeams {
+    getAllSimpleTeams {
+      id
+      name
+    }
+  }
+`;
+
+const CREATE_RATE = gql`
+  mutation CreateRate($name: String!, $rate: Int!, $teamId: String!) {
+    createRate(rateInputCreate: { name: $name, rate: $rate, teamId: $teamId }) {
+      id
+      name
+      rate
+      teamId
+    }
+  }
+`;
+
+const DELETE_RATE = gql`
+  mutation DeleteRate($rateId: Int!) {
+    deleteRate(rateId: $rateId) {
+      id
+    }
+  }
+`;
+
+const GET_RATES = gql`
+  query GetRates($teamId: String!) {
+    rates(teamId: $teamId) {
+      id
+      name
+      rate
+    }
+  }
+`;
+
+const RatesManager = () => {
+  const [selectedTeamId, setSelectedTeamId] = useState("");
+  const [rateName, setRateName] = useState("");
+  const [rateValue, setRateValue] = useState(0);
+
+  const [error, setError] = useState<ApolloError | null>(null);
+
+  const {
+    loading: teamsLoading,
+    data: teamsData,
+    error: teamsError,
+  } = useQuery(GET_ALL_SIMPLE_TEAMS, {
+    context: { useLinearApi: false },
+    onError: (error) => {
+      setError(error);
+    },
+  });
+
+  const {
+    loading: ratesLoading,
+    data: ratesData,
+    refetch: refetchRates,
+  } = useQuery(GET_RATES, {
+    variables: { teamId: selectedTeamId },
+    skip: !selectedTeamId,
+  });
+  const [createRate] = useMutation(CREATE_RATE, {
+    onCompleted: () => refetchRates(),
+  });
+  const [deleteRate] = useMutation(DELETE_RATE, {
+    onCompleted: () => refetchRates(),
+    onError: (error) => {
+      console.error("Error deleting rate:", error);
+    },
+  });
+
+  const handleCreateRate = () => {
+    if (selectedTeamId) {
+      createRate({
+        variables: { name: rateName, rate: rateValue, teamId: selectedTeamId },
+      });
+      setRateName("");
+      setRateValue(0);
+    }
+  };
+
+  const handleDeleteRate = (rateId: number) => {
+    console.log("Attempting to delete rate with ID:", rateId); // Debugging log
+    deleteRate({ variables: { rateId } }).catch((error) => {
+      setError(error);
+    });
+  };
+  if (error) return <p>Error: {error.message}</p>;
+  if (teamsLoading || ratesLoading) return <p>Loading...</p>;
+  if (!teamsData || !teamsData.getAllSimpleTeams)
+    return <p>No data available.</p>;
+
+  return (
+    <div className="p-6 bg-black shadow-md flex flex-row justify-between items-center">
+      <h3 className="font-bold text-lg text-white">Manage Rates</h3>
+
+      <div>
+        <select
+          id="teamSelector"
+          className="w-full p-2 mt-1 border border-gray-300 rounded"
+          onChange={(e) => setSelectedTeamId(e.target.value)}
+          value={selectedTeamId}
+        >
+          <option value="">Select a Team</option>
+          {teamsData.getAllSimpleTeams.map((team: Team) => (
+            <option key={team.id} value={team.id}>
+              {team.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div>
+        <input
+          type="text"
+          id="rateName"
+          className="w-full p-2 mt-1 border border-gray-300 rounded"
+          value={rateName}
+          onChange={(e) => setRateName(e.target.value)}
+          placeholder="Rate Name"
+        />
+      </div>
+
+      <div>
+        <input
+          type="number"
+          id="rateValue"
+          className="w-full p-2 mt-1 border border-gray-300 rounded"
+          value={rateValue}
+          onChange={(e) => setRateValue(parseInt(e.target.value) || 0)}
+          placeholder="Amount"
+        />
+      </div>
+
+      <div>
+        <button
+          className="w-full p-2 bg-white text-black rounded hover:bg-blue-600 font-bold"
+          onClick={handleCreateRate}
+        >
+          Create Rate
+        </button>
+      </div>
+
+      <div>
+        {ratesData &&
+          ratesData.rates.map((rate: Rate) => (
+            <div
+              key={rate.id}
+              className="flex justify-between items-center p-1 bg-gray-100 border border-gray-200 rounded m-2"
+            >
+              <span className="font-semibold mr-2">
+                {rate.name} - {rate.rate}
+              </span>
+              <button
+                className="p-1 bg-red-500 text-white rounded hover:bg-red-600"
+                onClick={() => handleDeleteRate(rate.id)}
+              >
+                Delete
+              </button>
+            </div>
+          ))}
+      </div>
+    </div>
+  );
+};
+
+export default RatesManager;
+
+// ====== FILE: src/app/section/page.tsx ======
+
+"use client";
+
+import { motion, useAnimation } from "framer-motion";
+import React, { useEffect } from "react";
+import { ContentWrapper } from "../components/contentWrapper";
+import PeopleSection from "@/app/people/page";
+import AboutComponent from "@/app/about/page";
+import ServicesComponent from "@/app/services/page";
+
+interface SectionProps {
+  id: string;
+  content: string;
+  isActive: boolean;
+  color: string;
+  zIndex: number;
+  videoSrc?: string;
+  isContactFormActive: boolean;
+  // children?: React.ReactNode;
+}
+
+const getSectionVariants = (isContactFormActive: boolean) => ({
+  inactive: isContactFormActive
+    ? {
+        opacity: 1,
+        scale: 1,
+        y: 0,
+        zIndex: 6,
+      }
+    : {
+        y: -40,
+        opacity: 0.7,
+        scale: 0.95,
+        zIndex: 6,
+        transition: {
+          duration: 0.5,
+          ease: "easeInOut",
+        },
+      },
+  active: {
+    y: 0,
+    opacity: 1,
+    scale: 1,
+    zIndex: 6,
+    transition: {
+      y: {
+        duration: 0.2,
+        type: "spring",
+        from: "40vh",
+        stiffness: 70,
+        damping: 15,
+      },
+      opacity: { duration: 0.2 },
+      scale: { duration: 0.2 },
+    },
+  },
+  exit: {
+    y: 50,
+    opacity: 0,
+    transition: { duration: 0.5 },
+  },
+});
+
+const Section: React.FC<SectionProps> = ({
+  id,
+  content,
+  isActive,
+  color,
+  zIndex,
+  videoSrc,
+  isContactFormActive,
+}) => {
+  const controls = useAnimation();
+  const sectionVariants = getSectionVariants(isContactFormActive);
+
+  useEffect(() => {
+    controls.start(isActive ? "active" : "inactive");
+  }, [isActive, controls, isContactFormActive]);
+
+  const videoSrcConditional = isActive ? videoSrc : "";
+
+  return (
+    <motion.div
+      layoutId={id}
+      variants={sectionVariants}
+      initial="initial"
+      animate={controls}
+      exit="inactive"
+      transition={{ duration: 0.5, type: "easeOut" }}
+      className={`section border-2 border-green-600 rounded-tl-3xl rounded-tr-3xl shadow-lg ${color} responsive-section`}
+      style={{
+        position: "absolute",
+        width: "75%",
+        top: 100,
+        right: 0,
+        bottom: 0,
+        boxSizing: "border-box",
+        zIndex: zIndex,
+      }}
+    >
+      {id === "People" ? (
+        <div
+          className="overflow-y-auto"
+          style={{ maxHeight: "calc(100vh - 200px)" }}
+        >
+          <PeopleSection isActive={isActive} />
+        </div>
+      ) : id === "About" ? (
+        <AboutComponent />
+      ) : id === "Services" ? (
+        <ServicesComponent />
+      ) : videoSrc ? (
+        <div className="w-full h-full">
+          <video
+            className="video w-full h-full overflow-hidden rounded-tl-3xl rounded-tr-3xl object-cover"
+            autoPlay
+            loop
+            muted
+            playsInline
+          >
+            <source src={videoSrc} type="video/mp4" />
+            Your browser does not support the video tag.
+          </video>
+          <div className="flex overlay-text lg:bottom-48 p-4 lg:relative md:flex ">
+            <h2 className="lg:text-4xl font-bold text-white p-4 bg-black bg-opacity-50 rounded-lg sm:text-lg">
+              We enable Collaborators
+              <br /> to create delightful technical solutions
+            </h2>
+          </div>
+        </div>
+      ) : (
+        <ContentWrapper isActive={isActive}>
+          <h2 className="text-2xl font-bold mb-4">{content}</h2>
+          <p className="text-gray-700">
+            Placeholder content for the {content} section.
+          </p>
+        </ContentWrapper>
+      )}
+    </motion.div>
+  );
+};
+
+export default Section;
+
+// ====== FILE: src/app/services/page.tsx ======
+
+import React, { JSX } from "react";
+import Image from "next/image";
+
+interface IFeature {
+  name: string;
+  icon: string;
+}
+
+interface IService {
+  title: string;
+  description: string[];
+  icon: string;
+  features?: IFeature[];
+  imageUrl: string;
+}
+
+const servicesData: IService[] = [
+  {
+    title: "Digital Product Development",
+    description: [
+      "Do you know the feeling of navigating a website or a mobile application and it is either hideous or you are getting lost in the pages all the time?",
+      "UI and UX is the art of creating beautiful applications that offer a smooth user experience whether it is a web or mobile application.",
+      "Both are essential for creating a successful application. UI design ensures that the application looks visually appealing and attractive to users, while UX design ensures that the application is intuitive and easy to use.",
+      "Let us enable you to balance both.",
+    ],
+    icon: "/icons/digital.svg",
+    imageUrl: "/images/dpd.jpg",
+    features: [
+      {
+        name: "E-commerce & Websites",
+        icon: "/icons/e-commerce.svg",
+      },
+      {
+        name: "Mobile apps & Web applications",
+        icon: "/icons/mobile.svg",
+      },
+      {
+        name: "Digital Solutions & Platforms",
+        icon: "/icons/platforms.svg",
+      },
+    ],
+  },
+  {
+    title: "Climate Reporting",
+    description: [
+      "Searching for the right data? Preparing to report scope 1, 2 or 3? Or are you looking for internal tracking to make data-driven decisions to lower your climate footprint?",
+      "At Enablment, we have the technical skills to integrate with the correct data sources and align that data for trustworthy reporting. We can set up automated reporting flows from multiple data sources for internal tracking.",
+    ],
+    icon: "/icons/climate.svg",
+    imageUrl: "/images/climate.jpg",
+  },
+  {
+    title: "Insights through Data",
+    description: [
+      "On the journey of digitalization, automating and optimizing processes and data collection create the best fundamentals for an effective digital solution.",
+      "Luckily, we are more than stoked to help you with following.",
+    ],
+    icon: "/icons/data.svg",
+    imageUrl: "/images/data.jpg",
+  },
+  {
+    title: "Data Consolidation (Cloud)",
+    description: [
+      "Is it difficult, and time consuming gathering data, and structuring it for data analytics/insight?",
+      "This is the first step within data analytics and all companies will inevitably go through this transformation at some point. Once implemented there will be a consistent and reliable data foundation for all data analysis. Plus a setup like this is fully automated.",
+    ],
+    icon: "/icons/cloud.svg",
+    imageUrl: "/images/cloud.jpg",
+  },
+  {
+    title: "Business Intelligence (BI)",
+    description: [
+      "Do you have a database that is automatically sourcing the data for you? And is your data then, consequently, consolidated in one place and might even be structured? Now you want insight from your data?",
+      "This is Business Intelligence. We conduct a data analysis and transform your data, then we create dashboards to visualize the insight.",
+    ],
+    icon: "/icons/bi.svg",
+    imageUrl: "/images/bi.jpg",
+  },
+  {
+    title: "Machine Learning & Artificial Intelligence (ML & AI)",
+    description: [
+      "Is your decision-making process supplemented with insight and a descriptive data analysis through BI? Are you ready to let a data model offer you suggestions?",
+      "Certain trends and causalities that might not be visible to the human eye or the data input is simply too big. This is when you move from the descriptive to the prescriptive data analysis. A machine learning model can highlight causalities and forecast development.",
+    ],
+    icon: "/icons/ai.svg",
+    imageUrl: "/images/AI-ML.jpg",
+  },
+];
+const formatText = (text: string, maxLength: number): JSX.Element[] => {
+  const words = text.split(" ");
+  const formattedLines: JSX.Element[] = [];
+  let currentLine = "";
+
+  words.forEach((word, index) => {
+    if ((currentLine + word).length > maxLength) {
+      formattedLines.push(
+        <span key={index}>
+          {currentLine.trim()}
+          <br />
+        </span>
+      );
+      currentLine = word + " ";
+    } else {
+      currentLine += word + " ";
+    }
+  });
+
+  // Add the last line
+  if (currentLine) {
+    formattedLines.push(<span key={words.length}>{currentLine.trim()}</span>);
+  }
+
+  return formattedLines;
+};
+const ServicesComponent: React.FC = () => {
+  return (
+    <div className="space-y-8 p-4 sm:p-6">
+      <h2 className="text-3xl font-pt-sans-bold-900 mb-4">Services</h2>
+      <div
+        style={{
+          maxHeight: "calc(100vh - 300px)",
+          overflowY: "auto",
+        }}
+      >
+        {servicesData.map((service, index) => (
+          <div key={index} className="mb-6">
+            <div className="flex flex-wrap items-stretch shadow-lg rounded-lg overflow-hidden lg:justify-start sm:justify-center lg:flex-nowrap space-x-4">
+              <div className="relative w-full flex-grow tablet:flex-grow-0 md:w-1/2  services-image-container">
+                <Image
+                  src={service.imageUrl}
+                  alt={`${service.title}`}
+                  layout="fill"
+                  objectFit="cover"
+                  sizes="(min-width: 768px) 50vw, 100vw"
+                />
+              </div>
+              {/* Rest of the Content */}
+              <div className="text-container lg:w-1/2 sm:mt-4">
+                <div className="flex items-center space-x-2">
+                  <Image
+                    src={service.icon}
+                    alt={`${service.title} Icon`}
+                    width={24}
+                    height={24}
+                  />
+                  <h3 className="text-2xl font-semibold mb-2">
+                    {service.title}
+                  </h3>
+                </div>
+                {service.description.map((paragraph, pIndex) => (
+                  <p
+                    key={pIndex}
+                    style={{ lineHeight: "1.4" }}
+                    className="text-lg mb-3"
+                  >
+                    {/* {formatText(paragraph, 75)} */}
+                    {paragraph}
+                  </p>
+                ))}
+                {service.features && (
+                  <div className="flex flex-col space-y-2 mt-4">
+                    {service.features.map((feature, fIndex) => (
+                      <div
+                        key={fIndex}
+                        className="flex items-center space-x-2 "
+                      >
+                        <Image
+                          src={feature.icon}
+                          alt={`${feature.name} Icon`}
+                          width={20}
+                          height={20}
+                        />
+                        <span style={{ lineHeight: "1.4" }} className="text-lg">
+                          {feature.name}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export default ServicesComponent;
+
+// ====== FILE: src/app/signup/page.tsx ======
+
+import React, { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/router";
+import Image from "next/image";
+
+const Signup: React.FC = () => {
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const router = useRouter();
+  const [errors, setErrors] = useState<{ email?: string; password?: string }>(
+    {}
+  );
+  const passwordRegex =
+    /^(?=.*[A-Z])(?=.*[!@#$%^&*()_+{}\[\]:;<>,.?~\\/-]).{8,}$/;
+
+  const validateForm = () => {
+    let valid = true;
+    const newErrors: { email?: string; password?: string } = {};
+
+    // Check if email is valid
+    const emailRegex = /\S+@\S+\.\S+/;
+    if (!email || !emailRegex.test(email)) {
+      newErrors.email = "Please provide a valid email address.";
+      valid = false;
+    }
+
+    // Check if password is valid
+    if (!password || !passwordRegex.test(password)) {
+      newErrors.password =
+        "Password must be at least 8 characters long, have at least one uppercase letter, and one special character.";
+      valid = false;
+    }
+
+    setErrors(newErrors);
+    return valid;
+  };
+
+  const handleSignup = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!validateForm()) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:8080/auth/signup`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      });
+
+      if (response.status === 409) {
+        setErrors({
+          ...errors,
+          email: "Email already exists.",
+        });
+        return;
+      }
+
+      if (response.ok) {
+        console.log("Signup successful. Redirecting to login...");
+        router.push("/login");
+      } else {
+        console.error("Signup failed:", await response.text());
+      }
+    } catch (error) {
+      console.error("Error during signup:", error);
+    }
+  };
+
+  return (
+    <div className="flex items-center justify-center h-screen bg-gray-100">
+      <div className="p-8 bg-white rounded shadow-md w-96">
+        <h2 className="text-center text-2xl font-bold mb-4">
+          Create an Account
+        </h2>
+        <form onSubmit={handleSignup}>
+          <input
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Email"
+            className="mb-2 p-2 w-full border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+          />
+          {errors.email && (
+            <p className="text-red-500 text-sm">{errors.email}</p>
+          )}
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Password"
+            className="mb-2 p-2 w-full border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+          />
+          {errors.password && (
+            <p className="text-red-500 text-sm">{errors.password}</p>
+          )}
+          <button
+            type="submit"
+            className="w-full bg-black text-white p-2 rounded focus:outline-none hover:bg-gray-700 mb-4"
+          >
+            GET STARTED
+          </button>
+        </form>
+        <div className="flex justify-center">
+          <span>
+            Already have an account?{" "}
+            <Link href="/login" className="text-blue-500">
+              LOGIN HERE
+            </Link>
+          </span>
+        </div>
+        <div className="flex justify-end items-end mt-20">
+          <Image
+            src="/logo.svg"
+            alt="Enablment-tt Logo"
+            width={150}
+            height={40}
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Signup;
+
+// ====== FILE: src/app/table/page.tsx ======
+
+import React from "react";
+
+// Define the TypeScript type for the table data
+type ClientServiceData = {
+  client: string;
+  year: number;
+  services: string;
+};
+interface ServiceTableProps {
+  onContactClick: () => void;
+}
+
+// Sample data array
+const tableData: ClientServiceData[] = [
+  {
+    client: "Modstrøm",
+    year: 2023,
+    services: "Climate Footprint Reporting: Scope 1 and 2",
+  },
+  { client: "Junkfood", year: 2023, services: "Climate Footprint Reporting" },
+  { client: "Confidential", year: 2023, services: "Cloud, User Platform" },
+  { client: "Shipping Company", year: 2023, services: "Cloud, User Platform" },
+  { client: "B93", year: 2023, services: "Website, UI & UX" },
+  {
+    client: "B:A:M",
+    year: 2024,
+    services: "Video Streaming Platform and Mobil App",
+  },
+  { client: "H5", year: 2024, services: "Website" },
+];
+
+const ServiceTable: React.FC<ServiceTableProps> = ({ onContactClick }) => {
+  return (
+    <div className="flex flex-col mx-2 z-10">
+      <p className="text-3xl font-semibold mb-2 text-center bg-white shadow rounded-lg sm:text-2xl">
+        Our Happy Collaborators
+      </p>
+      {tableData.map((item, index) => (
+        <div key={index} className="w-full pb-2">
+          <div className="bg-white shadow rounded-lg sm:p-1 sm:text-sm">
+            <h3 className="text-lg sm:text-md font-semibold">{item.client}</h3>
+            <p className="text-gray-900 font-roboto">Year: {item.year}</p>
+            <p className="text-gray-900 font-roboto">
+              Services: {item.services}
+            </p>
+          </div>
+        </div>
+      ))}
+      <div className="flex mt-2">
+        <button
+          className="bg-green-700 hover:bg-green-500 text-white font-bold py-2 px-4 rounded-full transition-colors duration-300 "
+          onClick={onContactClick}
+        >
+          Shall we collaborate ?
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default ServiceTable;
+
+// ====== FILE: src/app/teamSync/page.tsx ======
+
+import React, { useEffect } from "react";
+
+const TeamSyncAndFetch: React.FC = () => {
+  // const [teams, setTeams] = useState<Team[]>([]);
+
+  const syncTeams = async () => {
+    const token = localStorage.getItem("token");
+
+    try {
+      const response = await fetch(
+        `http://localhost:8080/team-synchronize/teams`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        }
+      );
+
+      const data = await response.json();
+      console.log("Sync Response:", data);
+    } catch (error) {
+      console.error("Error during sync:", error);
+    }
+  };
+
+  useEffect(() => {
+    const fetchDataAndSync = async () => {
+      await syncTeams();
+      // await fetchTeams();
+    };
+
+    fetchDataAndSync();
+  }, []);
+
+  return (
+    <button
+      onClick={syncTeams}
+      className="p-2 bg-black text-white rounded-full hover:bg-blue-600 flex flex-col items-center justify-center relative"
+      style={{ width: "120px", height: "120px" }}
+    >
+      <div
+        className="absolute w-full flex flex-col items-center justify-center"
+        style={{ top: "46%", transform: "translateY(-50%)" }}
+      >
+        <span className="text-center text-xs">Sync</span>
+        <span className="text-center text-xs mt-1">Teams</span>
+      </div>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        x="0px"
+        y="0px"
+        width="100"
+        height="100"
+        viewBox="0 0 24 24"
+        fill="currentColor"
+      >
+        <path d="M16 15L24 15 20 20zM8 9L0 9 4 4z"></path>
+        <path d="M21 6c0-1.654-1.346-3-3-3H7.161l1.6 2H18c.551 0 1 .448 1 1v10h2V6zM3 18c0 1.654 1.346 3 3 3h10.839l-1.6-2H6c-.551 0-1-.448-1-1V8H3V18z"></path>
+      </svg>
+    </button>
+  );
+};
+
+export default TeamSyncAndFetch;
+
+// ====== FILE: src/app/time/page.tsx ======
+
+import React, { useState, useEffect } from "react";
+import { useQuery } from "@apollo/client";
+import gql from "graphql-tag";
+import { currentUserVar } from "../lib/apolloClient";
+
+const GET_DROPDOWN_OPTIONS = gql`
+  query {
+    users {
+      id
+      email
+    }
+    projects {
+      id
+      name
+    }
+  }
+`;
+
+const GET_TOTAL_TIME_SPENT = gql`
+  query GetTotalTimeSpent(
+    $userId: Float!
+    $projectId: String!
+    $startDate: String!
+    $endDate: String!
+  ) {
+    getTotalTimeSpent(
+      userId: $userId
+      projectId: $projectId
+      startDate: $startDate
+      endDate: $endDate
+    )
+  }
+`;
+
+const GET_USER_PROJECTS = gql`
+  query GetUserProjects {
+    users {
+      id
+      teams {
+        name
+        projects {
+          id
+          name
+        }
+      }
+    }
+  }
+`;
+
+const getCurrentDate = () => new Date().toISOString().split("T")[0];
+
+const TotalTimeSpent: React.FC = () => {
+  const [totalTime, setTotalTime] = useState(0);
+  const [selectedProject, setSelectedProject] = useState<string | null>(null);
+  const [startDate, setStartDate] = useState(getCurrentDate());
+  const [endDate, setEndDate] = useState(getCurrentDate());
+
+  const loggedInUser = currentUserVar();
+  const [userProjects, setUserProjects] = useState<any[]>([]);
+
+  const {
+    loading: loadingUserProjects,
+    error: errorUserProjects,
+    data: userProjectsData,
+  } = useQuery(GET_USER_PROJECTS, {
+    skip: !loggedInUser,
+  });
+
+  const {
+    loading: loadingOptions,
+    error: errorOptions,
+    data: optionsData,
+  } = useQuery(GET_DROPDOWN_OPTIONS);
+  const {
+    loading: loadingTime,
+    error: errorTime,
+    data: timeData,
+    refetch,
+  } = useQuery(GET_TOTAL_TIME_SPENT, {
+    variables: {
+      userId: loggedInUser ? parseFloat(loggedInUser.id) : null,
+      projectId: selectedProject,
+      startDate,
+      endDate,
+    },
+    skip: !loggedInUser || !selectedProject,
+  });
+
+  useEffect(() => {
+    if (userProjectsData && loggedInUser) {
+      const userWithProjects = userProjectsData.users.find(
+        (user: any) => user.id === loggedInUser.id
+      );
+      if (userWithProjects) {
+        const projectsWithTeamName = userWithProjects.teams.flatMap(
+          (team: any) =>
+            team.projects.map((project: any) => ({
+              ...project,
+              teamName: team.name,
+            }))
+        );
+        setUserProjects(projectsWithTeamName);
+      }
+    }
+  }, [userProjectsData, loggedInUser]);
+
+  useEffect(() => {
+    if (selectedProject) {
+      refetch();
+    }
+  }, [selectedProject, startDate, endDate, refetch]);
+
+  useEffect(() => {
+    if (timeData) {
+      setTotalTime(timeData.getTotalTimeSpent);
+    }
+  }, [timeData]);
+
+  const formatMilliseconds = (ms: number) => {
+    const seconds = Math.floor((ms / 1000) % 60);
+    const minutes = Math.floor((ms / (1000 * 60)) % 60);
+    const hours = Math.floor(ms / (1000 * 60 * 60));
+    return `${hours.toString().padStart(2, "0")}:${minutes
+      .toString()
+      .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+  };
+
+  if (loadingTime) return <p>Loading...</p>;
+  if (errorOptions || errorTime?.message) {
+    const errorMessage = errorOptions
+      ? errorOptions.message
+      : errorTime?.message;
+    return (
+      <div className="bg-red-50 border-l-8 border-red-400 p-4 mb-4">
+        <div className="flex">
+          <div className="flex-shrink-0">
+            <svg
+              className="h-5 w-5 text-red-400"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                fillRule="evenodd"
+                d="M8.257 3.099c.366-.47.977-.751 1.743-.751s1.377.281 1.743.75l6.857 8.8c.38.487.4 1.128.06 1.625a1.162 1.162 0 01-.86.426H2.25c-.334 0-.65-.14-.86-.426a1.163 1.163 0 01-.06-1.625l6.857-8.8z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </div>
+          <div className="ml-3">
+            <h3 className="text-sm font-medium text-red-800">Error</h3>
+            <div className="text-sm text-red-600">
+              <p>{errorMessage}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-6 bg-black shadow-md flex flex-row justify-between items-center">
+      <h3 className="text-lg font-bold text-white">
+        Get Time Spent on Project
+      </h3>
+      <div>
+        <select
+          id="projectSelector"
+          value={selectedProject || ""}
+          onChange={(e) => setSelectedProject(e.target.value)}
+          className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+        >
+          <option value="">Select a Project</option>
+          {userProjects.map((project: any) => (
+            <option key={project.id} value={project.id}>
+              {project.name} (Team: {project.teamName})
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Date Pickers */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <input
+          type="date"
+          id="startDatePicker"
+          value={startDate}
+          onChange={(e) => setStartDate(e.target.value)}
+          className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+        />
+        <input
+          type="date"
+          id="endDatePicker"
+          value={endDate}
+          onChange={(e) => setEndDate(e.target.value)}
+          className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+        />
+      </div>
+
+      {/* Total Time Display */}
+      <p className="text-lg font-medium text-white">
+        Total Time: {formatMilliseconds(totalTime)}
+      </p>
+    </div>
+  );
+};
+
+export default TotalTimeSpent;
+
+// ====== FILE: src/app/timeKeeper/page.tsx ======
+
+// React and third-party library imports
+import React, { useEffect, useState, useRef } from "react";
+import { useQuery, useMutation, gql } from "@apollo/client";
+import {
+  formatISO,
+  parseISO,
+  differenceInSeconds,
+  format,
+  isValid,
+} from "date-fns";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+
+// Utility and store imports
+import {
+  formatDateForDisplay,
+  formatTimeFromISOString,
+} from "../utils/timeUtils";
+import useStore from "../lib/store";
+import { currentUserVar } from "../lib/apolloClient";
+
+// Component imports for UI
+import ProjectSelector from "../components/ProjectSelector";
+import RateSelector from "../components/RateSelector";
+import NavigationBar from "../components/NavigationBar";
+
+// GraphQL Queries and mutations
+// const USERS_QUERY = gql`
+//   query GetUsers {
+//     users {
+//       id
+//       email
+//     }
+//   }
+// `;
+
+const PROJECTS_QUERY = gql`
+  query GetProjects {
+    projects {
+      id
+      name
+      teamId
+    }
+  }
+`;
+
+const RATES_QUERY = gql`
+  query GetRates($teamId: String!) {
+    rates(teamId: $teamId) {
+      id
+      name
+      rate
+    }
+  }
+`;
+
+const TOTAL_TIME_PER_USER_PROJECT_QUERY = gql`
+  query GetTotalTimeForUserProject($userId: Float!, $projectId: String!) {
+    getTotalTimeForUserProject(userId: $userId, projectId: $projectId)
+  }
+`;
+
+const GET_USER_PROJECTS = gql`
+  query GetUserProjects {
+    users {
+      id
+      teams {
+        name
+        projects {
+          id
+          name
+        }
+      }
+    }
+  }
+`;
+
+const CREATE_TIME_MUTATION = gql`
+  mutation CreateTime($timeInputCreate: TimeInputCreate!) {
+    createTime(timeInputCreate: $timeInputCreate) {
+      id
+      startTime
+      endTime
+      totalElapsedTime
+    }
+  }
+`;
+
+const UPDATE_TIME_MUTATION = gql`
+  mutation UpdateTime($timeInputUpdate: TimeInputUpdate!) {
+    updateTime(timeInputUpdate: $timeInputUpdate) {
+      id
+      startTime
+      endTime
+      totalElapsedTime
+    }
+  }
+`;
+
+const DELETE_TIME_MUTATION = gql`
+  mutation DeleteTime($id: Float!) {
+    deleteTime(id: $id) {
+      id
+    }
+  }
+`;
+
+// Main component
+const TimeKeeper: React.FC = () => {
+  // Zustand store state and setters
+  const {
+    setUsers,
+    projects,
+    setProjects,
+    rates,
+    setRates,
+    selectedProject,
+    setSelectedProject,
+    selectedRate,
+    setSelectedRate,
+    teamId,
+    setTeamId,
+  } = useStore();
+
+  // Local component state
+  const [isRunning, setIsRunning] = useState(false);
+  const [startTime, setStartTime] = useState<Date | null>(null);
+  const [pauseTimes, setPauseTimes] = useState<Date[]>([]);
+  const [resumeTimes, setResumeTimes] = useState<Date[]>([]);
+  const [displayTime, setDisplayTime] = useState("00:00:00");
+  const [currentEntryId, setCurrentEntryId] = useState<number | null>(null);
+  const [startDate, setStartDate] = useState(new Date());
+
+  const [userProjects, setUserProjects] = useState<any[]>([]);
+  const [error, setError] = useState(null);
+  const [resetMessage, setResetMessage] = useState(false);
+  const [submissionSuccess, setSubmissionSuccess] = useState(false);
+  const [submissionError, setSubmissionError] = useState("");
+  const [dateAlertMessage, setDateAlertMessage] = useState<string | null>(null);
+
+  // References for intervals and accumulated time
+  const timerIntervalRef = useRef<number | null>(null);
+  const accumulatedTimeRef = useRef(0);
+
+  const loggedInUser = currentUserVar();
+  console.log("LoggedinUser", loggedInUser);
+
+  // Apollo GraphQL hooks
+  //Query hooks
+  // const { data: usersData } = useQuery(USERS_QUERY);
+  const { data: projectsData } = useQuery(PROJECTS_QUERY);
+  const { data: ratesData, error: ratesError } = useQuery(RATES_QUERY, {
+    // variables: { teamId: useStore.getState().teamId },
+    variables: { teamId },
+  });
+  // Fetch all users and their projects
+  const {
+    data: ProjectUsersData,
+    loading: loadingUsers,
+    error: usersError,
+  } = useQuery(GET_USER_PROJECTS, {
+    skip: !loggedInUser, // Run the query only if loggedInUser is set
+  });
+
+  const {
+    loading: totalTimeLoading,
+    data: totalTimeData,
+    error: totalTimeError,
+  } = useQuery(TOTAL_TIME_PER_USER_PROJECT_QUERY, {
+    variables: {
+      // userId: loggedInUser?.id,
+      userId: loggedInUser ? parseFloat(loggedInUser.id) : null,
+      projectId: selectedProject,
+    },
+    skip: !loggedInUser || !selectedProject,
+  });
+
+  // Mutation hooks
+  const [createTime] = useMutation(CREATE_TIME_MUTATION);
+  const [updateTime] = useMutation(UPDATE_TIME_MUTATION);
+  const [deleteTime] = useMutation(DELETE_TIME_MUTATION);
+
+  // Effect for fetching and setting user project data
+  useEffect(() => {
+    if (ProjectUsersData && loggedInUser) {
+      const userWithProjects = ProjectUsersData.users.find(
+        (user: any) => user.id === loggedInUser.id
+      );
+      if (userWithProjects) {
+        const projectsWithTeamName = userWithProjects.teams.flatMap(
+          (team: any) =>
+            team.projects.map((project: any) => ({
+              ...project,
+              teamName: team.name,
+            }))
+        );
+        setUserProjects(projectsWithTeamName);
+      }
+    }
+  }, [ProjectUsersData, loggedInUser]);
+
+  console.log("userprojects", userProjects);
+
+  // Query data handling
+  useEffect(() => {
+    // if (usersData) setUsers(usersData.users);
+    if (projectsData) setProjects(projectsData.projects);
+    if (ratesData) setRates(ratesData.rates);
+  }, [projectsData, ratesData, setProjects, setRates]);
+
+  // Error handling for the rates query
+  useEffect(() => {
+    if (ratesError) {
+      console.error("Error fetching rates:", ratesError.message);
+    }
+  }, [ratesError]);
+
+  useEffect(() => {
+    if (selectedProject) {
+      const project = projects.find((p) => p.id === selectedProject);
+      if (project) setTeamId(project.teamId);
+    }
+  }, [selectedProject, projects, setTeamId]);
+
+  // Timer Logic
+  const calculateElapsedTime = () => {
+    const now = new Date();
+    // Ensure startTime is a valid Date object
+    if (!isValid(startTime) || startTime === null) {
+      return 0;
+    }
+    let elapsedSeconds = differenceInSeconds(now, startTime);
+    pauseTimes.forEach((pauseTime, index) => {
+      const resumeTime = resumeTimes[index] || now;
+      if (isValid(pauseTime) && isValid(resumeTime)) {
+        elapsedSeconds -= differenceInSeconds(resumeTime, pauseTime);
+      }
+    });
+    return Math.max(elapsedSeconds, 0);
+  };
+
+  const updateDisplay = () => {
+    const elapsedSeconds = calculateElapsedTime();
+    const formattedTime = format(
+      new Date(0, 0, 0, 0, 0, elapsedSeconds),
+      "HH:mm:ss"
+    );
+    setDisplayTime(formattedTime);
+  };
+
+  // Effect to handle timer updates
+  useEffect(() => {
+    if (isRunning && isValid(startTime)) {
+      updateDisplay(); // Immediate update
+      timerIntervalRef.current = setInterval(
+        updateDisplay,
+        1000
+      ) as unknown as number;
+      return () => {
+        if (timerIntervalRef.current !== null) {
+          clearInterval(timerIntervalRef.current);
+          timerIntervalRef.current = null;
+        }
+      };
+    }
+  }, [isRunning, startTime, pauseTimes, resumeTimes]);
+
+  // Button click handlers
+  const handleStartStop = () => {
+    const now = new Date();
+
+    if (isRunning) {
+      // Pause the timer
+      if (isValid(startTime)) {
+        setPauseTimes((prevPauseTimes) => [...prevPauseTimes, now]);
+      }
+      setIsRunning(false);
+    } else {
+      // Start or resume the timer
+      if (startTime === null) {
+        // Start with the current time if no time was picked
+        setStartTime(now);
+      } // If startTime is not null, it means a time has been picked and we use that
+      setIsRunning(true);
+      if (pauseTimes.length !== resumeTimes.length) {
+        // Resume after a pause
+        setResumeTimes((prevResumeTimes) => [...prevResumeTimes, now]);
+      }
+    }
+  };
+
+  const handleReset = () => {
+    const now = new Date();
+    setIsRunning(false);
+    setStartTime(null);
+    setPauseTimes([]);
+    setResumeTimes([]);
+    setDisplayTime("00:00:00");
+    accumulatedTimeRef.current = 0;
+    setCurrentEntryId(null);
+    setResetMessage(true);
+    setStartDate(now);
+    setTimeout(() => setResetMessage(false), 2000);
+  };
+
+  const handleDateChange = (date: Date | null) => {
+    const now = new Date();
+    if (date) {
+      if (date > now) {
+        setDateAlertMessage("Please select a current or past date/time.");
+        setTimeout(() => setDateAlertMessage(null), 1000);
+      } else {
+        setStartDate(date);
+        setStartTime(date);
+      }
+    } else {
+      setStartDate(now);
+    }
+  };
+
+  // Helper function to format time
+  const formatTimeFromMilliseconds = (totalMilliseconds: number) => {
+    const totalSeconds = Math.floor(totalMilliseconds / 1000);
+    const days = Math.floor(totalSeconds / (3600 * 24));
+    const hours = Math.floor((totalSeconds % (3600 * 24)) / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+
+    return `${days} days, ${hours} hours, ${minutes} minutes`;
+  };
+
+  // Submit handler for time entries
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    if (!startTime) {
+      console.error("No start time set.");
+      return;
+    }
+    try {
+      const submissionTime = new Date();
+      console.log("Frontend - Formatted End Time:", formatISO(submissionTime));
+      console.log(
+        "Submitting time. Start Time:",
+        startTime,
+        "End Time:",
+        submissionTime
+      );
+      const totalElapsedTime =
+        accumulatedTimeRef.current +
+        (submissionTime.getTime() - startTime.getTime()) -
+        pauseTimes.reduce((acc, time, index) => {
+          const resumeTime = resumeTimes[index] || submissionTime;
+          return acc + (resumeTime.getTime() - time.getTime());
+        }, 0);
+
+      console.log("Frontend - Formatted Start Time:", formatISO(startTime));
+      console.log("Frontend - Formatted End Time:", formatISO(submissionTime));
+      console.log("Total Elapsed Time on Submit:", totalElapsedTime);
+
+      let result;
+
+      if (currentEntryId) {
+        // Update existing time entry
+        const updateVariables = {
+          id: currentEntryId,
+          endTime: formatISO(submissionTime),
+          totalElapsedTime,
+        };
+        result = await updateTime({
+          variables: { timeInputUpdate: updateVariables },
+        });
+      } else {
+        // Create new time entry
+        const createVariables = {
+          startTime: formatISO(startTime),
+          endTime: formatISO(submissionTime),
+          projectId: selectedProject,
+          userId: loggedInUser?.id,
+          rateId: parseFloat(selectedRate),
+          totalElapsedTime,
+        };
+        result = await createTime({
+          variables: { timeInputCreate: createVariables },
+        });
+        setCurrentEntryId(result.data.createTime.id);
+      }
+
+      setSubmissionSuccess(true);
+      setSubmissionError("");
+
+      setTimeout(() => setSubmissionSuccess(false), 2000);
+
+      console.log("Time entry result:", result);
+    } catch (error) {
+      // Check if error is an instance of Error and has a message property
+      if (error instanceof Error) {
+        setSubmissionError("Error with time entry: " + error.message);
+      } else {
+        // Fallback error message if the error is not an instance of Error
+        setSubmissionError("An unexpected error occurred.");
+      }
+    }
+  };
+
+  return (
+    <>
+      <NavigationBar />
+      <div className="relative max-w-6xl mx-auto p-6  rounded  flex flex-col font-roboto-condensed">
+        <div className="feedback-messages">
+          {submissionSuccess && (
+            <div className="absolute top-5 right-5 md:top-10 md:right-10 transform translate-x-0 translate-y-0 z-50 bg-green-100 text-green-800 text-sm font-semibold px-4 py-2 rounded-lg shadow-lg mt-2 transition ease-out duration-300">
+              Time entry saved!
+            </div>
+          )}
+          {submissionError && (
+            <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-full bg-red-100 text-red-800 text-sm font-semibold px-4 py-2 rounded-lg shadow-lg mt-2 transition ease-out duration-300">
+              {submissionError}
+            </div>
+          )}
+          {resetMessage && (
+            <div className="absolute top-7 right-4 md:top-10 md:right-10 transform translate-x-0 translate-y-0 z-50 bg-yellow-500 text-blue-800 text-sm font-semibold px-4 py-2 rounded-lg shadow-lg mt-2 transition ease-out duration-300">
+              Timer reset!
+            </div>
+          )}
+          {dateAlertMessage && (
+            <div className="absolute top-5 right-5 md:top-10 md:right-10 transform translate-x-0 translate-y-0 z-50 bg-red-100 text-red-800 text-sm font-semibold px-4 py-2 rounded-lg shadow-lg mt-2 transition ease-out duration-300">
+              {dateAlertMessage}
+            </div>
+          )}
+        </div>
+
+        <div className="flex flex-col items-center justify-center ">
+          <div
+            className={` clock-icon h-6 w-6  ${
+              isRunning ? "animate-spin" : ""
+            }text-gray-500`}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="12" cy="12" r="10"></circle>
+              <line
+                x1="12"
+                y1="12"
+                x2="12"
+                y2="8"
+                className="hour-hand"
+              ></line>{" "}
+              {/* Short hand */}
+              <line
+                x1="12"
+                y1="12"
+                x2="16"
+                y2="12"
+                className={`minute-hand ${isRunning ? "animate-spin" : ""}`}
+              ></line>{" "}
+              {/* Long hand that spins */}
+            </svg>
+          </div>
+          <div className="text-7xl font-digital text-black flex items-center justify-center">
+            {displayTime}{" "}
+          </div>
+          <div className="mb-2">
+            Started at:{" "}
+            {startTime
+              ? formatDateForDisplay(parseISO(formatISO(startTime))) +
+                " " +
+                formatTimeFromISOString(formatISO(startTime))
+              : "Not Started"}
+          </div>
+          <div className="flex justify-center ">
+            <DatePicker
+              inline
+              id="startDate"
+              selected={startDate}
+              onChange={handleDateChange}
+              showTimeSelect
+              dateFormat="MMMM d, yyyy HH:mm"
+              timeIntervals={10} // Minute-by-minute time selection
+              className="form-input block w-52 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+            />
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit}>
+          <div className="flex justify-center mt-auto py-6">
+            <button
+              type="button"
+              onClick={handleStartStop}
+              className={`px-6 py-6 ${
+                isRunning ? "bg-red-500" : "bg-green-500"
+              } text-white text-2xl rounded-full`}
+              disabled={!selectedProject || !selectedRate}
+            >
+              {isRunning ? "Pause" : "Start"}
+            </button>
+            <button
+              type="button"
+              onClick={handleReset}
+              className="px-6 py-8  bg-yellow-500 text-white text-2xl rounded-full ml-4"
+              disabled={!startTime}
+            >
+              Reset
+            </button>
+            <button
+              type="submit"
+              className="px-3 py-8  bg-blue-500 text-white text-2xl rounded-full ml-4"
+              disabled={isRunning || !startTime}
+            >
+              Submit
+            </button>
+          </div>
+          <div className="flex flex-col justify-center -mx-3">
+            <div className="w-1/2 mx-auto px-3 mb-4">
+              <ProjectSelector
+                projects={userProjects}
+                selectedProject={selectedProject}
+                onProjectChange={setSelectedProject}
+              />
+            </div>
+            <div className="w-1/2 mx-auto px-3 mb-4">
+              <RateSelector
+                rates={rates}
+                selectedRate={selectedRate}
+                onRateChange={setSelectedRate}
+              />
+            </div>
+            <div className="w-1/2 mx-auto px-3 mb-4">
+              {totalTimeLoading ? (
+                <p>Loading total time...</p>
+              ) : totalTimeError ? (
+                <p>Error loading total time: {totalTimeError.message}</p>
+              ) : (
+                <p>
+                  Your time on project so far:{" "}
+                  {formatTimeFromMilliseconds(
+                    totalTimeData?.getTotalTimeForUserProject || 0
+                  )}
+                </p>
+              )}
+            </div>
+          </div>
+        </form>
+      </div>
+    </>
+  );
+};
+
+export default TimeKeeper;
+
+// ====== FILE: src/app/utils/timeUtils.ts ======
+
+// timeUtils.ts
+
+export const formatDateForDisplay = (date: Date): string => {
+  const options: Intl.DateTimeFormatOptions = {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  };
+  return date.toLocaleDateString("en-US", options);
+};
+
+export const formatTimeFromISOString = (isoString: string): string => {
+  const date = new Date(isoString);
+  const hours = date.getHours();
+  const minutes = date.getMinutes();
+  const seconds = date.getSeconds();
+
+  const formattedTime = `${hours}:${minutes < 10 ? `0${minutes}` : minutes}:${
+    seconds < 10 ? `0${seconds}` : seconds
+  }`;
+  return formattedTime;
+};
+
+export const formatElapsedTime = (milliseconds: number): string => {
+  let seconds = Math.floor(milliseconds / 1000);
+  let minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+
+  seconds %= 60;
+  minutes %= 60;
+
+  const paddedHours = hours.toString().padStart(2, "0");
+  const paddedMinutes = minutes.toString().padStart(2, "0");
+  const paddedSeconds = seconds.toString().padStart(2, "0");
+
+  return `${paddedHours}:${paddedMinutes}:${paddedSeconds}`;
+};
+
+// ====== FILE: src/app/utils/userProfileUtils.ts ======
+
+interface User {
+  id: string;
+  email: string;
+}
+
+interface FetchError {
+  message: string;
+}
+
+export async function fetchUserProfile(token: string | null): Promise<User> {
+  try {
+    if (!token) {
+      throw new Error("No token found");
+    }
+    const response = await fetch("/api/profile", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch user profile.");
+    }
+
+    const userData: User = await response.json();
+    return userData;
+  } catch (error) {
+    if (error instanceof Error) {
+      console.error("Error fetching user profile:", error.message);
+      throw error as FetchError; // Rethrow the error with typing
+    }
+    throw new Error("Unknown error occurred during fetch");
+  }
+}
+
+// ====== FILE: src/app/components/ui/background-beams.tsx ======
+
+"use client";
+import React from "react";
+import { motion } from "framer-motion";
+import { cn } from "../../lib/utils";
+
+export const BackgroundBeams = React.memo(
+  ({ className }: { className?: string }) => {
+    const paths = [
+      "M-380 -189C-380 -189 -312 216 152 343C616 470 684 875 684 875",
+      "M-373 -197C-373 -197 -305 208 159 335C623 462 691 867 691 867",
+      "M-366 -205C-366 -205 -298 200 166 327C630 454 698 859 698 859",
+      "M-359 -213C-359 -213 -291 192 173 319C637 446 705 851 705 851",
+      "M-352 -221C-352 -221 -284 184 180 311C644 438 712 843 712 843",
+      "M-345 -229C-345 -229 -277 176 187 303C651 430 719 835 719 835",
+      "M-338 -237C-338 -237 -270 168 194 295C658 422 726 827 726 827",
+      "M-331 -245C-331 -245 -263 160 201 287C665 414 733 819 733 819",
+      "M-324 -253C-324 -253 -256 152 208 279C672 406 740 811 740 811",
+      "M-317 -261C-317 -261 -249 144 215 271C679 398 747 803 747 803",
+      "M-310 -269C-310 -269 -242 136 222 263C686 390 754 795 754 795",
+      "M-303 -277C-303 -277 -235 128 229 255C693 382 761 787 761 787",
+      "M-296 -285C-296 -285 -228 120 236 247C700 374 768 779 768 779",
+      "M-289 -293C-289 -293 -221 112 243 239C707 366 775 771 775 771",
+      "M-282 -301C-282 -301 -214 104 250 231C714 358 782 763 782 763",
+      "M-275 -309C-275 -309 -207 96 257 223C721 350 789 755 789 755",
+      "M-268 -317C-268 -317 -200 88 264 215C728 342 796 747 796 747",
+      "M-261 -325C-261 -325 -193 80 271 207C735 334 803 739 803 739",
+      "M-254 -333C-254 -333 -186 72 278 199C742 326 810 731 810 731",
+      "M-247 -341C-247 -341 -179 64 285 191C749 318 817 723 817 723",
+      "M-240 -349C-240 -349 -172 56 292 183C756 310 824 715 824 715",
+      "M-233 -357C-233 -357 -165 48 299 175C763 302 831 707 831 707",
+      "M-226 -365C-226 -365 -158 40 306 167C770 294 838 699 838 699",
+      "M-219 -373C-219 -373 -151 32 313 159C777 286 845 691 845 691",
+      "M-212 -381C-212 -381 -144 24 320 151C784 278 852 683 852 683",
+      "M-205 -389C-205 -389 -137 16 327 143C791 270 859 675 859 675",
+      "M-198 -397C-198 -397 -130 8 334 135C798 262 866 667 866 667",
+      "M-191 -405C-191 -405 -123 0 341 127C805 254 873 659 873 659",
+      "M-184 -413C-184 -413 -116 -8 348 119C812 246 880 651 880 651",
+      "M-177 -421C-177 -421 -109 -16 355 111C819 238 887 643 887 643",
+      "M-170 -429C-170 -429 -102 -24 362 103C826 230 894 635 894 635",
+      "M-163 -437C-163 -437 -95 -32 369 95C833 222 901 627 901 627",
+      "M-156 -445C-156 -445 -88 -40 376 87C840 214 908 619 908 619",
+      "M-149 -453C-149 -453 -81 -48 383 79C847 206 915 611 915 611",
+      "M-142 -461C-142 -461 -74 -56 390 71C854 198 922 603 922 603",
+      "M-135 -469C-135 -469 -67 -64 397 63C861 190 929 595 929 595",
+      "M-128 -477C-128 -477 -60 -72 404 55C868 182 936 587 936 587",
+      "M-121 -485C-121 -485 -53 -80 411 47C875 174 943 579 943 579",
+      "M-114 -493C-114 -493 -46 -88 418 39C882 166 950 571 950 571",
+      "M-107 -501C-107 -501 -39 -96 425 31C889 158 957 563 957 563",
+      "M-100 -509C-100 -509 -32 -104 432 23C896 150 964 555 964 555",
+      "M-93 -517C-93 -517 -25 -112 439 15C903 142 971 547 971 547",
+      "M-86 -525C-86 -525 -18 -120 446 7C910 134 978 539 978 539",
+      "M-79 -533C-79 -533 -11 -128 453 -1C917 126 985 531 985 531",
+      "M-72 -541C-72 -541 -4 -136 460 -9C924 118 992 523 992 523",
+      "M-65 -549C-65 -549 3 -144 467 -17C931 110 999 515 999 515",
+      "M-58 -557C-58 -557 10 -152 474 -25C938 102 1006 507 1006 507",
+      "M-51 -565C-51 -565 17 -160 481 -33C945 94 1013 499 1013 499",
+      "M-44 -573C-44 -573 24 -168 488 -41C952 86 1020 491 1020 491",
+      "M-37 -581C-37 -581 31 -176 495 -49C959 78 1027 483 1027 483",
+    ];
+    return (
+      <div
+        className={cn(
+          "absolute  h-full w-full inset-0  [mask-size:40px] [mask-repeat:no-repeat] flex items-center justify-center bg-slate-100",
+          className
+        )}
+      >
+        <svg
+          className=" z-0 h-full w-full pointer-events-none absolute "
+          width="100%"
+          height="100%"
+          viewBox="0 0 696 316"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M-380 -189C-380 -189 -312 216 152 343C616 470 684 875 684 875M-373 -197C-373 -197 -305 208 159 335C623 462 691 867 691 867M-366 -205C-366 -205 -298 200 166 327C630 454 698 859 698 859M-359 -213C-359 -213 -291 192 173 319C637 446 705 851 705 851M-352 -221C-352 -221 -284 184 180 311C644 438 712 843 712 843M-345 -229C-345 -229 -277 176 187 303C651 430 719 835 719 835M-338 -237C-338 -237 -270 168 194 295C658 422 726 827 726 827M-331 -245C-331 -245 -263 160 201 287C665 414 733 819 733 819M-324 -253C-324 -253 -256 152 208 279C672 406 740 811 740 811M-317 -261C-317 -261 -249 144 215 271C679 398 747 803 747 803M-310 -269C-310 -269 -242 136 222 263C686 390 754 795 754 795M-303 -277C-303 -277 -235 128 229 255C693 382 761 787 761 787M-296 -285C-296 -285 -228 120 236 247C700 374 768 779 768 779M-289 -293C-289 -293 -221 112 243 239C707 366 775 771 775 771M-282 -301C-282 -301 -214 104 250 231C714 358 782 763 782 763M-275 -309C-275 -309 -207 96 257 223C721 350 789 755 789 755M-268 -317C-268 -317 -200 88 264 215C728 342 796 747 796 747M-261 -325C-261 -325 -193 80 271 207C735 334 803 739 803 739M-254 -333C-254 -333 -186 72 278 199C742 326 810 731 810 731M-247 -341C-247 -341 -179 64 285 191C749 318 817 723 817 723M-240 -349C-240 -349 -172 56 292 183C756 310 824 715 824 715M-233 -357C-233 -357 -165 48 299 175C763 302 831 707 831 707M-226 -365C-226 -365 -158 40 306 167C770 294 838 699 838 699M-219 -373C-219 -373 -151 32 313 159C777 286 845 691 845 691M-212 -381C-212 -381 -144 24 320 151C784 278 852 683 852 683M-205 -389C-205 -389 -137 16 327 143C791 270 859 675 859 675M-198 -397C-198 -397 -130 8 334 135C798 262 866 667 866 667M-191 -405C-191 -405 -123 0 341 127C805 254 873 659 873 659M-184 -413C-184 -413 -116 -8 348 119C812 246 880 651 880 651M-177 -421C-177 -421 -109 -16 355 111C819 238 887 643 887 643M-170 -429C-170 -429 -102 -24 362 103C826 230 894 635 894 635M-163 -437C-163 -437 -95 -32 369 95C833 222 901 627 901 627M-156 -445C-156 -445 -88 -40 376 87C840 214 908 619 908 619M-149 -453C-149 -453 -81 -48 383 79C847 206 915 611 915 611M-142 -461C-142 -461 -74 -56 390 71C854 198 922 603 922 603M-135 -469C-135 -469 -67 -64 397 63C861 190 929 595 929 595M-128 -477C-128 -477 -60 -72 404 55C868 182 936 587 936 587M-121 -485C-121 -485 -53 -80 411 47C875 174 943 579 943 579M-114 -493C-114 -493 -46 -88 418 39C882 166 950 571 950 571M-107 -501C-107 -501 -39 -96 425 31C889 158 957 563 957 563M-100 -509C-100 -509 -32 -104 432 23C896 150 964 555 964 555M-93 -517C-93 -517 -25 -112 439 15C903 142 971 547 971 547M-86 -525C-86 -525 -18 -120 446 7C910 134 978 539 978 539M-79 -533C-79 -533 -11 -128 453 -1C917 126 985 531 985 531M-72 -541C-72 -541 -4 -136 460 -9C924 118 992 523 992 523M-65 -549C-65 -549 3 -144 467 -17C931 110 999 515 999 515M-58 -557C-58 -557 10 -152 474 -25C938 102 1006 507 1006 507M-51 -565C-51 -565 17 -160 481 -33C945 94 1013 499 1013 499M-44 -573C-44 -573 24 -168 488 -41C952 86 1020 491 1020 491M-37 -581C-37 -581 31 -176 495 -49C959 78 1027 483 1027 483M-30 -589C-30 -589 38 -184 502 -57C966 70 1034 475 1034 475M-23 -597C-23 -597 45 -192 509 -65C973 62 1041 467 1041 467M-16 -605C-16 -605 52 -200 516 -73C980 54 1048 459 1048 459M-9 -613C-9 -613 59 -208 523 -81C987 46 1055 451 1055 451M-2 -621C-2 -621 66 -216 530 -89C994 38 1062 443 1062 443M5 -629C5 -629 73 -224 537 -97C1001 30 1069 435 1069 435M12 -637C12 -637 80 -232 544 -105C1008 22 1076 427 1076 427M19 -645C19 -645 87 -240 551 -113C1015 14 1083 419 1083 419"
+            stroke="url(#paint0_radial_242_278)"
+            strokeOpacity="0.05"
+            strokeWidth="0.5"
+          ></path>
+
+          {paths.map((path, index) => (
+            <motion.path
+              key={index}
+              d={path}
+              stroke={`url(#linearGradient-${index})`}
+              strokeOpacity="0.6"
+              strokeWidth="1"
+            ></motion.path>
+          ))}
+          <defs>
+            {paths.map((path, index) => (
+              <motion.linearGradient
+                id={`linearGradient-${index}`}
+                x1="100%"
+                x2="100%"
+                y1="100%"
+                y2="100%"
+                key={`gradient-${index}`}
+                animate={{
+                  x1: ["0%", "100%"],
+                  x2: ["0%", "95%"],
+                  y1: ["0%", "100%"],
+                  y2: ["0%", `${93 + Math.random() * 8}%`],
+                }}
+                transition={{
+                  duration: Math.random() * 10 + 10,
+                  ease: "easeInOut",
+                  repeat: Infinity,
+                  delay: Math.random() * 10,
+                }}
+              >
+                <stop stopColor="#18CCFC" stopOpacity="0"></stop>
+                <stop stopColor="#18CCFC"></stop>
+                <stop offset="32.5%" stopColor="#6344F5"></stop>
+                <stop offset="100%" stopColor="#AE48FF" stopOpacity="0"></stop>
+              </motion.linearGradient>
+            ))}
+
+            <radialGradient
+              id="paint0_radial_242_278"
+              cx="0"
+              cy="0"
+              r="1"
+              gradientUnits="userSpaceOnUse"
+              gradientTransform="translate(352 34) rotate(90) scale(555 1560.62)"
+            >
+              <stop offset="0.0666667" stopColor="var(--neutral-300)"></stop>
+              <stop offset="0.243243" stopColor="var(--neutral-300)"></stop>
+              <stop offset="0.43594" stopColor="white" stopOpacity="0"></stop>
+            </radialGradient>
+          </defs>
+        </svg>
+      </div>
+    );
+  }
+);
+BackgroundBeams.displayName = "BackgroundBeams";
+
+// ====== FILE: src/app/components/ui/button.tsx ======
+
+import * as React from "react";
+import { Slot } from "@radix-ui/react-slot";
+import { cva, type VariantProps } from "class-variance-authority";
+
+import { cn } from "@/lib/utils";
+
+const buttonVariants = cva(
+  "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+  {
+    variants: {
+      variant: {
+        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        destructive:
+          "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+        outline:
+          "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
+        secondary:
+          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+        ghost: "hover:bg-accent hover:text-accent-foreground",
+        link: "text-primary underline-offset-4 hover:underline",
+      },
+      size: {
+        default: "h-10 px-4 py-2",
+        sm: "h-9 rounded-md px-3",
+        lg: "h-11 rounded-md px-8",
+        icon: "h-10 w-10",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+      size: "default",
+    },
+  }
+);
+
+export interface ButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+    VariantProps<typeof buttonVariants> {
+  asChild?: boolean;
+}
+
+const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ className, variant, size, asChild = false, ...props }, ref) => {
+    const Comp = asChild ? Slot : "button";
+    return (
+      <Comp
+        className={cn(buttonVariants({ variant, size, className }))}
+        ref={ref}
+        {...props}
+      />
+    );
+  }
+);
+Button.displayName = "Button";
+
+export { Button, buttonVariants };

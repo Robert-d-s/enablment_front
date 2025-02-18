@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useMemo, useState, useEffect } from "react";
 import { gql, useQuery, useSubscription } from "@apollo/client";
 // import { useQuery } from "@apollo/client";

@@ -1,3 +1,5 @@
+"use client";
+
 import { useQuery, useMutation, gql } from "@apollo/client";
 import { useState, useEffect } from "react";
 import { ApolloError } from "@apollo/client";

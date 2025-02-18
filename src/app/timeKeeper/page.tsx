@@ -1,3 +1,4 @@
+"use client";
 // React and third-party library imports
 import React, { useEffect, useState, useRef } from "react";
 import { useQuery, useMutation, gql } from "@apollo/client";

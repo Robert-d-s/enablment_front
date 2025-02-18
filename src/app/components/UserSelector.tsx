@@ -1,3 +1,5 @@
+"use client";
+
 const UserSelector: React.FC<{
   users: { id: string; email: string }[];
   selectedUser: string;
