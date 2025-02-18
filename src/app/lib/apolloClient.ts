@@ -8,9 +8,6 @@ import {
 } from "@apollo/client";
 import { setContext } from "@apollo/client/link/context";
 import { onError } from "@apollo/client/link/error";
-// import { createClient } from "graphql-ws";
-// import { GraphQLWsLink } from "@apollo/client/link/subscriptions";
-// import { getMainDefinition } from "@apollo/client/utilities";
 
 interface User {
   id: string;
@@ -86,11 +83,6 @@ const client = new ApolloClient({
     },
   }),
 });
-
-// const client = new ApolloClient({
-//   link: from([errorLink, splitLink]),
-//   cache: new InMemoryCache(),
-// });
 
 export default client;
 

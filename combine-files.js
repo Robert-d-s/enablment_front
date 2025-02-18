@@ -19,10 +19,14 @@ const EXCLUDE_DIRS = new Set([
   "dist",
   "__tests__",
   "__mocks__",
+]);
+
+const EXCLUDE_FILES = new Set([
   "package-lock.json",
   "project-context.txt",
   "combine-files.js",
   "readme.md",
+  "next-env.d.ts",
 ]);
 
 async function processFileContent(content) {
@@ -52,7 +56,7 @@ async function combineFiles() {
           if (!EXCLUDE_DIRS.has(dirent.name)) {
             directoryQueue.push(fullPath);
           }
-        } else {
+        } else if (!EXCLUDE_FILES.has(dirent.name)) {
           const ext = path.extname(dirent.name);
           if (INCLUDE_EXTENSIONS.has(ext)) {
             try {
