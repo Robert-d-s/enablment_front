@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
@@ -21,7 +21,22 @@ const Navbar: React.FC<NavbarProps> = ({
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  console.log("Navbar - sections prop:", sections);
+  // Automatically set the menu open on desktop and closed on mobile.
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 1024) {
+        setIsMenuOpen(true);
+      } else {
+        setIsMenuOpen(false);
+      }
+    };
+
+    // Run on mount
+    handleResize();
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const handleSectionClick = (section: string) => {
     if (section === "Client-Portal") {
@@ -29,7 +44,10 @@ const Navbar: React.FC<NavbarProps> = ({
     } else {
       setActiveSection(section);
     }
-    setIsMenuOpen(false);
+    // On mobile, close the menu after selection.
+    if (window.innerWidth < 1024) {
+      setIsMenuOpen(false);
+    }
   };
 
   const menuIconVariants = {
@@ -70,12 +88,13 @@ const Navbar: React.FC<NavbarProps> = ({
 
   return (
     <nav
-      className="relative flex items-center justify-center content-center p-4"
+      className="relative flex items-center justify-center p-4"
       style={{ minHeight: "64px" }}
     >
       <div className="absolute left-0 pl-4">
         <Image src={logo} alt="Logo" priority />
       </div>
+      {/* Burger Icon – visible on mobile only */}
       <motion.div
         className="lg:hidden z-20 absolute right-4 cursor-pointer"
         onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -97,12 +116,12 @@ const Navbar: React.FC<NavbarProps> = ({
           ></path>
         </svg>
       </motion.div>
+      {/* Menu Container */}
       <motion.div
         variants={menuVariants}
         initial="closed"
         animate={isMenuOpen ? "opened" : "closed"}
-        // className={`menu-container absolute md:top-auto md:relative md:flex md:flex-row md:items-center md:space-x-4 `}
-        className={`flex flex-col items-center w-full py-4 space-y-4 bg-white shadow-md absolute top-full left-0  lg:static lg:flex-row  lg:w-auto lg:bg-transparent lg:shadow-none lg:py-0 lg:space-y-0 lg:space-x-4`}
+        className="menu-container absolute md:top-auto md:relative md:flex md:flex-row md:items-center md:space-x-4"
       >
         {sections.map((section) => (
           <div
@@ -112,7 +131,7 @@ const Navbar: React.FC<NavbarProps> = ({
             onMouseLeave={() => setHoveredSection(null)}
           >
             <div
-              className={`h-4 w-4 rounded-full  cursor-pointer transition duration-800 ease-in-out ${
+              className={`h-4 w-4 rounded-full cursor-pointer transition duration-800 ease-in-out ${
                 activeSection === section
                   ? "bg-green-500"
                   : hoveredSection === section
@@ -124,7 +143,7 @@ const Navbar: React.FC<NavbarProps> = ({
             <button
               className={`py-2 px-4 ${
                 section === "Contact"
-                  ? "text-white font-bold rounded-lg  px-2 mx-2 py-0 bg-green-700"
+                  ? "text-white font-bold rounded-lg px-2 mx-2 py-0 bg-green-700"
                   : "text-black"
               }`}
               onClick={() => handleSectionClick(section)}
@@ -133,7 +152,6 @@ const Navbar: React.FC<NavbarProps> = ({
             </button>
           </div>
         ))}
-        {/* <div className="bg-red-500 text-white p-4">TESTING - DESKTOP MENU</div> */}
       </motion.div>
     </nav>
   );

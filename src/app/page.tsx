@@ -21,6 +21,8 @@ const Home: NextPage = () => {
     "Client-Portal",
   ];
 
+  console.log("Page - sections data:", sections);
+
   const [activeSection, setActiveSection] = useState<string>(sections[0]);
   const isContactActive = activeSection === "Contact";
   const backgroundFadeVariants = {
