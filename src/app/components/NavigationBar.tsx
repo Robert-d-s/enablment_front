@@ -25,13 +25,13 @@ const NavigationBar: React.FC = () => {
         />
       </Link>
       <div className="flex-grow font-semibold text-lg mx-4 flex items-center justify-center">
-        <Link href="/issues2" className="mr-4">
+        <Link href="/issues" className="mr-4">
           Issues
         </Link>
         <Link href="/adminPage" className="mr-4">
           Admin
         </Link>
-        <Link href="/timeKeeper2">Timekeeper</Link>
+        <Link href="/timeKeeper">Timekeeper</Link>
       </div>
       <div>
         <div>

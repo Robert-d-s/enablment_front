@@ -28,7 +28,7 @@ const Login: React.FC = () => {
       if (data && data.access_token) {
         localStorage.setItem("token", data.access_token);
         await fetchUserProfile(data.access_token);
-        router.push("/timeKeeper2");
+        router.push("/timeKeeper");
       } else if (data && data.error) {
         setErrorMessage(data.error);
       }

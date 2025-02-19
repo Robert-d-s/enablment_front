@@ -25,16 +25,6 @@ import ProjectSelector from "../components/ProjectSelector";
 import RateSelector from "../components/RateSelector";
 import NavigationBar from "../components/NavigationBar";
 
-// GraphQL Queries and mutations
-// const USERS_QUERY = gql`
-//   query GetUsers {
-//     users {
-//       id
-//       email
-//     }
-//   }
-// `;
-
 const PROJECTS_QUERY = gql`
   query GetProjects {
     projects {
