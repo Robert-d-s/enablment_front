@@ -1,4 +1,5 @@
-import { ApolloProvider } from "@apollo/client/react";
+// import { ApolloProvider } from "@apollo/client/react";
+import ApolloWrapper from "../app/ApolloWrapper";
 import client from "../app/lib/apolloClient";
 import type { Metadata } from "next";
 import {
@@ -60,7 +61,8 @@ export default function RootLayout({
     `}
     >
       <body className="antialiased">
-        <ApolloProvider client={client}>{children}</ApolloProvider>
+        {/* <ApolloProvider client={client}>{children}</ApolloProvider> */}
+        <ApolloWrapper>{children}</ApolloWrapper>
       </body>
     </html>
   );

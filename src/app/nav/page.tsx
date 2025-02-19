@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import logo from "../../../public/logo.svg";
 
 interface NavbarProps {
   sections: string[];
@@ -20,6 +21,8 @@ const Navbar: React.FC<NavbarProps> = ({
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
+  console.log("Navbar - sections prop:", sections);
+
   const handleSectionClick = (section: string) => {
     if (section === "Client-Portal") {
       router.push("/login");
@@ -33,34 +36,33 @@ const Navbar: React.FC<NavbarProps> = ({
     opened: {
       rotate: 90,
       scale: 1.2,
+      transition: { duration: 0.2 },
     },
     closed: {
       rotate: 0,
       scale: 1,
+      transition: { duration: 0.2 },
     },
   };
 
   const menuVariants = {
     opened: {
       opacity: 1,
-      y: "90%",
-      transition: {
-        y: { stiffness: 1000, velocity: -100 },
-        duration: 0.3,
-      },
-      // Explicitly define display property for the opened state to ensure visibility
+      y: 0,
       display: "flex",
+      transition: {
+        y: { stiffness: 100, velocity: -100, type: "spring" },
+        opacity: { duration: 0.3 },
+      },
     },
     closed: {
-      opacity: [1, 0],
-      y: "-50%",
+      opacity: 0,
+      y: "-100%",
       transition: {
-        y: { stiffness: 1000 },
+        y: { stiffness: 100 },
         opacity: { duration: 0.3 },
-        duration: 0.3,
       },
       transitionEnd: {
-        // Keep display as "none" only for small screens; adjust as necessary based on your design
         display: "none",
       },
     },
@@ -72,17 +74,10 @@ const Navbar: React.FC<NavbarProps> = ({
       style={{ minHeight: "64px" }}
     >
       <div className="absolute left-0 pl-4">
-        <Image
-          src="/icons/logo.svg"
-          alt="Logo"
-          width={100}
-          height={50}
-          priority
-          // className="filter invert"
-        />
+        <Image src={logo} alt="Logo" priority />
       </div>
       <motion.div
-        className="lg:hidden z-20 absolute right-4 "
+        className="lg:hidden z-20 absolute right-4 cursor-pointer"
         onClick={() => setIsMenuOpen(!isMenuOpen)}
         variants={menuIconVariants}
         animate={isMenuOpen ? "opened" : "closed"}
@@ -106,7 +101,8 @@ const Navbar: React.FC<NavbarProps> = ({
         variants={menuVariants}
         initial="closed"
         animate={isMenuOpen ? "opened" : "closed"}
-        className={`menu-container absolute md:top-auto md:relative md:flex md:flex-row md:items-center md:space-x-4 `}
+        // className={`menu-container absolute md:top-auto md:relative md:flex md:flex-row md:items-center md:space-x-4 `}
+        className={`flex flex-col items-center w-full py-4 space-y-4 bg-white shadow-md absolute top-full left-0  lg:static lg:flex-row  lg:w-auto lg:bg-transparent lg:shadow-none lg:py-0 lg:space-y-0 lg:space-x-4`}
       >
         {sections.map((section) => (
           <div
@@ -126,7 +122,6 @@ const Navbar: React.FC<NavbarProps> = ({
               onClick={() => handleSectionClick(section)}
             />
             <button
-              // className="text-black py-2 px-4"
               className={`py-2 px-4 ${
                 section === "Contact"
                   ? "text-white font-bold rounded-lg  px-2 mx-2 py-0 bg-green-700"
@@ -138,6 +133,7 @@ const Navbar: React.FC<NavbarProps> = ({
             </button>
           </div>
         ))}
+        {/* <div className="bg-red-500 text-white p-4">TESTING - DESKTOP MENU</div> */}
       </motion.div>
     </nav>
   );

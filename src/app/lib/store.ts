@@ -1,4 +1,5 @@
-// src/lib/store.ts
+"use client";
+
 import { create } from "zustand";
 
 type User = { id: string; email: string };

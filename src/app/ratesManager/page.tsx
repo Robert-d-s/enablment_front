@@ -1,4 +1,5 @@
-// RatesManager.jsx
+"use client";
+
 import React, { useState } from "react";
 import { useQuery, useMutation, gql, ApolloError } from "@apollo/client";
 

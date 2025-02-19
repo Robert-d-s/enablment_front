@@ -105,6 +105,23 @@ export default nextConfig;
   "exclude": ["node_modules"]
 }
 
+// ====== FILE: src/app/ApolloWrapper.tsx ======
+
+// src/app/ApolloWrapper.tsx
+"use client";
+
+import React, { ReactNode } from "react";
+import { ApolloProvider } from "@apollo/client/react";
+import client from "@/app/lib/apolloClient";
+
+interface ApolloWrapperProps {
+  children: ReactNode;
+}
+
+export default function ApolloWrapper({ children }: ApolloWrapperProps) {
+  return <ApolloProvider client={client}>{children}</ApolloProvider>;
+}
+
 // ====== FILE: src/app/globals.css ======
 
 @import 'tailwindcss';
@@ -244,6 +261,8 @@ export default nextConfig;
 }
 
 // ====== FILE: src/app/layout.tsx ======
+
+"use Client";
 
 import { ApolloProvider } from "@apollo/client/react";
 import client from "../app/lib/apolloClient";
@@ -653,6 +672,8 @@ const AboutComponent: React.FC = () => {
 export default AboutComponent;
 
 // ====== FILE: src/app/adminPage/page.tsx ======
+
+"use client";
 
 import { useQuery, useMutation, gql } from "@apollo/client";
 import { useState, useEffect } from "react";
@@ -1104,6 +1125,8 @@ export default AdminPage;
 
 // ====== FILE: src/app/components/NavigationBar.tsx ======
 
+"use client";
+
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -1166,6 +1189,8 @@ export default NavigationBar;
 
 // ====== FILE: src/app/components/ProjectSelector.tsx ======
 
+"use client";
+
 import React from "react";
 
 type ProjectSelectorProps = {
@@ -1202,6 +1227,8 @@ export default ProjectSelector;
 
 // ====== FILE: src/app/components/RateSelector.tsx ======
 
+"use client";
+
 import React from "react";
 
 type RateSelectorProps = {
@@ -1237,6 +1264,8 @@ export default RateSelector;
 
 // ====== FILE: src/app/components/UserSelector.tsx ======
 
+"use client";
+
 const UserSelector: React.FC<{
   users: { id: string; email: string }[];
   selectedUser: string;
@@ -1263,7 +1292,7 @@ export default UserSelector;
 
 // ====== FILE: src/app/components/contentWrapper.tsx ======
 
-"use-client";
+"use client";
 
 import { motion, useAnimation } from "framer-motion";
 import React, { useEffect, PropsWithChildren } from "react";
@@ -1626,6 +1655,8 @@ export default FooterComponent;
 
 // ====== FILE: src/app/invoice/page.tsx ======
 
+"use client";
+
 import React, { useState, useEffect } from "react";
 import { useQuery } from "@apollo/client";
 import gql from "graphql-tag";
@@ -1866,6 +1897,8 @@ const InvoiceDashboard: React.FC = () => {
 export default InvoiceDashboard;
 
 // ====== FILE: src/app/issues/page.tsx ======
+
+"use client";
 
 import React, { useMemo, useState, useEffect } from "react";
 import { gql, useQuery, useSubscription } from "@apollo/client";
@@ -2165,6 +2198,8 @@ export default IssuesComponent;
 
 // ====== FILE: src/app/lib/apolloClient.ts ======
 
+"use client";
+
 import {
   ApolloClient,
   InMemoryCache,
@@ -2275,7 +2310,8 @@ export const logout = () => {
 
 // ====== FILE: src/app/lib/store.ts ======
 
-// src/lib/store.ts
+"use client";
+
 import { create } from "zustand";
 
 type User = { id: string; email: string };
@@ -2334,9 +2370,11 @@ export function cn(...inputs: ClassValue[]) {
 
 // ====== FILE: src/app/login/page.tsx ======
 
+"use client";
+
 import React, { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { fetchUserProfile } from "@/app/lib/apolloClient";
 
@@ -2585,6 +2623,8 @@ export default Navbar;
 
 // ====== FILE: src/app/people/page.tsx ======
 
+"use client";
+
 import React from "react";
 import Image from "next/image";
 
@@ -2750,6 +2790,7 @@ export default PeopleSection;
 
 // ====== FILE: src/app/projects/page.tsx ======
 
+"use client";
 import React, { useState, useEffect, FC } from "react";
 
 const Projects: FC = () => {
@@ -2825,7 +2866,8 @@ export default Projects;
 
 // ====== FILE: src/app/ratesManager/page.tsx ======
 
-// RatesManager.jsx
+"use client";
+
 import React, { useState } from "react";
 import { useQuery, useMutation, gql, ApolloError } from "@apollo/client";
 
@@ -3160,6 +3202,8 @@ export default Section;
 
 // ====== FILE: src/app/services/page.tsx ======
 
+"use client";
+
 import React, { JSX } from "react";
 import Image from "next/image";
 
@@ -3352,6 +3396,7 @@ export default ServicesComponent;
 
 // ====== FILE: src/app/signup/page.tsx ======
 
+"use client";
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -3485,6 +3530,8 @@ export default Signup;
 
 // ====== FILE: src/app/table/page.tsx ======
 
+"use client";
+
 import React from "react";
 
 // Define the TypeScript type for the table data
@@ -3548,6 +3595,8 @@ const ServiceTable: React.FC<ServiceTableProps> = ({ onContactClick }) => {
 export default ServiceTable;
 
 // ====== FILE: src/app/teamSync/page.tsx ======
+
+"use client";
 
 import React, { useEffect } from "react";
 
@@ -3617,6 +3666,8 @@ const TeamSyncAndFetch: React.FC = () => {
 export default TeamSyncAndFetch;
 
 // ====== FILE: src/app/time/page.tsx ======
+
+"use client";
 
 import React, { useState, useEffect } from "react";
 import { useQuery } from "@apollo/client";
@@ -3830,6 +3881,7 @@ export default TotalTimeSpent;
 
 // ====== FILE: src/app/timeKeeper/page.tsx ======
 
+"use client";
 // React and third-party library imports
 import React, { useEffect, useState, useRef } from "react";
 import { useQuery, useMutation, gql } from "@apollo/client";
@@ -4464,6 +4516,39 @@ export async function fetchUserProfile(token: string | null): Promise<User> {
   }
 }
 
+// ====== FILE: src/app/api/profile/profile.ts ======
+
+import { NextApiRequest, NextApiResponse } from "next";
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  // console.log("NEXT_PUBLIC_BACKEND_URL:", process.env.NEXT_PUBLIC_BACKEND_URL);
+  const token = req.headers.authorization?.split(" ")[1] || ""; // Extract JWT token from incoming header
+
+  try {
+    // Assuming the endpoint to fetch user profile is at /auth/profile
+    const backendResponse = await fetch(`http://localhost:8080/auth/profile`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!backendResponse.ok) {
+      throw new Error("Failed to fetch user profile.");
+    }
+
+    const userProfile = await backendResponse.json();
+    res.status(200).json(userProfile);
+  } catch (error) {
+    console.error("Error while fetching user profile:", error);
+    res
+      .status(500)
+      .json({ error: "An error occurred while fetching user profile" });
+  }
+}
+
 // ====== FILE: src/app/components/ui/background-beams.tsx ======
 
 "use client";
@@ -4606,6 +4691,8 @@ export const BackgroundBeams = React.memo(
 BackgroundBeams.displayName = "BackgroundBeams";
 
 // ====== FILE: src/app/components/ui/button.tsx ======
+
+"use client";
 
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";

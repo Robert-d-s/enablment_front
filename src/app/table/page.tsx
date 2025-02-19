@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 
 // Define the TypeScript type for the table data

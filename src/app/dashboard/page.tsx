@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import TimeKeeper from "@/app/timeKeeper/page";
 import TotalTimeSpent from "@/app/time/page";
