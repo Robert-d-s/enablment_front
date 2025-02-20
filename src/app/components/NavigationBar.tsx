@@ -3,11 +3,8 @@
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { logout } from "../lib/apolloClient";
-import { currentUserVar } from "../lib/apolloClient";
-// import { useRouter } from "next/router";
+import { logout, currentUserVar } from "../lib/apolloClient";
 
-// NavigationBar component
 const NavigationBar: React.FC = () => {
   const loggedInUser = currentUserVar();
   const handleLogout = () => {

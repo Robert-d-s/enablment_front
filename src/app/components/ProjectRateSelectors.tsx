@@ -1,19 +1,33 @@
 "use client";
+
 import React from "react";
-import ProjectSelector from "../components/ProjectSelector";
-import RateSelector from "../components/RateSelector";
+import ProjectSelector from "./ProjectSelector";
+import RateSelector from "./RateSelector";
+import { ApolloError } from "@apollo/client";
+import { formatTimeFromMilliseconds } from "../utils/timeUtils";
+
+interface Project {
+  id: string;
+  name: string;
+  teamName: string;
+}
+
+interface Rate {
+  id: string;
+  name: string;
+  rate: number;
+}
 
 interface ProjectRateSelectorsProps {
-  userProjects: any[];
-  selectedProject: string;
+  userProjects: Project[];
+  selectedProject: string | null;
   setSelectedProject: (projectId: string) => void;
-  rates: any[];
-  selectedRate: string;
+  rates: Rate[];
+  selectedRate: string | null;
   setSelectedRate: (rateId: string) => void;
   totalTimeLoading: boolean;
-  totalTimeError: any;
+  totalTimeError: ApolloError | undefined;
   totalTime: number;
-  formatTimeFromMilliseconds: (ms: number) => string;
 }
 
 const ProjectRateSelectors: React.FC<ProjectRateSelectorsProps> = ({
@@ -26,25 +40,24 @@ const ProjectRateSelectors: React.FC<ProjectRateSelectorsProps> = ({
   totalTimeLoading,
   totalTimeError,
   totalTime,
-  formatTimeFromMilliseconds,
 }) => {
   return (
-    <div className="flex flex-col justify-center -mx-3">
-      <div className="w-1/2 mx-auto px-3 mb-4">
+    <div className="mt-6">
+      <div className="mb-4">
         <ProjectSelector
           projects={userProjects}
-          selectedProject={selectedProject}
+          selectedProject={selectedProject ?? ""}
           onProjectChange={setSelectedProject}
         />
       </div>
-      <div className="w-1/2 mx-auto px-3 mb-4">
+      <div className="mb-4">
         <RateSelector
           rates={rates}
-          selectedRate={selectedRate}
+          selectedRate={selectedRate ?? ""}
           onRateChange={setSelectedRate}
         />
       </div>
-      <div className="w-1/2 mx-auto px-3 mb-4">
+      <div className="mt-4">
         {totalTimeLoading ? (
           <p>Loading total time...</p>
         ) : totalTimeError ? (

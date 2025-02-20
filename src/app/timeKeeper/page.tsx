@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, gql } from "@apollo/client";
-import { formatISO, parseISO } from "date-fns";
+import { formatISO } from "date-fns";
 
 // Store and utility imports
 import useStore from "../lib/store";
@@ -16,7 +16,7 @@ import TimerDisplay from "../components/TimerDisplay";
 import TimerControls from "../components/TimerControls";
 import ProjectRateSelectors from "../components/ProjectRateSelectors";
 
-// GraphQL Queries & Mutations (unchanged)
+// GraphQL Queries & Mutations
 const PROJECTS_QUERY = gql`
   query GetProjects {
     projects {
@@ -37,13 +37,53 @@ const RATES_QUERY = gql`
   }
 `;
 
-const TOTAL_TIME_PER_USER_PROJECT_QUERY = gql`
+const TOTAL_TIME_QUERY = gql`
   query GetTotalTimeForUserProject($userId: Float!, $projectId: String!) {
     getTotalTimeForUserProject(userId: $userId, projectId: $projectId)
   }
 `;
 
-const GET_USER_PROJECTS = gql`
+interface Project {
+  id: string;
+  name: string;
+  teamId: string;
+}
+
+interface Rate {
+  id: string;
+  name: string;
+  rate: number;
+}
+
+interface UserProject {
+  id: string;
+  name: string;
+  teamName: string;
+}
+
+interface ProjectsQueryData {
+  projects: Project[];
+}
+
+interface RatesQueryData {
+  rates: Rate[];
+}
+
+interface UserProjectsQueryData {
+  users: {
+    id: string;
+    teams: {
+      name: string;
+      projects: Project[];
+    }[];
+  }[];
+}
+
+interface TotalTimeData {
+  getTotalTimeForUserProject: number;
+}
+
+const USER_PROJECTS_QUERY = gql`
   query GetUserProjects {
     users {
       id
@@ -69,48 +109,25 @@ const CREATE_TIME_MUTATION = gql`
   }
 `;
 
-const UPDATE_TIME_MUTATION = gql`
-  mutation UpdateTime($timeInputUpdate: TimeInputUpdate!) {
-    updateTime(timeInputUpdate: $timeInputUpdate) {
-      id
-      startTime
-      endTime
-      totalElapsedTime
-    }
-  }
-`;
-
-const DELETE_TIME_MUTATION = gql`
-  mutation DeleteTime($id: Float!) {
-    deleteTime(id: $id) {
-      id
-    }
-  }
-`;
-
 const TimeKeeper: React.FC = () => {
   const {
-    projects,
     setProjects,
-    rates,
     setRates,
     selectedProject,
     setSelectedProject,
     selectedRate,
     setSelectedRate,
-    teamId,
     setTeamId,
   } = useStore();
 
-  const [userProjects, setUserProjects] = useState<any[]>([]);
-  const [submissionSuccess, setSubmissionSuccess] = useState(false);
-  const [submissionError, setSubmissionError] = useState("");
+  const [userProjects, setUserProjects] = useState<UserProject[]>([]);
+  const [submissionSuccess, setSubmissionSuccess] = useState<boolean>(false);
+  const [submissionError, setSubmissionError] = useState<string>("");
   const [dateAlertMessage, setDateAlertMessage] = useState<string | null>(null);
-  const [resetMessage, setResetMessage] = useState(false);
 
   const loggedInUser = currentUserVar();
 
-  // Use our custom hook for timer logic
+  // Timer hook provides timer logic
   const {
     isRunning,
     startTime,
@@ -121,52 +138,55 @@ const TimeKeeper: React.FC = () => {
     setStartTime,
   } = useTimer();
 
-  // GraphQL queries
-  const { data: projectsData } = useQuery(PROJECTS_QUERY);
-  const { data: ratesData, error: ratesError } = useQuery(RATES_QUERY, {
-    variables: { teamId },
-    skip: !teamId,
+  const { data: projectsData } = useQuery<ProjectsQueryData>(PROJECTS_QUERY);
+  const { data: ratesData } = useQuery<RatesQueryData>(RATES_QUERY, {
+    variables: { teamId: undefined },
+    skip: true,
   });
-  const { data: userProjectsData } = useQuery(GET_USER_PROJECTS, {
-    skip: !loggedInUser,
-  });
+  const { data: userProjectsData } = useQuery<UserProjectsQueryData>(
+    USER_PROJECTS_QUERY,
+    {
+      skip: !loggedInUser,
+    }
+  );
   const {
     data: totalTimeData,
     loading: totalTimeLoading,
     error: totalTimeError,
-    refetch: refetchTotalTime,
-  } = useQuery(TOTAL_TIME_PER_USER_PROJECT_QUERY, {
+  } = useQuery<TotalTimeData>(TOTAL_TIME_QUERY, {
     variables: {
-      userId: loggedInUser ? parseFloat(loggedInUser.id) : null,
-      projectId: selectedProject,
+      userId: loggedInUser ? parseFloat(loggedInUser.id) : 0,
+      projectId: selectedProject || "",
     },
     skip: !loggedInUser || !selectedProject,
   });
 
-  // Mutations
   const [createTime] = useMutation(CREATE_TIME_MUTATION);
-  const [updateTime] = useMutation(UPDATE_TIME_MUTATION);
-  const [deleteTime] = useMutation(DELETE_TIME_MUTATION);
 
   useEffect(() => {
-    if (projectsData) setProjects(projectsData.projects);
-    if (ratesData) setRates(ratesData.rates);
-  }, [projectsData, ratesData, setProjects, setRates]);
+    if (projectsData) {
+      setProjects(projectsData.projects);
+    }
+  }, [projectsData, setProjects]);
+
+  useEffect(() => {
+    if (ratesData) {
+      setRates(ratesData.rates);
+    }
+  }, [ratesData, setRates]);
 
   useEffect(() => {
     if (userProjectsData && loggedInUser) {
-      const userWithProjects = userProjectsData.users.find(
-        (user: any) => user.id === loggedInUser.id
-      );
-      if (userWithProjects) {
-        const projectsWithTeamName = userWithProjects.teams.flatMap(
-          (team: any) =>
-            team.projects.map((project: any) => ({
-              ...project,
-              teamName: team.name,
-            }))
+      const user = userProjectsData.users.find((u) => u.id === loggedInUser.id);
+      if (user) {
+        const projectsList: UserProject[] = user.teams.flatMap((team) =>
+          team.projects.map((project) => ({
+            id: project.id,
+            name: project.name,
+            teamName: team.name,
+          }))
         );
-        setUserProjects(projectsWithTeamName);
+        setUserProjects(projectsList);
       }
     }
   }, [userProjectsData, loggedInUser]);
@@ -174,37 +194,56 @@ const TimeKeeper: React.FC = () => {
   useEffect(() => {
     if (selectedProject && projectsData) {
       const project = projectsData.projects.find(
-        (p: any) => p.id === selectedProject
+        (p) => p.id === selectedProject
       );
-      if (project) setTeamId(project.teamId);
+      if (project) {
+        setTeamId(project.teamId);
+      }
     }
   }, [selectedProject, projectsData, setTeamId]);
 
-  const handleDateChange = (date: Date | null) => {
+  const [currentTeamId, setCurrentTeamId] = useState<string | undefined>(
+    undefined
+  );
+  useEffect(() => {
+    if (projectsData && selectedProject) {
+      const project = projectsData.projects.find(
+        (p) => p.id === selectedProject
+      );
+      if (project && project.teamId !== currentTeamId) {
+        setCurrentTeamId(project.teamId);
+      }
+    }
+  }, [selectedProject, projectsData, currentTeamId]);
+
+  const { data: newRatesData } = useQuery<RatesQueryData>(RATES_QUERY, {
+    variables: { teamId: currentTeamId! },
+    skip: !currentTeamId,
+  });
+  useEffect(() => {
+    if (newRatesData) {
+      setRates(newRatesData.rates);
+    }
+  }, [newRatesData, setRates]);
+
+  const handleDateChange = (date: Date | null): void => {
     const now = new Date();
     if (date) {
       if (date > now) {
         setDateAlertMessage("Please select a current or past date/time.");
         setTimeout(() => setDateAlertMessage(null), 1000);
       } else {
-        // Update the timer's startTime when the user selects a new date
         setStartTime(date);
       }
     }
   };
 
-  const formatTimeFromMilliseconds = (ms: number) => {
-    const totalSeconds = Math.floor(ms / 1000);
-    const days = Math.floor(totalSeconds / (3600 * 24));
-    const hours = Math.floor((totalSeconds % (3600 * 24)) / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    return `${days} days, ${hours} hours, ${minutes} minutes`;
-  };
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (
+    e: React.FormEvent<HTMLFormElement>
+  ): Promise<void> => {
     e.preventDefault();
-    if (!startTime) {
-      console.error("No start time set.");
+    if (!startTime || !selectedProject || !loggedInUser || !selectedRate) {
+      console.error("Missing required data for time entry.");
       return;
     }
     try {
@@ -214,17 +253,15 @@ const TimeKeeper: React.FC = () => {
         startTime: formatISO(startTime),
         endTime: formatISO(submissionTime),
         projectId: selectedProject,
-        userId: loggedInUser?.id,
+        userId: loggedInUser.id,
         rateId: parseFloat(selectedRate),
         totalElapsedTime,
       };
-      const result = await createTime({
-        variables: { timeInputCreate: createVariables },
-      });
+      await createTime({ variables: { timeInputCreate: createVariables } });
       setSubmissionSuccess(true);
       setSubmissionError("");
       setTimeout(() => setSubmissionSuccess(false), 2000);
-    } catch (error) {
+    } catch (error: unknown) {
       if (error instanceof Error) {
         setSubmissionError("Error with time entry: " + error.message);
       } else {
@@ -240,14 +277,14 @@ const TimeKeeper: React.FC = () => {
         <FeedbackMessages
           submissionSuccess={submissionSuccess}
           submissionError={submissionError}
-          resetMessage={resetMessage}
+          resetMessage={false}
           dateAlertMessage={dateAlertMessage}
         />
         <TimerDisplay
           isRunning={isRunning}
           displayTime={displayTime}
           startTime={startTime}
-          startDate={new Date()} // You can manage startDate separately if needed
+          startDate={startTime ?? new Date()}
           handleDateChange={handleDateChange}
         />
         <TimerControls
@@ -263,13 +300,12 @@ const TimeKeeper: React.FC = () => {
           userProjects={userProjects}
           selectedProject={selectedProject}
           setSelectedProject={setSelectedProject}
-          rates={rates}
+          rates={newRatesData ? newRatesData.rates : []}
           selectedRate={selectedRate}
           setSelectedRate={setSelectedRate}
           totalTimeLoading={totalTimeLoading}
           totalTimeError={totalTimeError}
           totalTime={totalTimeData?.getTotalTimeForUserProject || 0}
-          formatTimeFromMilliseconds={formatTimeFromMilliseconds}
         />
       </div>
     </>
