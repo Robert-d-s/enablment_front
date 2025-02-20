@@ -25,13 +25,7 @@ const Home: NextPage = () => {
 
   const [activeSection, setActiveSection] = useState<string>(sections[0]);
   const isContactActive = activeSection === "Contact";
-  const backgroundFadeVariants = {
-    hidden: { opacity: 1 },
-    visible: {
-      opacity: 0.5,
-      transition: { duration: 0.4, delay: 0.2, ease: "easeOut" },
-    },
-  };
+
   const closeContactForm = () => {
     setActiveSection("Home");
   };
@@ -41,7 +35,7 @@ const Home: NextPage = () => {
     [key: string]: { zIndex: number; opacity: number };
   }
 
-  const [sectionProps, setSectionProps] = useState<SectionProps>(
+  const [sectionProps] = useState<SectionProps>(
     sections.reduce((acc, section, index) => {
       acc[section as keyof SectionProps] = {
         zIndex: sections.length - index, // Stack sections with initial z-index
