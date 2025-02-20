@@ -158,6 +158,7 @@ export default function ApolloWrapper({ children }: ApolloWrapperProps) {
     border-color: var(--color-gray-200, currentColor);
   }
 }
+
 /*
   ---break---
 */
@@ -262,11 +263,29 @@ export default function ApolloWrapper({ children }: ApolloWrapperProps) {
   }
 }
 
+/* @layer components {
+  .bg-black select,
+  .bg-black input,
+  .bg-black textarea {
+    color: white;
+  }
+} */
+@layer components {
+  /* Or append to @layer base */
+  /* Fix for dropdown and input colors in black backgrounds - INVERT COLORS */
+  .bg-black select,
+  .bg-black input,
+  .bg-black textarea {
+    color: black; /* Set text color to black */
+    background-color: white; /* Set background color to white */
+    border-color: var(--color-border); /* Optionally, match border color */
+  }
+}
+
 // ====== FILE: src/app/layout.tsx ======
 
 // import { ApolloProvider } from "@apollo/client/react";
 import ApolloWrapper from "../app/ApolloWrapper";
-import client from "../app/lib/apolloClient";
 import type { Metadata } from "next";
 import {
   Geist,
@@ -327,7 +346,6 @@ export default function RootLayout({
     `}
     >
       <body className="antialiased">
-        {/* <ApolloProvider client={client}>{children}</ApolloProvider> */}
         <ApolloWrapper>{children}</ApolloWrapper>
       </body>
     </html>
@@ -363,13 +381,7 @@ const Home: NextPage = () => {
 
   const [activeSection, setActiveSection] = useState<string>(sections[0]);
   const isContactActive = activeSection === "Contact";
-  const backgroundFadeVariants = {
-    hidden: { opacity: 1 },
-    visible: {
-      opacity: 0.5,
-      transition: { duration: 0.4, delay: 0.2, ease: "easeOut" },
-    },
-  };
+
   const closeContactForm = () => {
     setActiveSection("Home");
   };
@@ -379,7 +391,7 @@ const Home: NextPage = () => {
     [key: string]: { zIndex: number; opacity: number };
   }
 
-  const [sectionProps, setSectionProps] = useState<SectionProps>(
+  const [sectionProps] = useState<SectionProps>(
     sections.reduce((acc, section, index) => {
       acc[section as keyof SectionProps] = {
         zIndex: sections.length - index, // Stack sections with initial z-index
@@ -725,17 +737,6 @@ const GET_USERS = gql`
     }
   }
 `;
-
-// const GET_TEAMS = gql`
-//   query FetchTeamsFromLinear {
-//     fetchTeamsFromLinear {
-//       nodes {
-//         id
-//         name
-//       }
-//     }
-//   }
-// `;
 
 const GET_SIMPLE_TEAMS = gql`
   query GetAllSimpleTeams {
@@ -2081,7 +2082,7 @@ const GET_INVOICE_FOR_PROJECT = gql`
       projectId
       projectName
       totalHours
-  const [invoiceData, setInvoiceData] = useState<InvoiceData | null>(null);
+      totalCost
       rates {
         rateId
         rateName
@@ -2183,7 +2184,6 @@ const InvoiceDashboard: React.FC = () => {
       currency: "DKK",
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
-      // Use 'group' option for space as thousands separator
       currencyDisplay: "code",
       notation: "compact",
     })

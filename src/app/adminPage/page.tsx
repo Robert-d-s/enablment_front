@@ -47,17 +47,6 @@ const GET_USERS = gql`
   }
 `;
 
-// const GET_TEAMS = gql`
-//   query FetchTeamsFromLinear {
-//     fetchTeamsFromLinear {
-//       nodes {
-//         id
-//         name
-//       }
-//     }
-//   }
-// `;
-
 const GET_SIMPLE_TEAMS = gql`
   query GetAllSimpleTeams {
     getAllSimpleTeams {

@@ -55,7 +55,7 @@ const GET_INVOICE_FOR_PROJECT = gql`
       projectId
       projectName
       totalHours
-  const [invoiceData, setInvoiceData] = useState<InvoiceData | null>(null);
+      totalCost
       rates {
         rateId
         rateName
@@ -157,7 +157,6 @@ const InvoiceDashboard: React.FC = () => {
       currency: "DKK",
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
-      // Use 'group' option for space as thousands separator
       currencyDisplay: "code",
       notation: "compact",
     })

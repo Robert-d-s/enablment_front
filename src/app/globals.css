@@ -30,6 +30,7 @@
     border-color: var(--color-gray-200, currentColor);
   }
 }
+
 /*
   ---break---
 */
@@ -131,5 +132,24 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+/* @layer components {
+  .bg-black select,
+  .bg-black input,
+  .bg-black textarea {
+    color: white;
+  }
+} */
+@layer components {
+  /* Or append to @layer base */
+  /* Fix for dropdown and input colors in black backgrounds - INVERT COLORS */
+  .bg-black select,
+  .bg-black input,
+  .bg-black textarea {
+    color: black; /* Set text color to black */
+    background-color: white; /* Set background color to white */
+    border-color: var(--color-border); /* Optionally, match border color */
   }
 }
