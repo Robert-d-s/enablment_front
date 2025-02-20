@@ -1,133 +1,28 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { useQuery, useMutation, gql } from "@apollo/client";
+import React, { useEffect, useState } from "react";
+import { useQuery, useMutation, ApolloError } from "@apollo/client";
 import { formatISO } from "date-fns";
-
-// Store and utility imports
-import useStore from "../lib/store";
-import { currentUserVar } from "../lib/apolloClient";
-import { useTimer } from "../hooks/useTimer";
-
-// Component imports
-import NavigationBar from "../components/NavigationBar";
-import FeedbackMessages from "../components/FeedbackMessages";
-import TimerDisplay from "../components/TimerDisplay";
-import TimerControls from "../components/TimerControls";
-import ProjectRateSelectors from "../components/ProjectRateSelectors";
-
-// GraphQL Queries & Mutations
-const PROJECTS_QUERY = gql`
-  query GetProjects {
-    projects {
-      id
-      name
-      teamId
-    }
-  }
-`;
-
-const RATES_QUERY = gql`
-  query GetRates($teamId: String!) {
-    rates(teamId: $teamId) {
-      id
-      name
-      rate
-    }
-  }
-`;
-
-const TOTAL_TIME_QUERY = gql`
-  query GetTotalTimeForUserProject($userId: Float!, $projectId: String!) {
-    getTotalTimeForUserProject(userId: $userId, projectId: $projectId)
-  }
-`;
-
-interface Project {
-  id: string;
-  name: string;
-  teamId: string;
-}
-
-interface Rate {
-  id: string;
-  name: string;
-  rate: number;
-}
-
-interface UserProject {
-  id: string;
-  name: string;
-  teamName: string;
-}
-
-interface ProjectsQueryData {
-  projects: Project[];
-}
-
-interface RatesQueryData {
-  rates: Rate[];
-}
-
-interface UserProjectsQueryData {
-  users: {
-    id: string;
-    teams: {
-      name: string;
-      projects: Project[];
-    }[];
-  }[];
-}
-
-interface TotalTimeData {
-  getTotalTimeForUserProject: number;
-}
-
-const USER_PROJECTS_QUERY = gql`
-  query GetUserProjects {
-    users {
-      id
-      teams {
-        name
-        projects {
-          id
-          name
-        }
-      }
-    }
-  }
-`;
-
-const CREATE_TIME_MUTATION = gql`
-  mutation CreateTime($timeInputCreate: TimeInputCreate!) {
-    createTime(timeInputCreate: $timeInputCreate) {
-      id
-      startTime
-      endTime
-      totalElapsedTime
-    }
-  }
-`;
+import NavigationBar from "@/app/components/NavigationBar";
+import FeedbackMessages from "@/app/components/FeedbackMessages";
+import TimerDisplay from "@/app/components/TimerDisplay";
+import TimerControls from "@/app/components/TimerControls";
+import ProjectRateSelectors from "@/app/components/ProjectRateSelectors";
+import { currentUserVar } from "@/app/lib/apolloClient";
+import useStore from "@/app/lib/store";
+import { useTimer } from "@/app/hooks/useTimer";
+import {
+  RATES_QUERY,
+  TOTAL_TIME_QUERY,
+  CREATE_TIME_MUTATION,
+} from "@/app/graphql/timeKeeperOperations";
+import useTimeKeeperData from "@/app/hooks/useTimeKeeperData";
 
 const TimeKeeper: React.FC = () => {
-  const {
-    setProjects,
-    setRates,
-    selectedProject,
-    setSelectedProject,
-    selectedRate,
-    setSelectedRate,
-    setTeamId,
-  } = useStore();
+  const { selectedProject, setSelectedProject, selectedRate, setSelectedRate } =
+    useStore();
 
-  const [userProjects, setUserProjects] = useState<UserProject[]>([]);
-  const [submissionSuccess, setSubmissionSuccess] = useState<boolean>(false);
-  const [submissionError, setSubmissionError] = useState<string>("");
-  const [dateAlertMessage, setDateAlertMessage] = useState<string | null>(null);
-
-  const loggedInUser = currentUserVar();
-
-  // Timer hook provides timer logic
+  // Timer hook for managing timing
   const {
     isRunning,
     startTime,
@@ -138,22 +33,23 @@ const TimeKeeper: React.FC = () => {
     setStartTime,
   } = useTimer();
 
-  const { data: projectsData } = useQuery<ProjectsQueryData>(PROJECTS_QUERY);
-  const { data: ratesData } = useQuery<RatesQueryData>(RATES_QUERY, {
-    variables: { teamId: undefined },
-    skip: true,
+  // Use custom hook to fetch projects and compute current team ID
+  const { userProjects, currentTeamId } = useTimeKeeperData();
+
+  // Query for rates based on currentTeamId
+  const { data: newRatesData } = useQuery(RATES_QUERY, {
+    variables: { teamId: currentTeamId! },
+    skip: !currentTeamId,
   });
-  const { data: userProjectsData } = useQuery<UserProjectsQueryData>(
-    USER_PROJECTS_QUERY,
-    {
-      skip: !loggedInUser,
-    }
-  );
+
+  // Query for total time spent on the selected project
+  const loggedInUser = currentUserVar();
   const {
     data: totalTimeData,
     loading: totalTimeLoading,
     error: totalTimeError,
-  } = useQuery<TotalTimeData>(TOTAL_TIME_QUERY, {
+    refetch,
+  } = useQuery(TOTAL_TIME_QUERY, {
     variables: {
       userId: loggedInUser ? parseFloat(loggedInUser.id) : 0,
       projectId: selectedProject || "",
@@ -161,86 +57,33 @@ const TimeKeeper: React.FC = () => {
     skip: !loggedInUser || !selectedProject,
   });
 
+  // Mutation for creating a new time entry
   const [createTime] = useMutation(CREATE_TIME_MUTATION);
 
-  useEffect(() => {
-    if (projectsData) {
-      setProjects(projectsData.projects);
-    }
-  }, [projectsData, setProjects]);
-
-  useEffect(() => {
-    if (ratesData) {
-      setRates(ratesData.rates);
-    }
-  }, [ratesData, setRates]);
-
-  useEffect(() => {
-    if (userProjectsData && loggedInUser) {
-      const user = userProjectsData.users.find((u) => u.id === loggedInUser.id);
-      if (user) {
-        const projectsList: UserProject[] = user.teams.flatMap((team) =>
-          team.projects.map((project) => ({
-            id: project.id,
-            name: project.name,
-            teamName: team.name,
-          }))
-        );
-        setUserProjects(projectsList);
-      }
-    }
-  }, [userProjectsData, loggedInUser]);
-
-  useEffect(() => {
-    if (selectedProject && projectsData) {
-      const project = projectsData.projects.find(
-        (p) => p.id === selectedProject
-      );
-      if (project) {
-        setTeamId(project.teamId);
-      }
-    }
-  }, [selectedProject, projectsData, setTeamId]);
-
-  const [currentTeamId, setCurrentTeamId] = useState<string | undefined>(
-    undefined
-  );
-  useEffect(() => {
-    if (projectsData && selectedProject) {
-      const project = projectsData.projects.find(
-        (p) => p.id === selectedProject
-      );
-      if (project && project.teamId !== currentTeamId) {
-        setCurrentTeamId(project.teamId);
-      }
-    }
-  }, [selectedProject, projectsData, currentTeamId]);
-
-  const { data: newRatesData } = useQuery<RatesQueryData>(RATES_QUERY, {
-    variables: { teamId: currentTeamId! },
-    skip: !currentTeamId,
-  });
-  useEffect(() => {
-    if (newRatesData) {
-      setRates(newRatesData.rates);
-    }
-  }, [newRatesData, setRates]);
+  const [submissionSuccess, setSubmissionSuccess] = useState(false);
+  const [submissionError, setSubmissionError] = useState("");
+  const [dateAlertMessage, setDateAlertMessage] = useState<string | null>(null);
+  const [resetMessage, setResetMessage] = useState(false);
 
   const handleDateChange = (date: Date | null): void => {
     const now = new Date();
     if (date) {
       if (date > now) {
         setDateAlertMessage("Please select a current or past date/time.");
-        setTimeout(() => setDateAlertMessage(null), 1000);
+        setTimeout(() => setDateAlertMessage(null), 3000);
       } else {
         setStartTime(date);
       }
     }
   };
 
-  const handleSubmit = async (
-    e: React.FormEvent<HTMLFormElement>
-  ): Promise<void> => {
+  const handleReset = () => {
+    reset(); // This comes from useTimer hook
+    setResetMessage(true);
+    setTimeout(() => setResetMessage(false), 2000);
+  };
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!startTime || !selectedProject || !loggedInUser || !selectedRate) {
       console.error("Missing required data for time entry.");
@@ -261,14 +104,20 @@ const TimeKeeper: React.FC = () => {
       setSubmissionSuccess(true);
       setSubmissionError("");
       setTimeout(() => setSubmissionSuccess(false), 2000);
-    } catch (error: unknown) {
-      if (error instanceof Error) {
+    } catch (error) {
+      if (error instanceof ApolloError) {
         setSubmissionError("Error with time entry: " + error.message);
       } else {
         setSubmissionError("An unexpected error occurred.");
       }
     }
   };
+
+  useEffect(() => {
+    if (selectedProject) {
+      refetch();
+    }
+  }, [selectedProject, refetch]);
 
   return (
     <>
@@ -277,7 +126,7 @@ const TimeKeeper: React.FC = () => {
         <FeedbackMessages
           submissionSuccess={submissionSuccess}
           submissionError={submissionError}
-          resetMessage={false}
+          resetMessage={resetMessage}
           dateAlertMessage={dateAlertMessage}
         />
         <TimerDisplay
@@ -290,7 +139,7 @@ const TimeKeeper: React.FC = () => {
         <TimerControls
           isRunning={isRunning}
           handleStartStop={isRunning ? pause : start}
-          handleReset={reset}
+          handleReset={handleReset}
           handleSubmit={handleSubmit}
           disabledStartPause={!selectedProject || !selectedRate}
           disabledReset={!startTime}
