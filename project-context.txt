@@ -1156,13 +1156,13 @@ const NavigationBar: React.FC = () => {
         />
       </Link>
       <div className="flex-grow font-semibold text-lg mx-4 flex items-center justify-center">
-        <Link href="/issues2" className="mr-4">
+        <Link href="/issues" className="mr-4">
           Issues
         </Link>
         <Link href="/adminPage" className="mr-4">
           Admin
         </Link>
-        <Link href="/timeKeeper2">Timekeeper</Link>
+        <Link href="/timeKeeper">Timekeeper</Link>
       </div>
       <div>
         <div>
@@ -2406,7 +2406,7 @@ const Login: React.FC = () => {
       if (data && data.access_token) {
         localStorage.setItem("token", data.access_token);
         await fetchUserProfile(data.access_token);
-        router.push("/timeKeeper2");
+        router.push("/timeKeeper");
       } else if (data && data.error) {
         setErrorMessage(data.error);
       }
@@ -2482,7 +2482,7 @@ export default Login;
 
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
@@ -2503,7 +2503,22 @@ const Navbar: React.FC<NavbarProps> = ({
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  console.log("Navbar - sections prop:", sections);
+  // Automatically set the menu open on desktop and closed on mobile.
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 1024) {
+        setIsMenuOpen(true);
+      } else {
+        setIsMenuOpen(false);
+      }
+    };
+
+    // Run on mount
+    handleResize();
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const handleSectionClick = (section: string) => {
     if (section === "Client-Portal") {
@@ -2511,7 +2526,10 @@ const Navbar: React.FC<NavbarProps> = ({
     } else {
       setActiveSection(section);
     }
-    setIsMenuOpen(false);
+    // On mobile, close the menu after selection.
+    if (window.innerWidth < 1024) {
+      setIsMenuOpen(false);
+    }
   };
 
   const menuIconVariants = {
@@ -2552,12 +2570,13 @@ const Navbar: React.FC<NavbarProps> = ({
 
   return (
     <nav
-      className="relative flex items-center justify-center content-center p-4"
+      className="relative flex items-center justify-center p-4"
       style={{ minHeight: "64px" }}
     >
       <div className="absolute left-0 pl-4">
         <Image src={logo} alt="Logo" priority />
       </div>
+      {/* Burger Icon – visible on mobile only */}
       <motion.div
         className="lg:hidden z-20 absolute right-4 cursor-pointer"
         onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -2579,12 +2598,12 @@ const Navbar: React.FC<NavbarProps> = ({
           ></path>
         </svg>
       </motion.div>
+      {/* Menu Container */}
       <motion.div
         variants={menuVariants}
         initial="closed"
         animate={isMenuOpen ? "opened" : "closed"}
-        className={`menu-container absolute md:top-auto md:relative md:flex md:flex-row md:items-center md:space-x-4 `}
-        // className={`flex flex-col items-center w-full py-4 space-y-4 bg-white shadow-md absolute top-full left-0  lg:static lg:flex-row  lg:w-auto lg:bg-transparent lg:shadow-none lg:py-0 lg:space-y-0 lg:space-x-4`}
+        className="menu-container absolute md:top-auto md:relative md:flex md:flex-row md:items-center md:space-x-4"
       >
         {sections.map((section) => (
           <div
@@ -2594,7 +2613,7 @@ const Navbar: React.FC<NavbarProps> = ({
             onMouseLeave={() => setHoveredSection(null)}
           >
             <div
-              className={`h-4 w-4 rounded-full  cursor-pointer transition duration-800 ease-in-out ${
+              className={`h-4 w-4 rounded-full cursor-pointer transition duration-800 ease-in-out ${
                 activeSection === section
                   ? "bg-green-500"
                   : hoveredSection === section
@@ -2606,7 +2625,7 @@ const Navbar: React.FC<NavbarProps> = ({
             <button
               className={`py-2 px-4 ${
                 section === "Contact"
-                  ? "text-white font-bold rounded-lg  px-2 mx-2 py-0 bg-green-700"
+                  ? "text-white font-bold rounded-lg px-2 mx-2 py-0 bg-green-700"
                   : "text-black"
               }`}
               onClick={() => handleSectionClick(section)}
@@ -2615,7 +2634,6 @@ const Navbar: React.FC<NavbarProps> = ({
             </button>
           </div>
         ))}
-        {/* <div className="bg-red-500 text-white p-4">TESTING - DESKTOP MENU</div> */}
       </motion.div>
     </nav>
   );
@@ -3910,16 +3928,6 @@ import ProjectSelector from "../components/ProjectSelector";
 import RateSelector from "../components/RateSelector";
 import NavigationBar from "../components/NavigationBar";
 
-// GraphQL Queries and mutations
-// const USERS_QUERY = gql`
-//   query GetUsers {
-//     users {
-//       id
-//       email
-//     }
-//   }
-// `;
-
 const PROJECTS_QUERY = gql`
   query GetProjects {
     projects {
@@ -4518,36 +4526,34 @@ export async function fetchUserProfile(token: string | null): Promise<User> {
   }
 }
 
-// ====== FILE: src/app/api/profile/profile.ts ======
+// ====== FILE: src/app/api/profile/route.ts ======
 
-import { NextApiRequest, NextApiResponse } from "next";
+import { NextRequest, NextResponse } from "next/server";
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
-  // console.log("NEXT_PUBLIC_BACKEND_URL:", process.env.NEXT_PUBLIC_BACKEND_URL);
-  const token = req.headers.authorization?.split(" ")[1] || ""; // Extract JWT token from incoming header
+export async function GET(request: NextRequest) {
+  const token = request.headers.get("authorization")?.split(" ")[1] || "";
 
   try {
-    // Assuming the endpoint to fetch user profile is at /auth/profile
-    const backendResponse = await fetch(`http://localhost:8080/auth/profile`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+    // Call your backend profile endpoint (adjust URL if needed)
+    const backendRes = await fetch("http://localhost:8080/auth/profile", {
+      headers: { Authorization: `Bearer ${token}` },
     });
 
-    if (!backendResponse.ok) {
-      throw new Error("Failed to fetch user profile.");
+    if (!backendRes.ok) {
+      return NextResponse.json(
+        { error: "Failed to fetch user profile" },
+        { status: backendRes.status }
+      );
     }
 
-    const userProfile = await backendResponse.json();
-    res.status(200).json(userProfile);
+    const userProfile = await backendRes.json();
+    return NextResponse.json(userProfile, { status: 200 });
   } catch (error) {
     console.error("Error while fetching user profile:", error);
-    res
-      .status(500)
-      .json({ error: "An error occurred while fetching user profile" });
+    return NextResponse.json(
+      { error: "An error occurred while fetching user profile" },
+      { status: 500 }
+    );
   }
 }
 
