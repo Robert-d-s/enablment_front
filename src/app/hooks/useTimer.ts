@@ -1,43 +1,17 @@
-"use client";
-
 import { useState, useEffect, useRef } from "react";
-import { differenceInSeconds, format, isValid } from "date-fns";
+import { differenceInSeconds, format } from "date-fns";
+import type { TimerState } from "../types";
 
-export interface UseTimerReturn {
-  isRunning: boolean;
-  startTime: Date | null;
-  displayTime: string;
-  start: () => void;
-  pause: () => void;
-  reset: () => void;
-  setStartTime: (date: Date | null) => void;
-}
-
-export function useTimer(initialStartTime: Date | null = null): UseTimerReturn {
+export const useTimer = (): TimerState => {
   const [isRunning, setIsRunning] = useState<boolean>(false);
-  const [startTime, setStartTime] = useState<Date | null>(initialStartTime);
-  const [pauseTimes, setPauseTimes] = useState<Date[]>([]);
-  const [resumeTimes, setResumeTimes] = useState<Date[]>([]);
+  const [startTime, setStartTime] = useState<Date | null>(null);
   const [displayTime, setDisplayTime] = useState<string>("00:00:00");
+  const timerRef = useRef<number | null>(null);
 
-  // In browsers, setInterval returns a number.
-  const timerIntervalRef = useRef<number | null>(null);
-
-  const calculateElapsedTime = (): number => {
+  const updateDisplay = () => {
+    if (!startTime) return;
     const now = new Date();
-    if (!startTime || !isValid(startTime)) return 0;
-    let elapsedSeconds = differenceInSeconds(now, startTime);
-    pauseTimes.forEach((pauseTime, index) => {
-      const resumeTime = resumeTimes[index] ?? now;
-      if (isValid(pauseTime) && isValid(resumeTime)) {
-        elapsedSeconds -= differenceInSeconds(resumeTime, pauseTime);
-      }
-    });
-    return Math.max(elapsedSeconds, 0);
-  };
-
-  const updateDisplay = (): void => {
-    const elapsedSeconds = calculateElapsedTime();
+    const elapsedSeconds = differenceInSeconds(now, startTime);
     const formattedTime = format(
       new Date(0, 0, 0, 0, 0, elapsedSeconds),
       "HH:mm:ss"
@@ -46,42 +20,29 @@ export function useTimer(initialStartTime: Date | null = null): UseTimerReturn {
   };
 
   useEffect(() => {
-    if (isRunning && startTime && isValid(startTime)) {
-      updateDisplay();
-      timerIntervalRef.current = window.setInterval(updateDisplay, 1000);
-      return () => {
-        if (timerIntervalRef.current !== null) {
-          clearInterval(timerIntervalRef.current);
-          timerIntervalRef.current = null;
-        }
-      };
+    if (isRunning && startTime) {
+      timerRef.current = window.setInterval(updateDisplay, 1000);
+    } else if (!isRunning && timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
     }
-  }, [isRunning, startTime, pauseTimes, resumeTimes]);
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [isRunning, startTime]);
 
-  const start = (): void => {
-    const now = new Date();
-    if (!startTime) {
-      setStartTime(now);
-    }
+  const start = () => {
+    if (!startTime) setStartTime(new Date());
     setIsRunning(true);
-    if (pauseTimes.length !== resumeTimes.length) {
-      setResumeTimes((prev) => [...prev, now]);
-    }
   };
 
-  const pause = (): void => {
-    const now = new Date();
-    if (startTime && isValid(startTime)) {
-      setPauseTimes((prev) => [...prev, now]);
-    }
+  const pause = () => {
     setIsRunning(false);
   };
 
-  const reset = (): void => {
+  const reset = () => {
     setIsRunning(false);
     setStartTime(null);
-    setPauseTimes([]);
-    setResumeTimes([]);
     setDisplayTime("00:00:00");
   };
 
@@ -94,4 +55,4 @@ export function useTimer(initialStartTime: Date | null = null): UseTimerReturn {
     reset,
     setStartTime,
   };
-}
+};

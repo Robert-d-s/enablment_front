@@ -691,253 +691,100 @@ export default AboutComponent;
 
 "use client";
 
-import { useQuery, useMutation, gql } from "@apollo/client";
-import { useState, useEffect } from "react";
-import { ApolloError } from "@apollo/client";
-import { logout } from "../lib/apolloClient";
+import React, { useEffect, useState } from "react";
+import { useQuery, useMutation, ApolloError } from "@apollo/client";
 import NavigationBar from "../components/NavigationBar";
+import UserTable from "@/app/components/Admin/UserTable";
+import {
+  GET_USERS,
+  GET_SIMPLE_TEAMS,
+  UPDATE_USER_ROLE,
+  ADD_USER_TO_TEAM,
+  REMOVE_USER_FROM_TEAM,
+} from "@/app/graphql/adminOperations";
 import TotalTimeSpent from "../time/page";
 import RatesManager from "../ratesManager/page";
-import TeamSyncAndFetch from "../teamSync/page";
 import InvoiceDashboard from "../invoice/page";
-import { useRouter } from "next/navigation";
+import TeamSyncAndFetch from "../teamSync/page";
 
-enum UserRole {
-  ADMIN = "ADMIN",
-  ENABLER = "ENABLER",
-  COLLABORATOR = "COLLABORATOR",
-  PENDING = "PENDING",
-}
-
-type User = {
-  id: number;
-  email: string;
-  role: UserRole;
-  teams: {
-    id: string;
-    name: string;
-  }[];
-};
-
-type Team = {
-  id: string;
-  name: string;
-};
-
-const GET_USERS = gql`
-  query GetUsers {
-    users {
-      id
-      email
-      role
-      teams {
-        id
-        name
-      }
-    }
-  }
-`;
-
-const GET_SIMPLE_TEAMS = gql`
-  query GetAllSimpleTeams {
-    getAllSimpleTeams {
-      id
-      name
-    }
-  }
-`;
-
-const UPDATE_USER_ROLE = gql`
-  mutation UpdateUserRole($userId: Int!, $newRole: UserRole!) {
-    updateUserRole(userId: $userId, newRole: $newRole) {
-      id
-      role
-    }
-  }
-`;
-
-const ADD_USER_TO_TEAM = gql`
-  mutation AddUserToTeam($userId: Int!, $teamId: String!) {
-    addUserToTeam(userId: $userId, teamId: $teamId) {
-      id
-      email
-    }
-  }
-`;
-
-const REMOVE_USER_FROM_TEAM = gql`
-  mutation RemoveUserFromTeam($userId: Int!, $teamId: String!) {
-    removeUserFromTeam(userId: $userId, teamId: $teamId) {
-      id
-      email
-      teams {
-        id
-        name
-      }
-    }
-  }
-`;
-
-const AdminPage = () => {
-  const [users, setUsers] = useState<User[]>([]);
+const AdminPage: React.FC = () => {
+  const [users, setUsers] = useState([]);
   const [selectedTeam, setSelectedTeam] = useState<{
     [userId: number]: string;
   }>({});
   const [errorMessage, setErrorMessage] = useState("");
-  const router = useRouter();
 
   const {
     loading: loadingUsers,
     error: errorUsers,
     data: dataUsers,
     refetch: refetchUsers,
-  } = useQuery(GET_USERS, {
-    // fetchPolicy: "network-only",
-  });
-  // console.log("Datausers", dataUsers);
-  const { loading: loadingTeams, data: dataTeams } = useQuery(
-    GET_SIMPLE_TEAMS,
-    {
-      // fetchPolicy: "network-only",
-    }
-  );
-  console.log("DataTeams", dataTeams);
+  } = useQuery(GET_USERS);
+
+  const { loading: loadingTeams, data: dataTeams } = useQuery(GET_SIMPLE_TEAMS);
+
   const [updateUserRole] = useMutation(UPDATE_USER_ROLE);
   const [addUserToTeam] = useMutation(ADD_USER_TO_TEAM, {
     onCompleted: () => refetchUsers(),
   });
-
-  const [removeUserFromTeam, { error }] = useMutation(REMOVE_USER_FROM_TEAM, {
+  const [removeUserFromTeam] = useMutation(REMOVE_USER_FROM_TEAM, {
     onCompleted: () => refetchUsers(),
     onError: (error) => {
-      // Handle error
       console.error("Error removing user from team:", error);
-      // Potentially set an error state here
     },
   });
 
   useEffect(() => {
     if (dataUsers) {
-      const usersWithTeams = dataUsers.users.map((user: User) => ({
-        ...user,
-        teams: user.teams || [],
-      }));
-      setUsers(usersWithTeams);
+      setUsers(dataUsers.users);
     }
   }, [dataUsers]);
 
-  console.log("user data: ", dataUsers);
-  console.log("error data: ", errorUsers);
   if (loadingUsers || loadingTeams) return <p>Loading...</p>;
   if (errorUsers) {
     const graphQLError = errorUsers.graphQLErrors[0];
-    const message = graphQLError
-      ? graphQLError.message
-      : errorUsers.networkError
-      ? "Network error, please try again."
-      : "An error occurred.";
-
-    // Specific handling based on error type
     if (graphQLError && graphQLError.extensions?.code === "FORBIDDEN") {
-      // Handle Forbidden error
       return <p>You do not have permission to view this resource.</p>;
-    } else if (
-      graphQLError &&
-      graphQLError.extensions?.code === "UNAUTHENTICATED"
-    ) {
-      // Handle Unauthorized error
-      logout();
-      return;
     }
-
-    // return <p>Error: {message}</p>;
-    return (
-      <div className="flex flex-col items-center justify-center h-screen">
-        <div
-          className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative"
-          role="alert"
-        >
-          <strong className="font-bold">Permission Denied!</strong>
-          <span className="block sm:inline mr-8">
-            {" "}
-            You do not have permission to view this resource.
-          </span>
-          <button
-            onClick={() => router.push("/login")} // Use router from 'next/router' to navigate
-            className="absolute top-0 bottom-0 right-0 px-4 py-3"
-          >
-            <svg
-              className="fill-current h-6 w-6 text-red-500"
-              role="button"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 20 20"
-            >
-              <title>Close</title>
-              <path d="M14.348 14.849a1.2 1.2 0 0 1-1.697 0L10 12.196 7.349 14.849a1.2 1.2 0 1 1-1.697-1.697L8.196 10 5.652 7.349a1.2 1.2 0 1 1 1.697-1.697L10 7.804l2.651-2.652a1.2 1.2 0 1 1 1.697 1.697L11.804 10l2.544 2.651a1.2 1.2 0 0 1 0 1.698z" />
-            </svg>
-          </button>
-        </div>
-      </div>
-    );
+    return <p>Error: {errorUsers.message}</p>;
   }
-  const handleAddUserToTeam = (userId: number) => () => {
-    console.log(`Adding user ${userId} to team`);
-    console.log(`Selected team for user ${userId}: ${selectedTeam[userId]}`);
 
+  const handleTeamSelect = (userId: number, teamId: string) => {
+    setSelectedTeam((prev) => ({ ...prev, [userId]: teamId }));
+  };
+
+  const handleAddToTeam = (userId: number) => {
     const teamId = selectedTeam[userId];
-    console.log(`Attempting to add user ${userId} to team ${teamId}`);
     if (!teamId) {
       console.error("No team selected for user:", userId);
       return;
     }
-
-    addUserToTeam({ variables: { userId, teamId } })
-      .then(() => refetchUsers())
-      .catch((error) => console.error("Error adding user to team:", error));
+    addUserToTeam({ variables: { userId, teamId } }).catch((error) =>
+      console.error("Error adding user to team:", error)
+    );
   };
 
-  const handleRemoveUserFromTeam = (userId: number, teamId: string) => {
-    removeUserFromTeam({
-      variables: { userId, teamId },
-    })
-      .then(() => refetchUsers())
-      .catch((error) => console.error("Error removing user from team:", error));
+  const handleRemoveFromTeam = (userId: number, teamId: string) => {
+    removeUserFromTeam({ variables: { userId, teamId } }).catch((error) =>
+      console.error("Error removing user from team:", error)
+    );
   };
 
-  const handleTeamSelection = (userId: number, teamId: string) => {
-    console.log(`Selected team for user ${userId}: ${teamId}`);
-    setSelectedTeam((prev) => ({ ...prev, [userId]: teamId }));
-  };
-
-  const handleRoleChange = async (userId: number, newRole: UserRole) => {
-    console.log(`Updating role for user ${userId} to ${newRole}`);
+  const handleRoleChange = async (userId: number, newRole: string) => {
     try {
       await updateUserRole({ variables: { userId, newRole } });
       setErrorMessage("");
     } catch (error) {
       if (error instanceof ApolloError) {
-        const message =
-          error.graphQLErrors[0]?.message ||
-          "An error occurred while updating user role";
-        setErrorMessage(message);
+        setErrorMessage(
+          error.graphQLErrors[0]?.message || "Error updating role"
+        );
       } else {
         console.error("Error updating user role:", error);
         setErrorMessage("An unexpected error occurred");
       }
     }
   };
-
-  const handleError = (error: ApolloError) => {
-    const graphQLError = error.graphQLErrors[0];
-    return graphQLError
-      ? graphQLError.message
-      : error.networkError
-      ? "Network error, please try again."
-      : "An error occurred.";
-  };
-
-  if (loadingUsers || loadingTeams) return <p>Loading...</p>;
-  if (errorUsers) return <p>Error: {handleError(errorUsers)}</p>;
 
   return (
     <>
@@ -947,11 +794,10 @@ const AdminPage = () => {
           <div className="mb-3">
             <UserTable
               users={users}
-              // teams={dataTeams?.fetchTeamsFromLinear.nodes}
               teams={dataTeams?.getAllSimpleTeams}
-              onTeamSelect={handleTeamSelection}
-              onAddToTeam={(userId) => handleAddUserToTeam(userId)()}
-              onRemoveFromTeam={handleRemoveUserFromTeam}
+              onTeamSelect={handleTeamSelect}
+              onAddToTeam={handleAddToTeam}
+              onRemoveFromTeam={handleRemoveFromTeam}
               onRoleChange={handleRoleChange}
             />
             {errorMessage && <p className="text-red-500">{errorMessage}</p>}
@@ -974,158 +820,6 @@ const AdminPage = () => {
   );
 };
 
-type UserTableProps = {
-  users: User[];
-  teams: Team[];
-  onTeamSelect: (userId: number, teamId: string) => void;
-  onAddToTeam: (userId: number) => void;
-  onRemoveFromTeam: (userId: number, teamId: string) => void;
-  onRoleChange: (userId: number, newRole: UserRole) => void;
-};
-
-const UserTable: React.FC<UserTableProps> = ({
-  users,
-  teams,
-  onTeamSelect,
-  onAddToTeam,
-  onRemoveFromTeam,
-  onRoleChange,
-}) => (
-  <table className="min-w-full table-auto">
-    <thead className="bg-black">
-      <tr>
-        <th className="px-6 py-3 text-left text-lg font-medium text-white uppercase tracking-wider">
-          User
-        </th>
-        <th className="px-6 py-3 text-left text-lg font-medium text-white uppercase tracking-wider">
-          Teams
-        </th>
-        <th className="px-6 py-3 text-left text-lg font-medium text-white uppercase tracking-wider">
-          Assigned
-        </th>
-        <th className="px-6 py-3 text-left text-lg font-medium text-white uppercase tracking-wider">
-          Role
-        </th>
-      </tr>
-    </thead>
-    <tbody>
-      {users.map((user: User) => (
-        <UserRow
-          key={user.id}
-          user={user}
-          teams={teams}
-          onTeamSelect={onTeamSelect}
-          onAddToTeam={onAddToTeam}
-          onRemoveFromTeam={onRemoveFromTeam}
-          onRoleChange={onRoleChange}
-        />
-      ))}
-    </tbody>
-  </table>
-);
-type UserRowProps = {
-  user: User;
-  teams: Team[];
-  onTeamSelect: (userId: number, teamId: string) => void;
-  onAddToTeam: (userId: number) => void;
-  onRemoveFromTeam: (userId: number, teamId: string) => void;
-  onRoleChange: (userId: number, newRole: UserRole) => void;
-};
-const UserRow: React.FC<UserRowProps> = ({
-  user,
-  teams,
-  onTeamSelect,
-  onAddToTeam,
-  onRemoveFromTeam,
-  onRoleChange,
-}) => {
-  console.log("Teams for user:", user.id, user.teams);
-  const safeTeams = teams || [];
-
-  return (
-    <tr>
-      <td className="px-6 py-4 whitespace-nowrap border-b border-gray-200 shadow-md">
-        {user.email}
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap border-b border-gray-200 shadow-md">
-        <TeamSelect
-          teams={safeTeams}
-          onTeamSelect={(teamId) => onTeamSelect(user.id, teamId)}
-        />
-        <button
-          className="ml-20 bg-black hover:bg-green-700 text-white font-bold py-1 px-2 rounded"
-          onClick={() => onAddToTeam(user.id)}
-        >
-          Add to Team
-        </button>
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap border-b border-gray-200 shadow-md">
-        {user.teams && user.teams.length > 0 ? (
-          <ul className="list-disc list-inside space-y-2">
-            {user.teams.map((team) => (
-              <li
-                key={team.id}
-                className="flex items-center justify-between border-b border-gray-200"
-              >
-                {team.name}
-                <button
-                  onClick={() => onRemoveFromTeam(user.id, team.id)}
-                  className="ml-4 bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded border-b border-gray-200"
-                >
-                  Remove
-                </button>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p>No teams assigned</p>
-        )}
-      </td>
-      <td className="border-b border-gray-200 shadow-md">
-        <UserRoleSelect
-          currentRole={user.role}
-          onRoleChange={(newRole) => onRoleChange(user.id, newRole)}
-        />
-      </td>
-    </tr>
-  );
-};
-
-type TeamSelectProps = {
-  teams: Team[];
-  onTeamSelect: (teamId: string) => void;
-};
-const TeamSelect: React.FC<TeamSelectProps> = ({ teams, onTeamSelect }) => (
-  <select onChange={(e) => onTeamSelect(e.target.value)}>
-    <option value="">Select team...</option>
-    {teams.map((team: Team) => (
-      <option key={team.id} value={team.id}>
-        {team.name}
-      </option>
-    ))}
-  </select>
-);
-
-type UserRoleSelectProps = {
-  currentRole: UserRole;
-  onRoleChange: (newRole: UserRole) => void;
-};
-const UserRoleSelect: React.FC<UserRoleSelectProps> = ({
-  currentRole,
-  onRoleChange,
-}) => (
-  <select
-    defaultValue={currentRole}
-    onChange={(e) => onRoleChange(e.target.value as UserRole)}
-  >
-    {Object.values(UserRole).map((role) => (
-      <option key={role} value={role}>
-        {role}
-      </option>
-    ))}
-  </select>
-);
-
 export default AdminPage;
 
 // ====== FILE: src/app/components/FeedbackMessages.tsx ======
@@ -1147,28 +841,28 @@ const FeedbackMessages: React.FC<FeedbackMessagesProps> = ({
   dateAlertMessage,
 }) => {
   return (
-    <>
+    <div className="absolute top-5 right-5 z-50 flex flex-col items-end space-y-2">
       {submissionSuccess && (
-        <div className="absolute top-5 right-5 md:top-10 md:right-10 z-50 bg-green-100 text-green-800 text-sm font-semibold px-4 py-2 rounded-lg shadow-lg transition ease-out duration-300">
+        <div className="bg-green-100 text-green-800 text-sm font-semibold px-4 py-2 rounded-lg shadow-lg transition ease-out duration-300">
           Time entry saved!
         </div>
       )}
       {submissionError && (
-        <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-full bg-red-100 text-red-800 text-sm font-semibold px-4 py-2 rounded-lg shadow-lg transition ease-out duration-300">
+        <div className="bg-red-100 text-red-800 text-sm font-semibold px-4 py-2 rounded-lg shadow-lg transition ease-out duration-300">
           {submissionError}
         </div>
       )}
       {resetMessage && (
-        <div className="absolute top-7 right-4 md:top-10 md:right-10 z-50 bg-yellow-500 text-blue-800 text-sm font-semibold px-4 py-2 rounded-lg shadow-lg transition ease-out duration-300">
+        <div className="bg-yellow-500 text-blue-800 text-sm font-semibold px-4 py-2 rounded-lg shadow-lg transition ease-out duration-300">
           Timer reset!
         </div>
       )}
       {dateAlertMessage && (
-        <div className="absolute top-5 right-5 md:top-10 md:right-10 z-50 bg-red-100 text-red-800 text-sm font-semibold px-4 py-2 rounded-lg shadow-lg transition ease-out duration-300">
+        <div className="bg-red-100 text-red-800 text-sm font-semibold px-4 py-2 rounded-lg shadow-lg transition ease-out duration-300">
           {dateAlertMessage}
         </div>
       )}
-    </>
+    </div>
   );
 };
 
@@ -1923,6 +1617,216 @@ const FooterComponent: React.FC = () => {
 
 export default FooterComponent;
 
+// ====== FILE: src/app/graphql/adminOperations.ts ======
+
+import { gql } from "@apollo/client";
+
+export const GET_USERS = gql`
+  query GetUsers {
+    users {
+      id
+      email
+      role
+      teams {
+        id
+        name
+      }
+    }
+  }
+`;
+
+export const GET_SIMPLE_TEAMS = gql`
+  query GetAllSimpleTeams {
+    getAllSimpleTeams {
+      id
+      name
+    }
+  }
+`;
+
+export const UPDATE_USER_ROLE = gql`
+  mutation UpdateUserRole($userId: Int!, $newRole: UserRole!) {
+    updateUserRole(userId: $userId, newRole: $newRole) {
+      id
+      role
+    }
+  }
+`;
+
+export const ADD_USER_TO_TEAM = gql`
+  mutation AddUserToTeam($userId: Int!, $teamId: String!) {
+    addUserToTeam(userId: $userId, teamId: $teamId) {
+      id
+      email
+    }
+  }
+`;
+
+export const REMOVE_USER_FROM_TEAM = gql`
+  mutation RemoveUserFromTeam($userId: Int!, $teamId: String!) {
+    removeUserFromTeam(userId: $userId, teamId: $teamId) {
+      id
+      email
+    }
+  }
+`;
+
+// ====== FILE: src/app/graphql/timeKeeperOperations.ts ======
+
+import { gql } from "@apollo/client";
+
+export const PROJECTS_QUERY = gql`
+  query GetProjects {
+    projects {
+      id
+      name
+      teamId
+    }
+  }
+`;
+
+export const RATES_QUERY = gql`
+  query GetRates($teamId: String!) {
+    rates(teamId: $teamId) {
+      id
+      name
+      rate
+    }
+  }
+`;
+
+export const TOTAL_TIME_QUERY = gql`
+  query GetTotalTimeForUserProject($userId: Float!, $projectId: String!) {
+    getTotalTimeForUserProject(userId: $userId, projectId: $projectId)
+  }
+`;
+
+export const USER_PROJECTS_QUERY = gql`
+  query GetUserProjects {
+    users {
+      id
+      teams {
+        name
+        projects {
+          id
+          name
+        }
+      }
+    }
+  }
+`;
+
+export const CREATE_TIME_MUTATION = gql`
+  mutation CreateTime($timeInputCreate: TimeInputCreate!) {
+    createTime(timeInputCreate: $timeInputCreate) {
+      id
+      startTime
+      endTime
+      totalElapsedTime
+    }
+  }
+`;
+
+// ====== FILE: src/app/hooks/useTimeKeeperData.ts ======
+
+import { useQuery } from "@apollo/client";
+import { useEffect, useState } from "react";
+import {
+  PROJECTS_QUERY,
+  USER_PROJECTS_QUERY,
+} from "@/app/graphql/timeKeeperOperations";
+import useStore from "@/app/lib/store";
+import { currentUserVar } from "@/app/lib/apolloClient";
+
+// Define interfaces for our expected data shapes:
+export interface Project {
+  id: string;
+  name: string;
+  teamId: string;
+}
+
+export interface ProjectsData {
+  projects: Project[];
+}
+
+export interface Team {
+  name: string;
+  projects: Project[];
+}
+
+export interface User {
+  id: string;
+  teams: Team[];
+}
+
+export interface UserProjectsData {
+  users: User[];
+}
+
+export interface UserProject {
+  id: string;
+  name: string;
+  teamName: string;
+}
+
+const useTimeKeeperData = () => {
+  // Use typed queries
+  const { data: projectsData } = useQuery<ProjectsData>(PROJECTS_QUERY);
+  const { data: userProjectsData } = useQuery<UserProjectsData>(
+    USER_PROJECTS_QUERY,
+    {
+      skip: !currentUserVar(),
+    }
+  );
+  const { setProjects, setTeamId } = useStore();
+  const [userProjects, setUserProjects] = useState<UserProject[]>([]);
+  const [currentTeamId, setCurrentTeamId] = useState<string | undefined>(
+    undefined
+  );
+  const selectedProject = useStore((state) => state.selectedProject);
+
+  useEffect(() => {
+    if (projectsData) {
+      setProjects(projectsData.projects);
+    }
+  }, [projectsData, setProjects]);
+
+  useEffect(() => {
+    if (projectsData && selectedProject) {
+      // Use the typed projects array
+      const project = projectsData.projects.find(
+        (p) => p.id === selectedProject
+      );
+      if (project) {
+        setTeamId(project.teamId);
+        setCurrentTeamId(project.teamId);
+      }
+    }
+  }, [projectsData, selectedProject, setTeamId]);
+
+  useEffect(() => {
+    const currentUser = currentUserVar();
+    if (userProjectsData && currentUser) {
+      const currentUserId = currentUser.id;
+      const user = userProjectsData.users.find((u) => u.id === currentUserId);
+      if (user) {
+        const projectsList: UserProject[] = user.teams.flatMap((team) =>
+          team.projects.map((project) => ({
+            id: project.id,
+            name: project.name,
+            teamName: team.name,
+          }))
+        );
+        setUserProjects(projectsList);
+      }
+    }
+  }, [userProjectsData]);
+
+  return { userProjects, currentTeamId };
+};
+
+export default useTimeKeeperData;
+
 // ====== FILE: src/app/hooks/useTimer.ts ======
 
 "use client";
@@ -2271,9 +2175,7 @@ export default InvoiceDashboard;
 
 import React, { useMemo, useState, useEffect } from "react";
 import { gql, useQuery, useSubscription } from "@apollo/client";
-// import { useQuery } from "@apollo/client";
 import NavigationBar from "../components/NavigationBar";
-import { formatDateForDisplay } from "@/app/utils/timeUtils";
 
 type Label = {
   id: string;
@@ -4266,134 +4168,29 @@ export default TotalTimeSpent;
 
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { useQuery, useMutation, gql } from "@apollo/client";
+import React, { useEffect, useState } from "react";
+import { useQuery, useMutation, ApolloError } from "@apollo/client";
 import { formatISO } from "date-fns";
-
-// Store and utility imports
-import useStore from "../lib/store";
-import { currentUserVar } from "../lib/apolloClient";
-import { useTimer } from "../hooks/useTimer";
-
-// Component imports
-import NavigationBar from "../components/NavigationBar";
-import FeedbackMessages from "../components/FeedbackMessages";
-import TimerDisplay from "../components/TimerDisplay";
-import TimerControls from "../components/TimerControls";
-import ProjectRateSelectors from "../components/ProjectRateSelectors";
-
-// GraphQL Queries & Mutations
-const PROJECTS_QUERY = gql`
-  query GetProjects {
-    projects {
-      id
-      name
-      teamId
-    }
-  }
-`;
-
-const RATES_QUERY = gql`
-  query GetRates($teamId: String!) {
-    rates(teamId: $teamId) {
-      id
-      name
-      rate
-    }
-  }
-`;
-
-const TOTAL_TIME_QUERY = gql`
-  query GetTotalTimeForUserProject($userId: Float!, $projectId: String!) {
-    getTotalTimeForUserProject(userId: $userId, projectId: $projectId)
-  }
-`;
-
-interface Project {
-  id: string;
-  name: string;
-  teamId: string;
-}
-
-interface Rate {
-  id: string;
-  name: string;
-  rate: number;
-}
-
-interface UserProject {
-  id: string;
-  name: string;
-  teamName: string;
-}
-
-interface ProjectsQueryData {
-  projects: Project[];
-}
-
-interface RatesQueryData {
-  rates: Rate[];
-}
-
-interface UserProjectsQueryData {
-  users: {
-    id: string;
-    teams: {
-      name: string;
-      projects: Project[];
-    }[];
-  }[];
-}
-
-interface TotalTimeData {
-  getTotalTimeForUserProject: number;
-}
-
-const USER_PROJECTS_QUERY = gql`
-  query GetUserProjects {
-    users {
-      id
-      teams {
-        name
-        projects {
-          id
-          name
-        }
-      }
-    }
-  }
-`;
-
-const CREATE_TIME_MUTATION = gql`
-  mutation CreateTime($timeInputCreate: TimeInputCreate!) {
-    createTime(timeInputCreate: $timeInputCreate) {
-      id
-      startTime
-      endTime
-      totalElapsedTime
-    }
-  }
-`;
+import NavigationBar from "@/app/components/NavigationBar";
+import FeedbackMessages from "@/app/components/FeedbackMessages";
+import TimerDisplay from "@/app/components/TimerDisplay";
+import TimerControls from "@/app/components/TimerControls";
+import ProjectRateSelectors from "@/app/components/ProjectRateSelectors";
+import { currentUserVar } from "@/app/lib/apolloClient";
+import useStore from "@/app/lib/store";
+import { useTimer } from "@/app/hooks/useTimer";
+import {
+  RATES_QUERY,
+  TOTAL_TIME_QUERY,
+  CREATE_TIME_MUTATION,
+} from "@/app/graphql/timeKeeperOperations";
+import useTimeKeeperData from "@/app/hooks/useTimeKeeperData";
 
 const TimeKeeper: React.FC = () => {
-  const {
-    setProjects,
-    setRates,
-    selectedProject,
-    setSelectedProject,
-    selectedRate,
-    setSelectedRate,
-    setTeamId,
-  } = useStore();
+  const { selectedProject, setSelectedProject, selectedRate, setSelectedRate } =
+    useStore();
 
-  const [userProjects, setUserProjects] = useState<UserProject[]>([]);
-  const [submissionSuccess, setSubmissionSuccess] = useState<boolean>(false);
-  const [submissionError, setSubmissionError] = useState<string>("");
-  const [dateAlertMessage, setDateAlertMessage] = useState<string | null>(null);
-
-  const loggedInUser = currentUserVar();
-
-  // Timer hook provides timer logic
+  // Timer hook for managing timing
   const {
     isRunning,
     startTime,
@@ -4404,22 +4201,23 @@ const TimeKeeper: React.FC = () => {
     setStartTime,
   } = useTimer();
 
-  const { data: projectsData } = useQuery<ProjectsQueryData>(PROJECTS_QUERY);
-  const { data: ratesData } = useQuery<RatesQueryData>(RATES_QUERY, {
-    variables: { teamId: undefined },
-    skip: true,
+  // Use custom hook to fetch projects and compute current team ID
+  const { userProjects, currentTeamId } = useTimeKeeperData();
+
+  // Query for rates based on currentTeamId
+  const { data: newRatesData } = useQuery(RATES_QUERY, {
+    variables: { teamId: currentTeamId! },
+    skip: !currentTeamId,
   });
-  const { data: userProjectsData } = useQuery<UserProjectsQueryData>(
-    USER_PROJECTS_QUERY,
-    {
-      skip: !loggedInUser,
-    }
-  );
+
+  // Query for total time spent on the selected project
+  const loggedInUser = currentUserVar();
   const {
     data: totalTimeData,
     loading: totalTimeLoading,
     error: totalTimeError,
-  } = useQuery<TotalTimeData>(TOTAL_TIME_QUERY, {
+    refetch,
+  } = useQuery(TOTAL_TIME_QUERY, {
     variables: {
       userId: loggedInUser ? parseFloat(loggedInUser.id) : 0,
       projectId: selectedProject || "",
@@ -4427,86 +4225,33 @@ const TimeKeeper: React.FC = () => {
     skip: !loggedInUser || !selectedProject,
   });
 
+  // Mutation for creating a new time entry
   const [createTime] = useMutation(CREATE_TIME_MUTATION);
 
-  useEffect(() => {
-    if (projectsData) {
-      setProjects(projectsData.projects);
-    }
-  }, [projectsData, setProjects]);
-
-  useEffect(() => {
-    if (ratesData) {
-      setRates(ratesData.rates);
-    }
-  }, [ratesData, setRates]);
-
-  useEffect(() => {
-    if (userProjectsData && loggedInUser) {
-      const user = userProjectsData.users.find((u) => u.id === loggedInUser.id);
-      if (user) {
-        const projectsList: UserProject[] = user.teams.flatMap((team) =>
-          team.projects.map((project) => ({
-            id: project.id,
-            name: project.name,
-            teamName: team.name,
-          }))
-        );
-        setUserProjects(projectsList);
-      }
-    }
-  }, [userProjectsData, loggedInUser]);
-
-  useEffect(() => {
-    if (selectedProject && projectsData) {
-      const project = projectsData.projects.find(
-        (p) => p.id === selectedProject
-      );
-      if (project) {
-        setTeamId(project.teamId);
-      }
-    }
-  }, [selectedProject, projectsData, setTeamId]);
-
-  const [currentTeamId, setCurrentTeamId] = useState<string | undefined>(
-    undefined
-  );
-  useEffect(() => {
-    if (projectsData && selectedProject) {
-      const project = projectsData.projects.find(
-        (p) => p.id === selectedProject
-      );
-      if (project && project.teamId !== currentTeamId) {
-        setCurrentTeamId(project.teamId);
-      }
-    }
-  }, [selectedProject, projectsData, currentTeamId]);
-
-  const { data: newRatesData } = useQuery<RatesQueryData>(RATES_QUERY, {
-    variables: { teamId: currentTeamId! },
-    skip: !currentTeamId,
-  });
-  useEffect(() => {
-    if (newRatesData) {
-      setRates(newRatesData.rates);
-    }
-  }, [newRatesData, setRates]);
+  const [submissionSuccess, setSubmissionSuccess] = useState(false);
+  const [submissionError, setSubmissionError] = useState("");
+  const [dateAlertMessage, setDateAlertMessage] = useState<string | null>(null);
+  const [resetMessage, setResetMessage] = useState(false);
 
   const handleDateChange = (date: Date | null): void => {
     const now = new Date();
     if (date) {
       if (date > now) {
         setDateAlertMessage("Please select a current or past date/time.");
-        setTimeout(() => setDateAlertMessage(null), 1000);
+        setTimeout(() => setDateAlertMessage(null), 3000);
       } else {
         setStartTime(date);
       }
     }
   };
 
-  const handleSubmit = async (
-    e: React.FormEvent<HTMLFormElement>
-  ): Promise<void> => {
+  const handleReset = () => {
+    reset(); // This comes from useTimer hook
+    setResetMessage(true);
+    setTimeout(() => setResetMessage(false), 2000);
+  };
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!startTime || !selectedProject || !loggedInUser || !selectedRate) {
       console.error("Missing required data for time entry.");
@@ -4527,14 +4272,20 @@ const TimeKeeper: React.FC = () => {
       setSubmissionSuccess(true);
       setSubmissionError("");
       setTimeout(() => setSubmissionSuccess(false), 2000);
-    } catch (error: unknown) {
-      if (error instanceof Error) {
+    } catch (error) {
+      if (error instanceof ApolloError) {
         setSubmissionError("Error with time entry: " + error.message);
       } else {
         setSubmissionError("An unexpected error occurred.");
       }
     }
   };
+
+  useEffect(() => {
+    if (selectedProject) {
+      refetch();
+    }
+  }, [selectedProject, refetch]);
 
   return (
     <>
@@ -4543,7 +4294,7 @@ const TimeKeeper: React.FC = () => {
         <FeedbackMessages
           submissionSuccess={submissionSuccess}
           submissionError={submissionError}
-          resetMessage={false}
+          resetMessage={resetMessage}
           dateAlertMessage={dateAlertMessage}
         />
         <TimerDisplay
@@ -4556,7 +4307,7 @@ const TimeKeeper: React.FC = () => {
         <TimerControls
           isRunning={isRunning}
           handleStartStop={isRunning ? pause : start}
-          handleReset={reset}
+          handleReset={handleReset}
           handleSubmit={handleSubmit}
           disabledStartPause={!selectedProject || !selectedRate}
           disabledReset={!startTime}
@@ -4697,6 +4448,192 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+// ====== FILE: src/app/components/Admin/UserRoleSelect.tsx ======
+
+"use client";
+import React from "react";
+
+export enum UserRole {
+  ADMIN = "ADMIN",
+  ENABLER = "ENABLER",
+  COLLABORATOR = "COLLABORATOR",
+  PENDING = "PENDING",
+}
+
+interface UserRoleSelectProps {
+  currentRole: UserRole;
+  onRoleChange: (newRole: UserRole) => void;
+}
+
+const UserRoleSelect: React.FC<UserRoleSelectProps> = ({
+  currentRole,
+  onRoleChange,
+}) => {
+  return (
+    <select
+      value={currentRole}
+      onChange={(e) => onRoleChange(e.target.value as UserRole)}
+    >
+      {Object.values(UserRole).map((role) => (
+        <option key={role} value={role}>
+          {role}
+        </option>
+      ))}
+    </select>
+  );
+};
+
+export default UserRoleSelect;
+
+// ====== FILE: src/app/components/Admin/UserRow.tsx ======
+
+"use client";
+import React from "react";
+import UserRoleSelect, { UserRole } from "./UserRoleSelect";
+
+export interface Team {
+  id: string;
+  name: string;
+}
+
+export interface User {
+  id: number;
+  email: string;
+  role: UserRole;
+  teams: Team[];
+}
+
+interface UserRowProps {
+  user: User;
+  teams: Team[];
+  onTeamSelect: (userId: number, teamId: string) => void;
+  onAddToTeam: (userId: number) => void;
+  onRemoveFromTeam: (userId: number, teamId: string) => void;
+  onRoleChange: (userId: number, newRole: UserRole) => void;
+}
+
+const UserRow: React.FC<UserRowProps> = ({
+  user,
+  teams,
+  onTeamSelect,
+  onAddToTeam,
+  onRemoveFromTeam,
+  onRoleChange,
+}) => {
+  return (
+    <tr>
+      <td className="px-6 py-4 whitespace-nowrap border-b border-gray-200 shadow-md">
+        {user.email}
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap border-b border-gray-200 shadow-md">
+        {/* Inline team select (skipping separate TeamSelect file) */}
+        <select onChange={(e) => onTeamSelect(user.id, e.target.value)}>
+          <option value="">Select team...</option>
+          {teams.map((team) => (
+            <option key={team.id} value={team.id}>
+              {team.name}
+            </option>
+          ))}
+        </select>
+        <button
+          className="ml-20 bg-black hover:bg-green-700 text-white font-bold py-1 px-2 rounded"
+          onClick={() => onAddToTeam(user.id)}
+        >
+          Add to Team
+        </button>
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap border-b border-gray-200 shadow-md">
+        {user.teams && user.teams.length > 0 ? (
+          <ul className="list-disc list-inside space-y-2">
+            {user.teams.map((team) => (
+              <li
+                key={team.id}
+                className="flex items-center justify-between border-b border-gray-200"
+              >
+                {team.name}
+                <button
+                  onClick={() => onRemoveFromTeam(user.id, team.id)}
+                  className="ml-4 bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded border-b border-gray-200"
+                >
+                  Remove
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p>No teams assigned</p>
+        )}
+      </td>
+      <td className="border-b border-gray-200 shadow-md">
+        <UserRoleSelect
+          currentRole={user.role}
+          onRoleChange={(newRole) => onRoleChange(user.id, newRole)}
+        />
+      </td>
+    </tr>
+  );
+};
+
+export default UserRow;
+
+// ====== FILE: src/app/components/Admin/UserTable.tsx ======
+
+"use client";
+import React from "react";
+import UserRow, { User, Team } from "./UserRow";
+
+interface UserTableProps {
+  users: User[];
+  teams: Team[];
+  onTeamSelect: (userId: number, teamId: string) => void;
+  onAddToTeam: (userId: number) => void;
+  onRemoveFromTeam: (userId: number, teamId: string) => void;
+  onRoleChange: (userId: number, newRole: string) => void;
+}
+
+const UserTable: React.FC<UserTableProps> = ({
+  users,
+  teams,
+  onTeamSelect,
+  onAddToTeam,
+  onRemoveFromTeam,
+  onRoleChange,
+}) => (
+  <table className="min-w-full table-auto">
+    <thead className="bg-black">
+      <tr>
+        <th className="px-6 py-3 text-left text-lg font-medium text-white uppercase tracking-wider">
+          User
+        </th>
+        <th className="px-6 py-3 text-left text-lg font-medium text-white uppercase tracking-wider">
+          Teams
+        </th>
+        <th className="px-6 py-3 text-left text-lg font-medium text-white uppercase tracking-wider">
+          Assigned
+        </th>
+        <th className="px-6 py-3 text-left text-lg font-medium text-white uppercase tracking-wider">
+          Role
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      {users.map((user) => (
+        <UserRow
+          key={user.id}
+          user={user}
+          teams={teams}
+          onTeamSelect={onTeamSelect}
+          onAddToTeam={onAddToTeam}
+          onRemoveFromTeam={onRemoveFromTeam}
+          onRoleChange={onRoleChange}
+        />
+      ))}
+    </tbody>
+  </table>
+);
+
+export default UserTable;
 
 // ====== FILE: src/app/components/ui/background-beams.tsx ======
 
