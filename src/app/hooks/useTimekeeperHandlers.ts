@@ -13,6 +13,7 @@ interface HandlersConfig {
   showSuccessMessage: () => void;
   setSubmissionError: (error: string) => void;
   showDateAlert: (message: string) => void;
+  showResetMessage: () => void;
 }
 
 export const useTimeKeeperHandlers = ({
@@ -24,6 +25,7 @@ export const useTimeKeeperHandlers = ({
   showSuccessMessage,
   setSubmissionError,
   showDateAlert,
+  showResetMessage,
 }: HandlersConfig) => {
   const handleDateChange = (date: Date | null): void => {
     const now = new Date();
@@ -67,8 +69,14 @@ export const useTimeKeeperHandlers = ({
     }
   };
 
+  const handleReset = () => {
+    timerState.reset();
+    showResetMessage();
+  };
+
   return {
     handleDateChange,
     handleSubmit,
+    handleReset,
   };
 };

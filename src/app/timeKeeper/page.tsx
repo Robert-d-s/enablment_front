@@ -35,14 +35,16 @@ const TimeKeeper: React.FC = () => {
     loggedInUser?.id || ""
   );
 
-  const { handleDateChange, handleSubmit } = useTimeKeeperHandlers({
-    timerState,
-    selectedProject,
-    selectedRate,
-    userId: loggedInUser?.id || "",
-    createTimeEntry,
-    ...feedbackState.actions,
-  });
+  const { handleDateChange, handleSubmit, handleReset } = useTimeKeeperHandlers(
+    {
+      timerState,
+      selectedProject,
+      selectedRate,
+      userId: loggedInUser?.id || "",
+      createTimeEntry,
+      ...feedbackState.actions,
+    }
+  );
 
   useEffect(() => {
     if (selectedProject) {
@@ -65,7 +67,8 @@ const TimeKeeper: React.FC = () => {
           handleStartStop={
             timerState.isRunning ? timerState.pause : timerState.start
           }
-          handleReset={timerState.reset}
+          // handleReset={timerState.reset}
+          handleReset={handleReset}
           handleSubmit={handleSubmit}
           disabledStartPause={!selectedProject || !selectedRate}
           disabledReset={!timerState.startTime}
