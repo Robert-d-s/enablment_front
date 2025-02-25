@@ -15,7 +15,6 @@ interface SectionProps {
   zIndex: number;
   videoSrc?: string;
   isContactFormActive: boolean;
-  // children?: React.ReactNode;
 }
 
 const getSectionVariants = (isContactFormActive: boolean) => ({
@@ -76,15 +75,13 @@ const Section: React.FC<SectionProps> = ({
     controls.start(isActive ? "active" : "inactive");
   }, [isActive, controls, isContactFormActive]);
 
-  const videoSrcConditional = isActive ? videoSrc : "";
-
   return (
     <motion.div
       layoutId={id}
       variants={sectionVariants}
       initial="initial"
       animate={controls}
-      exit="inactive"
+      exit="exit"
       transition={{ duration: 0.5, type: "easeOut" }}
       className={`section border-2 border-green-600 rounded-tl-3xl rounded-tr-3xl shadow-lg ${color} responsive-section`}
       style={{

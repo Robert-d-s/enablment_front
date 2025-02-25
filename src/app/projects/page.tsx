@@ -1,8 +1,14 @@
 "use client";
 import React, { useState, useEffect, FC } from "react";
 
+interface Project {
+  id: string;
+  name: string;
+  teamId: string;
+}
+
 const Projects: FC = () => {
-  const [projects, setProjects] = useState<any[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
 
   useEffect(() => {
     const fetchProjects = async () => {
@@ -42,10 +48,12 @@ const Projects: FC = () => {
         } else {
           alert("An unexpected error occurred.");
         }
-      } catch (error: any) {
-        alert(
-          `Network error: ${error.message || "Cannot connect to the server."}`
-        );
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : "Cannot connect to the server.";
+        alert(`Network error: ${errorMessage}`);
       }
     };
 
