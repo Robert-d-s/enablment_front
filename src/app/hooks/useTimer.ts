@@ -1,87 +1,132 @@
 import { useState, useEffect, useRef } from "react";
-import { differenceInSeconds, format } from "date-fns";
+import { differenceInMilliseconds, format } from "date-fns";
 import type { TimerState } from "../types";
 
 export const useTimer = (): TimerState & {
   initialStartTime: Date | null;
   elapsedBeforePause: number;
+  pauseTimes: Date[];
+  resumeTimes: Date[];
 } => {
   const [isRunning, setIsRunning] = useState<boolean>(false);
   const [initialStartTime, setInitialStartTime] = useState<Date | null>(null);
   const [currentStartTime, setCurrentStartTime] = useState<Date | null>(null);
   const [elapsedBeforePause, setElapsedBeforePause] = useState<number>(0);
   const [displayTime, setDisplayTime] = useState<string>("00:00:00");
+  const [pauseTimes, setPauseTimes] = useState<Date[]>([]);
+  const [resumeTimes, setResumeTimes] = useState<Date[]>([]);
   const timerRef = useRef<number | null>(null);
 
-  const updateDisplay = () => {
-    if (!currentStartTime) return;
+  const calculateElapsedTime = (): number => {
     const now = new Date();
-    const elapsedSeconds =
-      elapsedBeforePause + differenceInSeconds(now, currentStartTime);
+
+    // If timer has never started, return 0
+    if (!initialStartTime) {
+      return 0;
+    }
+
+    // Calculate total elapsed time since initial start
+    let totalActiveTime = 0;
+
+    // Add time from first segment (initial start to first pause, or now if no pauses)
+    const firstPauseTime =
+      pauseTimes.length > 0 ? pauseTimes[0] : isRunning ? now : null;
+    if (firstPauseTime) {
+      totalActiveTime += differenceInMilliseconds(
+        firstPauseTime,
+        initialStartTime
+      );
+    }
+
+    // Add time from all resume-pause segments
+    for (let i = 0; i < resumeTimes.length; i++) {
+      const resumeTime = resumeTimes[i];
+      // The end of this segment is either the next pause or now (if currently running)
+      const endTime =
+        i < pauseTimes.length - 1
+          ? pauseTimes[i + 1]
+          : isRunning && i === pauseTimes.length - 1
+          ? now
+          : null;
+
+      if (endTime) {
+        totalActiveTime += differenceInMilliseconds(endTime, resumeTime);
+      }
+    }
+
+    console.log("Total active time calculated:", totalActiveTime);
+    return Math.max(totalActiveTime, 0);
+  };
+
+  const updateDisplay = () => {
+    const elapsedMs = calculateElapsedTime();
+    // Convert milliseconds to seconds for formatting
+    const elapsedSeconds = Math.floor(elapsedMs / 1000);
+
+    // Format time as HH:MM:SS
     const formattedTime = format(
       new Date(0, 0, 0, 0, 0, elapsedSeconds),
       "HH:mm:ss"
     );
+
     console.log(
-      "Updating display. Elapsed seconds:",
-      elapsedSeconds,
+      "Updating display. Elapsed ms:",
+      elapsedMs,
       "Formatted time:",
       formattedTime
     );
+
     setDisplayTime(formattedTime);
   };
 
   useEffect(() => {
-    if (isRunning && currentStartTime) {
+    if (isRunning) {
       console.log("Timer started, setting interval");
+      updateDisplay(); // Immediate update
       timerRef.current = window.setInterval(updateDisplay, 1000);
     } else if (!isRunning && timerRef.current) {
       console.log("Timer paused or stopped, clearing interval");
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
+
     return () => {
       if (timerRef.current) {
         clearInterval(timerRef.current);
         console.log("Cleaning up interval");
       }
     };
-  }, [isRunning, currentStartTime, elapsedBeforePause]);
+  }, [isRunning, currentStartTime, pauseTimes, resumeTimes]);
 
   const start = () => {
     const now = new Date();
+
     if (!initialStartTime) {
+      // First start
       console.log("Timer starting at:", now);
       setInitialStartTime(now);
       setCurrentStartTime(now);
     } else if (!isRunning) {
-      console.log(
-        "Resuming timer; initialStartTime remains:",
-        initialStartTime,
-        "New currentStartTime:",
-        now
-      );
+      // Resume after pause
+      console.log("Resuming timer at:", now);
       setCurrentStartTime(now);
+      // Record resume time
+      setResumeTimes((prev) => [...prev, now]);
     }
+
     setIsRunning(true);
   };
 
   const pause = () => {
-    if (isRunning && currentStartTime) {
+    if (isRunning) {
       const now = new Date();
-      const elapsed = differenceInSeconds(now, currentStartTime);
-      console.log("Pausing timer. Elapsed this run:", elapsed, "seconds");
-      setElapsedBeforePause((prev) => {
-        const newTotal = prev + elapsed;
-        console.log(
-          "Total elapsedBeforePause updated to:",
-          newTotal,
-          "seconds"
-        );
-        return newTotal;
-      });
+      console.log("Pausing timer at:", now);
+
+      // Record pause time
+      setPauseTimes((prev) => [...prev, now]);
+
+      setIsRunning(false);
     }
-    setIsRunning(false);
   };
 
   const reset = () => {
@@ -91,6 +136,8 @@ export const useTimer = (): TimerState & {
     setCurrentStartTime(null);
     setElapsedBeforePause(0);
     setDisplayTime("00:00:00");
+    setPauseTimes([]);
+    setResumeTimes([]);
   };
 
   return {
@@ -101,12 +148,16 @@ export const useTimer = (): TimerState & {
     pause,
     reset,
     setStartTime: (date: Date | null) => {
-      setCurrentStartTime(date);
-      if (!initialStartTime) {
-        setInitialStartTime(date);
+      if (date) {
+        setCurrentStartTime(date);
+        if (!initialStartTime) {
+          setInitialStartTime(date);
+        }
       }
     },
     initialStartTime,
-    elapsedBeforePause, // <-- Now returning this property
+    elapsedBeforePause,
+    pauseTimes,
+    resumeTimes,
   };
 };
