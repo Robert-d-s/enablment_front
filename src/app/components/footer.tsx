@@ -2,7 +2,7 @@
 import React from "react";
 import Image from "next/image";
 
-const FooterComponent: React.FC = () => {
+const Footer: React.FC = () => {
   return (
     <div className="flex justify-between px-4 bg-gray-100 text-sm text-gray-600 mb-2">
       <div className="mt-4 w-1/2">
@@ -67,4 +67,4 @@ const FooterComponent: React.FC = () => {
   );
 };
 
-export default FooterComponent;
+export default Footer;

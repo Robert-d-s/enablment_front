@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useQuery } from "@apollo/client";
 import gql from "graphql-tag";
-import { currentUserVar } from "../lib/apolloClient";
+import { currentUserVar } from "@/app/lib/apolloClient";
 
 const GET_DROPDOWN_OPTIONS = gql`
   query {

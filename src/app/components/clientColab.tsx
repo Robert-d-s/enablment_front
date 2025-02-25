@@ -31,7 +31,7 @@ const tableData: ClientServiceData[] = [
   { client: "H5", year: 2024, services: "Website" },
 ];
 
-const ServiceTable: React.FC<ServiceTableProps> = ({ onContactClick }) => {
+const ClientColab: React.FC<ServiceTableProps> = ({ onContactClick }) => {
   return (
     <div className="flex flex-col mx-2 z-10">
       <p className="text-3xl font-semibold mb-2 text-center bg-white shadow rounded-lg sm:text-2xl">
@@ -60,4 +60,4 @@ const ServiceTable: React.FC<ServiceTableProps> = ({ onContactClick }) => {
   );
 };
 
-export default ServiceTable;
+export default ClientColab;

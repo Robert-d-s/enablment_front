@@ -22,7 +22,7 @@ const NavigationBar: React.FC = () => {
         />
       </Link>
       <div className="flex-grow font-semibold text-lg mx-4 flex items-center justify-center">
-        <Link href="/issues" className="mr-4">
+        <Link href="/issuesPage" className="mr-4">
           Issues
         </Link>
         <Link href="/adminPage" className="mr-4">

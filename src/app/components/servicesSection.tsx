@@ -114,7 +114,7 @@ const formatText = (text: string, maxLength: number): JSX.Element[] => {
 
   return formattedLines;
 };
-const ServicesComponent: React.FC = () => {
+const ServicesSection: React.FC = () => {
   return (
     <div className="space-y-8 p-4 sm:p-6">
       <h2 className="text-3xl font-pt-sans-bold-900 mb-4">Services</h2>
@@ -188,4 +188,4 @@ const ServicesComponent: React.FC = () => {
   );
 };
 
-export default ServicesComponent;
+export default ServicesSection;

@@ -4,12 +4,12 @@ import React from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import type { NextPage } from "next";
 import { useState, useEffect } from "react";
-import Navbar from "@/app/nav/page";
-import Section from "@/app/section/page";
+import NavBar from "@/app/components/navBar";
+import SectionWrapper from "@/app/components/sectionWrapper";
 import { BackgroundBeams } from "@/app/components/ui/background-beams";
-import ContactForm from "@/app/contact/page";
-import ServiceTable from "@/app/table/page";
-import FooterComponent from "@/app/footer/page";
+import ContactForm from "@/app/components/contactForm";
+import ClientColab from "@/app/components/clientColab";
+import Footer from "@/app/components/footer";
 
 const Home: NextPage = () => {
   const sections = [
@@ -87,7 +87,7 @@ const Home: NextPage = () => {
     <>
       <BackgroundBeams />
       <div className="relative overflow-hidden" style={{ minHeight: "100vh" }}>
-        <Navbar
+        <NavBar
           sections={sections}
           setActiveSection={setActiveSection}
           activeSection={activeSection}
@@ -119,7 +119,7 @@ const Home: NextPage = () => {
             <div className="flex pt-6">
               {activeSection === "Home" && (
                 <div className="flex justify-center items-start client-table">
-                  <ServiceTable
+                  <ClientColab
                     onContactClick={() => setActiveSection("Contact")}
                   />
                 </div>
@@ -139,7 +139,7 @@ const Home: NextPage = () => {
                   }
 
                   return (
-                    <Section
+                    <SectionWrapper
                       key={section}
                       id={section}
                       content={section}
@@ -159,7 +159,7 @@ const Home: NextPage = () => {
           </AnimatePresence>
         </div>
       </div>
-      <FooterComponent />
+      <Footer />
     </>
   );
 };

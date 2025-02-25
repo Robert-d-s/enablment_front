@@ -68,7 +68,7 @@ const formatText = (text: string, maxLength: number) => {
 };
 
 // Your AboutComponent, modified to render formatted text
-const AboutComponent: React.FC = () => {
+const AboutSection: React.FC = () => {
   return (
     <div className="space-y-8 p-6">
       <h2 className="text-3xl mb-4 font-pt-sans-bold-900">About Enablment</h2>
@@ -150,4 +150,4 @@ const AboutComponent: React.FC = () => {
   );
 };
 
-export default AboutComponent;
+export default AboutSection;

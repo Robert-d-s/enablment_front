@@ -11,10 +11,10 @@ import {
   ADD_USER_TO_TEAM,
   REMOVE_USER_FROM_TEAM,
 } from "@/app/graphql/adminOperations";
-import TotalTimeSpent from "../time/page";
+import TotalTimeSpent from "@/app/components/Admin/totalTimeSpent";
 import RatesManager from "@/app/components/Admin/ratesManager";
-import InvoiceDashboard from "../invoice/page";
-import TeamSyncAndFetch from "../teamSync/page";
+import InvoiceSummary from "@/app/components/Admin/invoiceSummary";
+import TeamSync from "@/app/components/Admin/teamSynch";
 
 const AdminPage: React.FC = () => {
   const [users, setUsers] = useState([]);
@@ -118,10 +118,10 @@ const AdminPage: React.FC = () => {
             <RatesManager />
           </div>
           <div className="shadow-md">
-            <InvoiceDashboard />
+            <InvoiceSummary />
           </div>
           <div className="mt-3 float-right">
-            <TeamSyncAndFetch />
+            <TeamSync />
           </div>
         </div>
       </div>

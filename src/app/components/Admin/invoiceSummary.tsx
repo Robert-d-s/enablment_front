@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useQuery } from "@apollo/client";
 import gql from "graphql-tag";
-import ProjectSelector from "../components/ProjectSelector";
+import ProjectSelector from "../ProjectSelector";
 
 interface Rate {
   rateId: string;
@@ -67,7 +67,7 @@ const GET_INVOICE_FOR_PROJECT = gql`
   }
 `;
 
-const InvoiceDashboard: React.FC = () => {
+const InvoiceSummary: React.FC = () => {
   const [selectedProject, setSelectedProject] = useState<string>("");
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
@@ -236,4 +236,4 @@ const InvoiceDashboard: React.FC = () => {
   );
 };
 
-export default InvoiceDashboard;
+export default InvoiceSummary;

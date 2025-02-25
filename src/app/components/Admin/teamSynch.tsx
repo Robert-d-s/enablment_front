@@ -2,7 +2,7 @@
 
 import React, { useEffect } from "react";
 
-const TeamSyncAndFetch: React.FC = () => {
+const TeamSync: React.FC = () => {
   // const [teams, setTeams] = useState<Team[]>([]);
 
   const syncTeams = async () => {
@@ -65,4 +65,4 @@ const TeamSyncAndFetch: React.FC = () => {
   );
 };
 
-export default TeamSyncAndFetch;
+export default TeamSync;

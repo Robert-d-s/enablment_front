@@ -360,12 +360,12 @@ import React from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import type { NextPage } from "next";
 import { useState, useEffect } from "react";
-import Navbar from "@/app/nav/page";
-import Section from "@/app/section/page";
+import NavBar from "@/app/components/navBar";
+import SectionWrapper from "@/app/components/sectionWrapper";
 import { BackgroundBeams } from "@/app/components/ui/background-beams";
-import ContactForm from "@/app/contact/page";
-import ServiceTable from "@/app/table/page";
-import FooterComponent from "@/app/footer/page";
+import ContactForm from "@/app/components/contactForm";
+import ClientColab from "@/app/components/clientColab";
+import Footer from "@/app/components/footer";
 
 const Home: NextPage = () => {
   const sections = [
@@ -443,7 +443,7 @@ const Home: NextPage = () => {
     <>
       <BackgroundBeams />
       <div className="relative overflow-hidden" style={{ minHeight: "100vh" }}>
-        <Navbar
+        <NavBar
           sections={sections}
           setActiveSection={setActiveSection}
           activeSection={activeSection}
@@ -475,7 +475,7 @@ const Home: NextPage = () => {
             <div className="flex pt-6">
               {activeSection === "Home" && (
                 <div className="flex justify-center items-start client-table">
-                  <ServiceTable
+                  <ClientColab
                     onContactClick={() => setActiveSection("Contact")}
                   />
                 </div>
@@ -495,7 +495,7 @@ const Home: NextPage = () => {
                   }
 
                   return (
-                    <Section
+                    <SectionWrapper
                       key={section}
                       id={section}
                       content={section}
@@ -515,7 +515,7 @@ const Home: NextPage = () => {
           </AnimatePresence>
         </div>
       </div>
-      <FooterComponent />
+      <Footer />
     </>
   );
 };
@@ -578,162 +578,6 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-// ====== FILE: src/app/about/page.tsx ======
-
-import React from "react";
-
-interface IDefinition {
-  term: string;
-  description: string;
-}
-
-interface IAboutContent {
-  definitions: IDefinition[];
-  transparency: string[];
-  organization: string[];
-}
-
-const aboutContent: IAboutContent = {
-  definitions: [
-    {
-      term: "Collaborator",
-      description:
-        "Is a client company, who is subject to a collaboration with Enablment.",
-    },
-    {
-      term: "Enabler",
-      description:
-        "Conventionally known as a consultant, but we enable Collaborators. We exist because we are Enablers who love to devise and create delightful technical solutions with Collaborators.",
-    },
-  ],
-  transparency: [
-    "We demystify the conventional consultancy-client relationship.",
-    "We want transparency. In the sense that we have structurally implemented it in our professional relationship with Collaborators.",
-    "We want to communicate openly with Collaborators whether an Enabler is experienced in the given tech or needs to learn new components.",
-    "Consequently, we deploy varied rates for varied tasks, supported by a decision tree and a detailed invoice report.",
-  ],
-  organization: [
-    "We place decision-making where it is due.",
-    "Enablment is expanding on the idea of a flat hierarchy and is transitioning towards an organization with distributed leadership.",
-    "We have a passion for rethinking and refining processes, why we deploy slim and execution-oriented project teams. That means we have redefined the project manager as a role that is shared by Collaborators and Enablers, but it is structured by a system landscape.",
-    "We have added what we call work groups. These are diverse groups of Enablers which only exist to support each other in their decision-making.",
-    "At Enablement, everyone is passionate about digitization and capable to execute on it.",
-  ],
-};
-
-// Function to insert line breaks in text to ensure each line does not exceed the max length
-const formatText = (text: string, maxLength: number) => {
-  const words = text.split(" ");
-  const formattedLines: React.ReactNode[] = [];
-  let currentLine = "";
-
-  words.forEach((word, index) => {
-    if ((currentLine + word).length > maxLength) {
-      formattedLines.push(
-        <span key={index}>
-          {currentLine.trim()}
-          <br />
-        </span>
-      );
-      currentLine = word + " ";
-    } else {
-      currentLine += word + " ";
-    }
-  });
-
-  // Add the last line
-  if (currentLine) {
-    formattedLines.push(<span key={words.length}>{currentLine.trim()}</span>);
-  }
-
-  return formattedLines;
-};
-
-// Your AboutComponent, modified to render formatted text
-const AboutComponent: React.FC = () => {
-  return (
-    <div className="space-y-8 p-6">
-      <h2 className="text-3xl mb-4 font-pt-sans-bold-900">About Enablment</h2>
-      <div style={{ maxHeight: "calc(100vh - 300px)", overflowY: "auto" }}>
-        <section className="pb-4">
-          <h3 className="text-2xl font-semibold mb-2">Definitions</h3>
-          {aboutContent.definitions.map((def, index) => (
-            <div key={index} className="mb-3">
-              <p style={{ lineHeight: "1.4" }} className="text-lg">
-                <span className="font-bold">{def.term}:</span>{" "}
-                {/* {formatText(def.description, 75)} */}
-                {def.description}
-              </p>
-            </div>
-          ))}
-        </section>
-
-        <section className="flex flex-col md:flex-row space-y-4 gap-4">
-          <div className="md:w-1/2">
-            <h3 className="text-2xl font-semibold mb-2">Transparency</h3>
-            {aboutContent.transparency.map((item, index) => (
-              <div key={index} className="mb-3">
-                {/* <p className="text-lg font-roboto">{formatText(item, 75)}</p> */}
-                <p
-                  style={{ lineHeight: "1.4" }}
-                  className="text-lg font-roboto"
-                >
-                  {item}
-                </p>
-              </div>
-            ))}
-          </div>
-          <div className="md:w-1/2 flex justify-center shadow-md">
-            <video
-              className="rounded-lg lazy h-full w-full object-cover"
-              autoPlay
-              loop
-              muted
-              playsInline
-              preload="metadata"
-            >
-              <source src="/video/transparancy.mp4" type="video/mp4" />
-              Your browser does not support the video tag.
-            </video>
-          </div>
-        </section>
-
-        <section className="flex flex-col md:flex-row-reverse mt-6 gap-4">
-          <div className="md:w-1/2 mt-6">
-            <h3 className="text-2xl font-semibold mb-2">Organization</h3>
-            {aboutContent.organization.map((item, index) => (
-              <div key={index} className="mb-3">
-                {/* <p className="text-lg font-roboto">{formatText(item, 75)}</p> */}
-                <p
-                  style={{ lineHeight: "1.4" }}
-                  className="text-lg font-roboto"
-                >
-                  {item}
-                </p>
-              </div>
-            ))}
-          </div>
-          <div className="md:w-1/2 flex justify-center">
-            <video
-              className="rounded-lg lazy h-full w-full object-cover"
-              autoPlay
-              loop
-              muted
-              playsInline
-              preload="metadata"
-            >
-              <source src="/video/meeting.mp4" type="video/mp4" />
-              Your browser does not support the video tag.
-            </video>
-          </div>
-        </section>
-      </div>
-    </div>
-  );
-};
-
-export default AboutComponent;
-
 // ====== FILE: src/app/adminPage/page.tsx ======
 
 "use client";
@@ -749,10 +593,10 @@ import {
   ADD_USER_TO_TEAM,
   REMOVE_USER_FROM_TEAM,
 } from "@/app/graphql/adminOperations";
-import TotalTimeSpent from "../time/page";
-import RatesManager from "../ratesManager/page";
-import InvoiceDashboard from "../invoice/page";
-import TeamSyncAndFetch from "../teamSync/page";
+import TotalTimeSpent from "@/app/components/Admin/totalTimeSpent";
+import RatesManager from "@/app/components/Admin/ratesManager";
+import InvoiceSummary from "@/app/components/Admin/invoiceSummary";
+import TeamSync from "@/app/components/Admin/teamSynch";
 
 const AdminPage: React.FC = () => {
   const [users, setUsers] = useState([]);
@@ -856,10 +700,10 @@ const AdminPage: React.FC = () => {
             <RatesManager />
           </div>
           <div className="shadow-md">
-            <InvoiceDashboard />
+            <InvoiceSummary />
           </div>
           <div className="mt-3 float-right">
-            <TeamSyncAndFetch />
+            <TeamSync />
           </div>
         </div>
       </div>
@@ -941,7 +785,7 @@ const NavigationBar: React.FC = () => {
         />
       </Link>
       <div className="flex-grow font-semibold text-lg mx-4 flex items-center justify-center">
-        <Link href="/issues" className="mr-4">
+        <Link href="/issuesPage" className="mr-4">
           Issues
         </Link>
         <Link href="/adminPage" className="mr-4">
@@ -1297,49 +1141,229 @@ const UserSelector: React.FC<{
 };
 export default UserSelector;
 
-// ====== FILE: src/app/components/contentWrapper.tsx ======
+// ====== FILE: src/app/components/aboutSection.tsx ======
 
-"use client";
+import React from "react";
 
-import { motion, useAnimation } from "framer-motion";
-import React, { useEffect, PropsWithChildren } from "react";
-
-interface ContentWrapperProps {
-  isActive: boolean;
+interface IDefinition {
+  term: string;
+  description: string;
 }
 
-export const ContentWrapper: React.FC<
-  PropsWithChildren<ContentWrapperProps>
-> = ({ isActive, children }) => {
-  const controls = useAnimation();
+interface IAboutContent {
+  definitions: IDefinition[];
+  transparency: string[];
+  organization: string[];
+}
 
-  useEffect(() => {
-    controls.start(isActive ? "visible" : "hidden");
-  }, [isActive, controls]);
-
-  const contentVariants = {
-    visible: {
-      opacity: 1,
-      maxHeight: "1000px", // Adjust as needed
-      overflow: "hidden",
-      transition: { duration: 0.5 },
+const aboutContent: IAboutContent = {
+  definitions: [
+    {
+      term: "Collaborator",
+      description:
+        "Is a client company, who is subject to a collaboration with Enablment.",
     },
-    hidden: {
-      opacity: 0,
-      maxHeight: 0, // Collapse content area when hidden
-      overflow: "hidden",
-      transition: { duration: 0.5 },
+    {
+      term: "Enabler",
+      description:
+        "Conventionally known as a consultant, but we enable Collaborators. We exist because we are Enablers who love to devise and create delightful technical solutions with Collaborators.",
     },
-  };
+  ],
+  transparency: [
+    "We demystify the conventional consultancy-client relationship.",
+    "We want transparency. In the sense that we have structurally implemented it in our professional relationship with Collaborators.",
+    "We want to communicate openly with Collaborators whether an Enabler is experienced in the given tech or needs to learn new components.",
+    "Consequently, we deploy varied rates for varied tasks, supported by a decision tree and a detailed invoice report.",
+  ],
+  organization: [
+    "We place decision-making where it is due.",
+    "Enablment is expanding on the idea of a flat hierarchy and is transitioning towards an organization with distributed leadership.",
+    "We have a passion for rethinking and refining processes, why we deploy slim and execution-oriented project teams. That means we have redefined the project manager as a role that is shared by Collaborators and Enablers, but it is structured by a system landscape.",
+    "We have added what we call work groups. These are diverse groups of Enablers which only exist to support each other in their decision-making.",
+    "At Enablement, everyone is passionate about digitization and capable to execute on it.",
+  ],
+};
 
+// Function to insert line breaks in text to ensure each line does not exceed the max length
+const formatText = (text: string, maxLength: number) => {
+  const words = text.split(" ");
+  const formattedLines: React.ReactNode[] = [];
+  let currentLine = "";
+
+  words.forEach((word, index) => {
+    if ((currentLine + word).length > maxLength) {
+      formattedLines.push(
+        <span key={index}>
+          {currentLine.trim()}
+          <br />
+        </span>
+      );
+      currentLine = word + " ";
+    } else {
+      currentLine += word + " ";
+    }
+  });
+
+  // Add the last line
+  if (currentLine) {
+    formattedLines.push(<span key={words.length}>{currentLine.trim()}</span>);
+  }
+
+  return formattedLines;
+};
+
+// Your AboutComponent, modified to render formatted text
+const AboutSection: React.FC = () => {
   return (
-    <motion.div variants={contentVariants} animate={controls} initial="hidden">
-      {children}
-    </motion.div>
+    <div className="space-y-8 p-6">
+      <h2 className="text-3xl mb-4 font-pt-sans-bold-900">About Enablment</h2>
+      <div style={{ maxHeight: "calc(100vh - 300px)", overflowY: "auto" }}>
+        <section className="pb-4">
+          <h3 className="text-2xl font-semibold mb-2">Definitions</h3>
+          {aboutContent.definitions.map((def, index) => (
+            <div key={index} className="mb-3">
+              <p style={{ lineHeight: "1.4" }} className="text-lg">
+                <span className="font-bold">{def.term}:</span>{" "}
+                {/* {formatText(def.description, 75)} */}
+                {def.description}
+              </p>
+            </div>
+          ))}
+        </section>
+
+        <section className="flex flex-col md:flex-row space-y-4 gap-4">
+          <div className="md:w-1/2">
+            <h3 className="text-2xl font-semibold mb-2">Transparency</h3>
+            {aboutContent.transparency.map((item, index) => (
+              <div key={index} className="mb-3">
+                {/* <p className="text-lg font-roboto">{formatText(item, 75)}</p> */}
+                <p
+                  style={{ lineHeight: "1.4" }}
+                  className="text-lg font-roboto"
+                >
+                  {item}
+                </p>
+              </div>
+            ))}
+          </div>
+          <div className="md:w-1/2 flex justify-center shadow-md">
+            <video
+              className="rounded-lg lazy h-full w-full object-cover"
+              autoPlay
+              loop
+              muted
+              playsInline
+              preload="metadata"
+            >
+              <source src="/video/transparancy.mp4" type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
+          </div>
+        </section>
+
+        <section className="flex flex-col md:flex-row-reverse mt-6 gap-4">
+          <div className="md:w-1/2 mt-6">
+            <h3 className="text-2xl font-semibold mb-2">Organization</h3>
+            {aboutContent.organization.map((item, index) => (
+              <div key={index} className="mb-3">
+                {/* <p className="text-lg font-roboto">{formatText(item, 75)}</p> */}
+                <p
+                  style={{ lineHeight: "1.4" }}
+                  className="text-lg font-roboto"
+                >
+                  {item}
+                </p>
+              </div>
+            ))}
+          </div>
+          <div className="md:w-1/2 flex justify-center">
+            <video
+              className="rounded-lg lazy h-full w-full object-cover"
+              autoPlay
+              loop
+              muted
+              playsInline
+              preload="metadata"
+            >
+              <source src="/video/meeting.mp4" type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
+          </div>
+        </section>
+      </div>
+    </div>
   );
 };
 
-// ====== FILE: src/app/contact/page.tsx ======
+export default AboutSection;
+
+// ====== FILE: src/app/components/clientColab.tsx ======
+
+"use client";
+
+import React from "react";
+
+// Define the TypeScript type for the table data
+type ClientServiceData = {
+  client: string;
+  year: number;
+  services: string;
+};
+interface ServiceTableProps {
+  onContactClick: () => void;
+}
+
+// Sample data array
+const tableData: ClientServiceData[] = [
+  {
+    client: "Modstrøm",
+    year: 2023,
+    services: "Climate Footprint Reporting: Scope 1 and 2",
+  },
+  { client: "Junkfood", year: 2023, services: "Climate Footprint Reporting" },
+  { client: "Confidential", year: 2023, services: "Cloud, User Platform" },
+  { client: "Shipping Company", year: 2023, services: "Cloud, User Platform" },
+  { client: "B93", year: 2023, services: "Website, UI & UX" },
+  {
+    client: "B:A:M",
+    year: 2024,
+    services: "Video Streaming Platform and Mobil App",
+  },
+  { client: "H5", year: 2024, services: "Website" },
+];
+
+const ClientColab: React.FC<ServiceTableProps> = ({ onContactClick }) => {
+  return (
+    <div className="flex flex-col mx-2 z-10">
+      <p className="text-3xl font-semibold mb-2 text-center bg-white shadow rounded-lg sm:text-2xl">
+        Our Happy Collaborators
+      </p>
+      {tableData.map((item, index) => (
+        <div key={index} className="w-full pb-2">
+          <div className="bg-white shadow rounded-lg sm:p-1 sm:text-sm">
+            <h3 className="text-lg sm:text-md font-semibold">{item.client}</h3>
+            <p className="text-gray-900 font-roboto">Year: {item.year}</p>
+            <p className="text-gray-900 font-roboto">
+              Services: {item.services}
+            </p>
+          </div>
+        </div>
+      ))}
+      <div className="flex mt-2">
+        <button
+          className="bg-green-700 hover:bg-green-500 text-white font-bold py-2 px-4 rounded-full transition-colors duration-300 "
+          onClick={onContactClick}
+        >
+          Shall we collaborate ?
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default ClientColab;
+
+// ====== FILE: src/app/components/contactForm.tsx ======
 
 "use client";
 
@@ -1550,52 +1574,55 @@ const ContactForm: React.FC<ContactFormProps> = ({
 
 export default ContactForm;
 
-// ====== FILE: src/app/dashboard/page.tsx ======
+// ====== FILE: src/app/components/contentWrapper.tsx ======
 
 "use client";
 
-import React from "react";
-import TimeKeeper from "@/app/timeKeeper/page";
-import TotalTimeSpent from "@/app/time/page";
-import RatesManager from "@/app/ratesManager/page";
-import IssuesComponent from "@/app/issues/page";
-import { logout } from "../lib/apolloClient";
+import { motion, useAnimation } from "framer-motion";
+import React, { useEffect, PropsWithChildren } from "react";
 
-const handleLogout = () => {
-  logout();
-};
-export default function Dashboard() {
-  return (
-    <div>
-      <div className="dashboard-container px-4 sm:px-6 lg:px-8">
-        <h1 className="text-2xl font-semibold text-gray-900 mb-4">Dashboard</h1>
-        <button onClick={handleLogout}>Logout</button>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-          <div>
-            <TimeKeeper />
-          </div>
-          <div>
-            <TotalTimeSpent />
-          </div>
-          <div>
-            <RatesManager />
-          </div>
-        </div>
-        <div className="flex flex-col gap-4">
-          <IssuesComponent />
-        </div>
-      </div>
-    </div>
-  );
+interface ContentWrapperProps {
+  isActive: boolean;
 }
 
-// ====== FILE: src/app/footer/page.tsx ======
+export const ContentWrapper: React.FC<
+  PropsWithChildren<ContentWrapperProps>
+> = ({ isActive, children }) => {
+  const controls = useAnimation();
+
+  useEffect(() => {
+    controls.start(isActive ? "visible" : "hidden");
+  }, [isActive, controls]);
+
+  const contentVariants = {
+    visible: {
+      opacity: 1,
+      maxHeight: "1000px", // Adjust as needed
+      overflow: "hidden",
+      transition: { duration: 0.5 },
+    },
+    hidden: {
+      opacity: 0,
+      maxHeight: 0, // Collapse content area when hidden
+      overflow: "hidden",
+      transition: { duration: 0.5 },
+    },
+  };
+
+  return (
+    <motion.div variants={contentVariants} animate={controls} initial="hidden">
+      {children}
+    </motion.div>
+  );
+};
+
+// ====== FILE: src/app/components/footer.tsx ======
 
 // FooterComponent.tsx
 import React from "react";
 import Image from "next/image";
 
-const FooterComponent: React.FC = () => {
+const Footer: React.FC = () => {
   return (
     <div className="flex justify-between px-4 bg-gray-100 text-sm text-gray-600 mb-2">
       <div className="mt-4 w-1/2">
@@ -1660,7 +1687,673 @@ const FooterComponent: React.FC = () => {
   );
 };
 
-export default FooterComponent;
+export default Footer;
+
+// ====== FILE: src/app/components/navBar.tsx ======
+
+"use client";
+
+import React, { useState, useEffect } from "react";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
+import logo from "../../../public/logo.svg";
+
+interface NavbarProps {
+  sections: string[];
+  setActiveSection: (section: string) => void;
+  activeSection: string;
+}
+
+const NavBar: React.FC<NavbarProps> = ({
+  sections = [],
+  setActiveSection,
+  activeSection,
+}) => {
+  const [hoveredSection, setHoveredSection] = useState<string | null>(null);
+  const router = useRouter();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  // Automatically set the menu open on desktop and closed on mobile.
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 1024) {
+        setIsMenuOpen(true);
+      } else {
+        setIsMenuOpen(false);
+      }
+    };
+
+    // Run on mount
+    handleResize();
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const handleSectionClick = (section: string) => {
+    if (section === "Client-Portal") {
+      router.push("/login");
+    } else {
+      setActiveSection(section);
+    }
+    // On mobile, close the menu after selection.
+    if (window.innerWidth < 1024) {
+      setIsMenuOpen(false);
+    }
+  };
+
+  const menuIconVariants = {
+    opened: {
+      rotate: 90,
+      scale: 1.2,
+      transition: { duration: 0.2 },
+    },
+    closed: {
+      rotate: 0,
+      scale: 1,
+      transition: { duration: 0.2 },
+    },
+  };
+
+  const menuVariants = {
+    opened: {
+      opacity: 1,
+      y: 0,
+      display: "flex",
+      transition: {
+        y: { stiffness: 100, velocity: -100, type: "spring" },
+        opacity: { duration: 0.3 },
+      },
+    },
+    closed: {
+      opacity: 0,
+      y: "-100%",
+      transition: {
+        y: { stiffness: 100 },
+        opacity: { duration: 0.3 },
+      },
+      transitionEnd: {
+        display: "none",
+      },
+    },
+  };
+
+  return (
+    <nav
+      className="relative flex items-center justify-center p-4"
+      style={{ minHeight: "64px" }}
+    >
+      <div className="absolute left-0 pl-4">
+        <Image src={logo} alt="Logo" priority />
+      </div>
+      {/* Burger Icon – visible on mobile only */}
+      <motion.div
+        className="lg:hidden z-20 absolute right-4 cursor-pointer"
+        onClick={() => setIsMenuOpen(!isMenuOpen)}
+        variants={menuIconVariants}
+        animate={isMenuOpen ? "opened" : "closed"}
+      >
+        <svg
+          className="w-6 h-6"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+            d={isMenuOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"}
+          ></path>
+        </svg>
+      </motion.div>
+      {/* Menu Container */}
+      <motion.div
+        variants={menuVariants}
+        initial="closed"
+        animate={isMenuOpen ? "opened" : "closed"}
+        className="menu-container absolute md:top-auto md:relative md:flex md:flex-row md:items-center md:space-x-4"
+      >
+        {sections.map((section) => (
+          <div
+            key={section}
+            className="flex items-center"
+            onMouseEnter={() => setHoveredSection(section)}
+            onMouseLeave={() => setHoveredSection(null)}
+          >
+            <div
+              className={`h-4 w-4 rounded-full cursor-pointer transition duration-800 ease-in-out ${
+                activeSection === section
+                  ? "bg-green-500"
+                  : hoveredSection === section
+                  ? "bg-gray-500"
+                  : "bg-transparent border-2 border-black"
+              }`}
+              onClick={() => handleSectionClick(section)}
+            />
+            <button
+              className={`py-2 px-4 ${
+                section === "Contact"
+                  ? "text-white font-bold rounded-lg px-2 mx-2 py-0 bg-green-700"
+                  : "text-black"
+              }`}
+              onClick={() => handleSectionClick(section)}
+            >
+              {section}
+            </button>
+          </div>
+        ))}
+      </motion.div>
+    </nav>
+  );
+};
+
+export default NavBar;
+
+// ====== FILE: src/app/components/peopleSection.tsx ======
+
+"use client";
+
+import React from "react";
+import Image from "next/image";
+
+interface Person {
+  name: string;
+  roles: string[];
+  images: [string, string];
+}
+
+const peopleData: Person[] = [
+  {
+    name: "Gustav Duus",
+    images: ["/members/ceo_1.jpg", "/members/ceo_2.jpg"],
+    roles: ["CEO", "Co-Founder"],
+  },
+  {
+    name: "Joakim Larsen",
+    images: ["/members/m_1.jpg", "/members/m_2.jpg"],
+    roles: ["Co-Founder"],
+  },
+  {
+    name: "George Aftincai",
+    images: ["/members/gerorge_1.jpg", "/members/gerorge_2.jpg"],
+    roles: ["Front-end"],
+  },
+  {
+    name: "Riccardo Conti",
+    images: ["/members/ricardo_1.jpg", "/members/ricardo_2.jpg"],
+    roles: ["Front-end", "Mobile"],
+  },
+  {
+    name: "Sam Hakimane",
+    images: ["/members/sam_1.jpg", "/members/sam_2.jpg"],
+    roles: ["Back-end"],
+  },
+  {
+    name: "Jedrzej Lagodzinski",
+    images: ["/members/j_1.jpg", "/members/j_2.jpg"],
+    roles: ["Front-end"],
+  },
+  {
+    name: "David Lin",
+    images: ["/members/david_1.jpg", "/members/david_2.jpg"],
+    roles: ["Front-end", "Design"],
+  },
+];
+
+interface PeopleSectionProps {
+  isActive: boolean;
+}
+
+const PeopleSection: React.FC<PeopleSectionProps> = ({ isActive }) => {
+  if (!isActive) return null;
+  return (
+    <div className="p-4">
+      <h2 className="text-3xl font-pt-sans-bold-900 mb-4 mx-4">People</h2>
+      <div className="people-section grid grid-cols-1 sm:grid-cols-3 gap-4 p-4">
+        {peopleData.map((person, index) => (
+          <PersonCard key={index} person={person} />
+        ))}
+      </div>
+    </div>
+  );
+};
+
+interface PersonCardProps {
+  person: Person;
+}
+
+// Define the type for the mapping object
+type RoleIconMappingType = {
+  [roleName: string]: string;
+};
+
+// Define the mapping from role names to icon filenames
+const roleIconMapping: RoleIconMappingType = {
+  CEO: "ceo.svg",
+  "Co-Founder": "founder.svg",
+  "Front-end": "front.svg",
+  Mobile: "mobile.svg",
+  "Back-end": "back.svg",
+  Design: "design.svg",
+};
+
+// Function to return the icon path based on the role, with a fallback
+const getIconPath = (role: string): string => {
+  return `/icons/${roleIconMapping[role] || "default-icon.svg"}`;
+};
+
+const PersonCard: React.FC<PersonCardProps> = ({ person }) => {
+  const [isHovered, setIsHovered] = React.useState(false);
+  return (
+    <div
+      className="person-card cursor-pointer overflow-hidden relative w-full h-auto shadow-lg"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <div
+        className="relative w-full md:w-auto lg:w-full aspect-w-1 aspect-h-1"
+        style={{ paddingTop: "calc(512 / 342 * 100%)" }}
+      >
+        <div
+          className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
+            isHovered ? "opacity-0" : "opacity-100"
+          }`}
+          style={{ paddingTop: "calc(512 / 342 * 100%)" }}
+        >
+          <Image
+            src={person.images[0]}
+            alt={`${person.name} - Base`}
+            fill
+            sizes="(max-width: 768px) 100vw, 50vw"
+            className="rounded-lg"
+          />
+        </div>
+        <div
+          className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
+            isHovered ? "opacity-100" : "opacity-0"
+          }`}
+          style={{ paddingTop: "calc(512 / 342 * 100%)" }}
+        >
+          <Image
+            src={person.images[1]}
+            alt={`${person.name} - Hover`}
+            fill
+            sizes="(max-width: 768px) 100vw, 50vw"
+            className="rounded-lg"
+          />
+        </div>
+      </div>
+      <div className="absolute inset-0 flex flex-col justify-end p-4 rounded-lg">
+        <div
+          style={{ width: "fit-content" }}
+          className="bg-black bg-opacity-40 lg:p-2 sm:p-1"
+        >
+          <h3 className="text-white lg:text-xl md:text-sm font-bold">
+            {person.name}
+          </h3>
+        </div>
+        {person.roles.map((role, index) => (
+          <div key={index} style={{ width: "fit-content" }}>
+            <div className="bg-black bg-opacity-40 flex items-center">
+              <div className="relative mr-1 flex justify-center items-center w-8 h-8 sm:w-[3vw] sm:h-[3vw] lg:w-[2vw] lg:h-[2vw] md:w-[3vw] md:h-[3vw]">
+                <Image
+                  src={getIconPath(role)}
+                  alt={`${role} icon`}
+                  fill
+                  className="filter invert"
+                />
+              </div>
+              <span className="text-white lg:text-lg md:text-sm mr-2">
+                {role}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export default PeopleSection;
+
+// ====== FILE: src/app/components/sectionWrapper.tsx ======
+
+"use client";
+
+import { motion, useAnimation } from "framer-motion";
+import React, { useEffect } from "react";
+import { ContentWrapper } from "../components/contentWrapper";
+import PeopleSection from "@/app/components/peopleSection";
+import AboutSection from "@/app/components/aboutSection";
+import ServicesSection from "@/app/components/servicesSection";
+
+interface SectionProps {
+  id: string;
+  content: string;
+  isActive: boolean;
+  color: string;
+  zIndex: number;
+  videoSrc?: string;
+  isContactFormActive: boolean;
+}
+
+const getSectionVariants = (isContactFormActive: boolean) => ({
+  inactive: isContactFormActive
+    ? {
+        opacity: 1,
+        scale: 1,
+        y: 0,
+        zIndex: 6,
+      }
+    : {
+        y: -40,
+        opacity: 0.7,
+        scale: 0.95,
+        zIndex: 6,
+        transition: {
+          duration: 0.5,
+          ease: "easeInOut",
+        },
+      },
+  active: {
+    y: 0,
+    opacity: 1,
+    scale: 1,
+    zIndex: 6,
+    transition: {
+      y: {
+        duration: 0.2,
+        type: "spring",
+        from: "40vh",
+        stiffness: 70,
+        damping: 15,
+      },
+      opacity: { duration: 0.2 },
+      scale: { duration: 0.2 },
+    },
+  },
+  exit: {
+    y: 50,
+    opacity: 0,
+    transition: { duration: 0.5 },
+  },
+});
+
+const SectionWrapper: React.FC<SectionProps> = ({
+  id,
+  content,
+  isActive,
+  color,
+  zIndex,
+  videoSrc,
+  isContactFormActive,
+}) => {
+  const controls = useAnimation();
+  const sectionVariants = getSectionVariants(isContactFormActive);
+
+  useEffect(() => {
+    controls.start(isActive ? "active" : "inactive");
+  }, [isActive, controls, isContactFormActive]);
+
+  return (
+    <motion.div
+      layoutId={id}
+      variants={sectionVariants}
+      initial="initial"
+      animate={controls}
+      exit="exit"
+      transition={{ duration: 0.5, type: "easeOut" }}
+      className={`section border-2 border-green-600 rounded-tl-3xl rounded-tr-3xl shadow-lg ${color} responsive-section`}
+      style={{
+        position: "absolute",
+        width: "75%",
+        top: 100,
+        right: 0,
+        bottom: 0,
+        boxSizing: "border-box",
+        zIndex: zIndex,
+      }}
+    >
+      {id === "People" ? (
+        <div
+          className="overflow-y-auto"
+          style={{ maxHeight: "calc(100vh - 200px)" }}
+        >
+          <PeopleSection isActive={isActive} />
+        </div>
+      ) : id === "About" ? (
+        <AboutSection />
+      ) : id === "Services" ? (
+        <ServicesSection />
+      ) : videoSrc ? (
+        <div className="w-full h-full">
+          <video
+            className="video w-full h-full overflow-hidden rounded-tl-3xl rounded-tr-3xl object-cover"
+            autoPlay
+            loop
+            muted
+            playsInline
+          >
+            <source src={videoSrc} type="video/mp4" />
+            Your browser does not support the video tag.
+          </video>
+          <div className="flex overlay-text lg:bottom-48 p-4 lg:relative md:flex ">
+            <h2 className="lg:text-4xl font-bold text-white p-4 bg-black bg-opacity-50 rounded-lg sm:text-lg">
+              We enable Collaborators
+              <br /> to create delightful technical solutions
+            </h2>
+          </div>
+        </div>
+      ) : (
+        <ContentWrapper isActive={isActive}>
+          <h2 className="text-2xl font-bold mb-4">{content}</h2>
+          <p className="text-gray-700">
+            Placeholder content for the {content} section.
+          </p>
+        </ContentWrapper>
+      )}
+    </motion.div>
+  );
+};
+
+export default SectionWrapper;
+
+// ====== FILE: src/app/components/servicesSection.tsx ======
+
+"use client";
+
+import React, { JSX } from "react";
+import Image from "next/image";
+
+interface IFeature {
+  name: string;
+  icon: string;
+}
+
+interface IService {
+  title: string;
+  description: string[];
+  icon: string;
+  features?: IFeature[];
+  imageUrl: string;
+}
+
+const servicesData: IService[] = [
+  {
+    title: "Digital Product Development",
+    description: [
+      "Do you know the feeling of navigating a website or a mobile application and it is either hideous or you are getting lost in the pages all the time?",
+      "UI and UX is the art of creating beautiful applications that offer a smooth user experience whether it is a web or mobile application.",
+      "Both are essential for creating a successful application. UI design ensures that the application looks visually appealing and attractive to users, while UX design ensures that the application is intuitive and easy to use.",
+      "Let us enable you to balance both.",
+    ],
+    icon: "/icons/digital.svg",
+    imageUrl: "/images/dpd.jpg",
+    features: [
+      {
+        name: "E-commerce & Websites",
+        icon: "/icons/e-commerce.svg",
+      },
+      {
+        name: "Mobile apps & Web applications",
+        icon: "/icons/mobile.svg",
+      },
+      {
+        name: "Digital Solutions & Platforms",
+        icon: "/icons/platforms.svg",
+      },
+    ],
+  },
+  {
+    title: "Climate Reporting",
+    description: [
+      "Searching for the right data? Preparing to report scope 1, 2 or 3? Or are you looking for internal tracking to make data-driven decisions to lower your climate footprint?",
+      "At Enablment, we have the technical skills to integrate with the correct data sources and align that data for trustworthy reporting. We can set up automated reporting flows from multiple data sources for internal tracking.",
+    ],
+    icon: "/icons/climate.svg",
+    imageUrl: "/images/climate.jpg",
+  },
+  {
+    title: "Insights through Data",
+    description: [
+      "On the journey of digitalization, automating and optimizing processes and data collection create the best fundamentals for an effective digital solution.",
+      "Luckily, we are more than stoked to help you with following.",
+    ],
+    icon: "/icons/data.svg",
+    imageUrl: "/images/data.jpg",
+  },
+  {
+    title: "Data Consolidation (Cloud)",
+    description: [
+      "Is it difficult, and time consuming gathering data, and structuring it for data analytics/insight?",
+      "This is the first step within data analytics and all companies will inevitably go through this transformation at some point. Once implemented there will be a consistent and reliable data foundation for all data analysis. Plus a setup like this is fully automated.",
+    ],
+    icon: "/icons/cloud.svg",
+    imageUrl: "/images/cloud.jpg",
+  },
+  {
+    title: "Business Intelligence (BI)",
+    description: [
+      "Do you have a database that is automatically sourcing the data for you? And is your data then, consequently, consolidated in one place and might even be structured? Now you want insight from your data?",
+      "This is Business Intelligence. We conduct a data analysis and transform your data, then we create dashboards to visualize the insight.",
+    ],
+    icon: "/icons/bi.svg",
+    imageUrl: "/images/bi.jpg",
+  },
+  {
+    title: "Machine Learning & Artificial Intelligence (ML & AI)",
+    description: [
+      "Is your decision-making process supplemented with insight and a descriptive data analysis through BI? Are you ready to let a data model offer you suggestions?",
+      "Certain trends and causalities that might not be visible to the human eye or the data input is simply too big. This is when you move from the descriptive to the prescriptive data analysis. A machine learning model can highlight causalities and forecast development.",
+    ],
+    icon: "/icons/ai.svg",
+    imageUrl: "/images/AI-ML.jpg",
+  },
+];
+const formatText = (text: string, maxLength: number): JSX.Element[] => {
+  const words = text.split(" ");
+  const formattedLines: JSX.Element[] = [];
+  let currentLine = "";
+
+  words.forEach((word, index) => {
+    if ((currentLine + word).length > maxLength) {
+      formattedLines.push(
+        <span key={index}>
+          {currentLine.trim()}
+          <br />
+        </span>
+      );
+      currentLine = word + " ";
+    } else {
+      currentLine += word + " ";
+    }
+  });
+
+  // Add the last line
+  if (currentLine) {
+    formattedLines.push(<span key={words.length}>{currentLine.trim()}</span>);
+  }
+
+  return formattedLines;
+};
+const ServicesSection: React.FC = () => {
+  return (
+    <div className="space-y-8 p-4 sm:p-6">
+      <h2 className="text-3xl font-pt-sans-bold-900 mb-4">Services</h2>
+      <div
+        style={{
+          maxHeight: "calc(100vh - 300px)",
+          overflowY: "auto",
+        }}
+      >
+        {servicesData.map((service, index) => (
+          <div key={index} className="mb-6">
+            <div className="flex flex-wrap items-stretch shadow-lg rounded-lg overflow-hidden lg:justify-start sm:justify-center lg:flex-nowrap space-x-4">
+              <div className="relative w-full flex-grow tablet:flex-grow-0 md:w-1/2  services-image-container">
+                <Image
+                  src={service.imageUrl}
+                  alt={`${service.title}`}
+                  layout="fill"
+                  objectFit="cover"
+                  sizes="(min-width: 768px) 50vw, 100vw"
+                />
+              </div>
+              {/* Rest of the Content */}
+              <div className="text-container lg:w-1/2 sm:mt-4">
+                <div className="flex items-center space-x-2">
+                  <Image
+                    src={service.icon}
+                    alt={`${service.title} Icon`}
+                    width={24}
+                    height={24}
+                  />
+                  <h3 className="text-2xl font-semibold mb-2">
+                    {service.title}
+                  </h3>
+                </div>
+                {service.description.map((paragraph, pIndex) => (
+                  <p
+                    key={pIndex}
+                    style={{ lineHeight: "1.4" }}
+                    className="text-lg mb-3"
+                  >
+                    {/* {formatText(paragraph, 75)} */}
+                    {paragraph}
+                  </p>
+                ))}
+                {service.features && (
+                  <div className="flex flex-col space-y-2 mt-4">
+                    {service.features.map((feature, fIndex) => (
+                      <div
+                        key={fIndex}
+                        className="flex items-center space-x-2 "
+                      >
+                        <Image
+                          src={feature.icon}
+                          alt={`${feature.name} Icon`}
+                          width={20}
+                          height={20}
+                        />
+                        <span style={{ lineHeight: "1.4" }} className="text-lg">
+                          {feature.name}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export default ServicesSection;
 
 // ====== FILE: src/app/graphql/adminOperations.ts ======
 
@@ -1928,13 +2621,16 @@ export default useTimeKeeperData;
 
 // ====== FILE: src/app/hooks/useTimekeeperHandlers.ts ======
 
-import { formatISO, differenceInSeconds } from "date-fns";
+import { formatISO } from "date-fns";
 import type { TimerState, TimeEntry } from "../types";
 
 interface HandlersConfig {
   timerState: TimerState & {
     initialStartTime: Date | null;
     elapsedBeforePause: number;
+    pauseTimes: Date[];
+    resumeTimes: Date[];
+    calculateTotalActiveTime: () => number; // Use the function from useTimer
   };
   selectedProject: string;
   selectedRate: string;
@@ -1946,7 +2642,7 @@ interface HandlersConfig {
     timeInputUpdate: { id: number; endTime: string; totalElapsedTime: number };
   }) => Promise<{ data: { updateTime: TimeEntry } }>;
   currentEntryId: number | null;
-  setCurrentEntryId: (id: number) => void;
+  setCurrentEntryId: (id: number | null) => void;
   showSuccessMessage: () => void;
   setSubmissionError: (error: string) => void;
   showDateAlert: (message: string) => void;
@@ -1990,11 +2686,13 @@ export const useTimeKeeperHandlers = ({
 
     try {
       const submissionTime = new Date();
-      const additionalElapsed = timerState.startTime
-        ? differenceInSeconds(submissionTime, timerState.startTime)
-        : 0;
-      const totalElapsedTime =
-        timerState.elapsedBeforePause + additionalElapsed;
+
+      // Use the calculation function from timerState
+      const totalElapsedTimeMs = timerState.calculateTotalActiveTime();
+      console.log(
+        "Total elapsed time calculated for submission (ms):",
+        totalElapsedTimeMs
+      );
 
       if (currentEntryId) {
         // Update existing time entry
@@ -2002,9 +2700,10 @@ export const useTimeKeeperHandlers = ({
           timeInputUpdate: {
             id: currentEntryId,
             endTime: formatISO(submissionTime),
-            totalElapsedTime,
+            totalElapsedTime: totalElapsedTimeMs,
           },
         });
+        console.log("Updated existing time entry ID:", currentEntryId);
       } else {
         // Create new time entry and store its ID
         const result = await createTimeEntry({
@@ -2014,23 +2713,33 @@ export const useTimeKeeperHandlers = ({
             projectId: selectedProject,
             userId,
             rateId: parseFloat(selectedRate),
-            totalElapsedTime,
+            totalElapsedTime: totalElapsedTimeMs,
           },
         });
         setCurrentEntryId(result.data.createTime.id);
+        console.log("Created new time entry ID:", result.data.createTime.id);
       }
+
       showSuccessMessage();
+
+      // IMPORTANT: Don't reset the timer after submission!
+      // Just pause it if it's running
+      if (timerState.isRunning) {
+        timerState.pause();
+      }
     } catch (error: unknown) {
       if (error instanceof Error) {
         setSubmissionError(`Error with time entry: ${error.message}`);
       } else {
         setSubmissionError("Unknown error");
       }
+      console.error("Error submitting time entry:", error);
     }
   };
 
   const handleReset = (): void => {
     timerState.reset();
+    setCurrentEntryId(null); // Clear the current entry ID on reset
     showResetMessage();
   };
 
@@ -2110,89 +2819,134 @@ export const useTimeKeeperQueries = (
 // ====== FILE: src/app/hooks/useTimer.ts ======
 
 import { useState, useEffect, useRef } from "react";
-import { differenceInSeconds, format } from "date-fns";
+import { format } from "date-fns";
 import type { TimerState } from "../types";
 
 export const useTimer = (): TimerState & {
   initialStartTime: Date | null;
   elapsedBeforePause: number;
+  pauseTimes: Date[];
+  resumeTimes: Date[];
+  calculateTotalActiveTime: () => number; // Expose this function
 } => {
   const [isRunning, setIsRunning] = useState<boolean>(false);
   const [initialStartTime, setInitialStartTime] = useState<Date | null>(null);
   const [currentStartTime, setCurrentStartTime] = useState<Date | null>(null);
   const [elapsedBeforePause, setElapsedBeforePause] = useState<number>(0);
   const [displayTime, setDisplayTime] = useState<string>("00:00:00");
+  const [pauseTimes, setPauseTimes] = useState<Date[]>([]);
+  const [resumeTimes, setResumeTimes] = useState<Date[]>([]);
   const timerRef = useRef<number | null>(null);
 
-  const updateDisplay = () => {
-    if (!currentStartTime) return;
+  // Function to calculate total active time
+  const calculateTotalActiveTime = (): number => {
     const now = new Date();
-    const elapsedSeconds =
-      elapsedBeforePause + differenceInSeconds(now, currentStartTime);
+
+    // If timer has never started, return 0
+    if (!initialStartTime) {
+      return 0;
+    }
+
+    // Calculate total elapsed time since initial start
+    let totalActiveTime = 0;
+
+    // Add time from first segment (initial start to first pause, or now if no pauses)
+    const firstPauseTime =
+      pauseTimes.length > 0 ? pauseTimes[0] : isRunning ? now : null;
+
+    if (firstPauseTime && initialStartTime) {
+      totalActiveTime += firstPauseTime.getTime() - initialStartTime.getTime();
+    }
+
+    // Add time from all resume-pause segments
+    for (let i = 0; i < resumeTimes.length; i++) {
+      const resumeTime = resumeTimes[i];
+      // The end of this segment is either the next pause or now (if currently running)
+      const endTime =
+        i < pauseTimes.length - 1
+          ? pauseTimes[i + 1]
+          : isRunning && i === pauseTimes.length - 1
+          ? now
+          : null;
+
+      if (endTime) {
+        totalActiveTime += endTime.getTime() - resumeTime.getTime();
+      }
+    }
+
+    console.log("Total active time calculated:", totalActiveTime);
+    return Math.max(totalActiveTime, 0);
+  };
+
+  const updateDisplay = () => {
+    const elapsedMs = calculateTotalActiveTime();
+    // Convert milliseconds to seconds for formatting
+    const elapsedSeconds = Math.floor(elapsedMs / 1000);
+
+    // Format time as HH:MM:SS
     const formattedTime = format(
       new Date(0, 0, 0, 0, 0, elapsedSeconds),
       "HH:mm:ss"
     );
+
     console.log(
-      "Updating display. Elapsed seconds:",
-      elapsedSeconds,
+      "Updating display. Elapsed ms:",
+      elapsedMs,
       "Formatted time:",
       formattedTime
     );
+
     setDisplayTime(formattedTime);
   };
 
   useEffect(() => {
-    if (isRunning && currentStartTime) {
+    if (isRunning) {
       console.log("Timer started, setting interval");
+      updateDisplay(); // Immediate update
       timerRef.current = window.setInterval(updateDisplay, 1000);
     } else if (!isRunning && timerRef.current) {
       console.log("Timer paused or stopped, clearing interval");
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
+
     return () => {
       if (timerRef.current) {
         clearInterval(timerRef.current);
         console.log("Cleaning up interval");
       }
     };
-  }, [isRunning, currentStartTime, elapsedBeforePause]);
+  }, [isRunning, currentStartTime, pauseTimes, resumeTimes]);
 
   const start = () => {
     const now = new Date();
+
     if (!initialStartTime) {
+      // First start
       console.log("Timer starting at:", now);
       setInitialStartTime(now);
       setCurrentStartTime(now);
     } else if (!isRunning) {
-      console.log(
-        "Resuming timer; initialStartTime remains:",
-        initialStartTime,
-        "New currentStartTime:",
-        now
-      );
+      // Resume after pause
+      console.log("Resuming timer at:", now);
       setCurrentStartTime(now);
+      // Record resume time
+      setResumeTimes((prev) => [...prev, now]);
     }
+
     setIsRunning(true);
   };
 
   const pause = () => {
-    if (isRunning && currentStartTime) {
+    if (isRunning) {
       const now = new Date();
-      const elapsed = differenceInSeconds(now, currentStartTime);
-      console.log("Pausing timer. Elapsed this run:", elapsed, "seconds");
-      setElapsedBeforePause((prev) => {
-        const newTotal = prev + elapsed;
-        console.log(
-          "Total elapsedBeforePause updated to:",
-          newTotal,
-          "seconds"
-        );
-        return newTotal;
-      });
+      console.log("Pausing timer at:", now);
+
+      // Record pause time
+      setPauseTimes((prev) => [...prev, now]);
+
+      setIsRunning(false);
     }
-    setIsRunning(false);
   };
 
   const reset = () => {
@@ -2202,6 +2956,8 @@ export const useTimer = (): TimerState & {
     setCurrentStartTime(null);
     setElapsedBeforePause(0);
     setDisplayTime("00:00:00");
+    setPauseTimes([]);
+    setResumeTimes([]);
   };
 
   return {
@@ -2212,259 +2968,22 @@ export const useTimer = (): TimerState & {
     pause,
     reset,
     setStartTime: (date: Date | null) => {
-      setCurrentStartTime(date);
-      if (!initialStartTime) {
-        setInitialStartTime(date);
+      if (date) {
+        setCurrentStartTime(date);
+        if (!initialStartTime) {
+          setInitialStartTime(date);
+        }
       }
     },
     initialStartTime,
-    elapsedBeforePause, // <-- Now returning this property
+    elapsedBeforePause,
+    pauseTimes,
+    resumeTimes,
+    calculateTotalActiveTime, // Expose the calculation function
   };
 };
 
-// ====== FILE: src/app/invoice/page.tsx ======
-
-"use client";
-
-import React, { useState, useEffect } from "react";
-import { useQuery } from "@apollo/client";
-import gql from "graphql-tag";
-import ProjectSelector from "../components/ProjectSelector";
-
-interface Rate {
-  rateId: string;
-  rateName: string;
-  hours: number;
-  cost: number;
-  ratePerHour: number;
-}
-
-interface InvoiceData {
-  projectId: string;
-  projectName: string;
-  totalHours: number;
-  totalCost: number;
-  rates: Rate[];
-}
-
-// GraphQL queries
-const GET_PROJECTS = gql`
-  query {
-    projects {
-      id
-      name
-      teamId
-    }
-  }
-`;
-
-const GET_ALL_TEAMS = gql`
-  query {
-    getAllSimpleTeams {
-      id
-      name
-    }
-  }
-`;
-
-const GET_INVOICE_FOR_PROJECT = gql`
-  query InvoiceForProject(
-    $projectId: String!
-    $startDate: DateTime!
-    $endDate: DateTime!
-  ) {
-    invoiceForProject(
-      projectId: $projectId
-      startDate: $startDate
-      endDate: $endDate
-    ) {
-      projectId
-      projectName
-      totalHours
-      totalCost
-      rates {
-        rateId
-        rateName
-        hours
-        cost
-        ratePerHour
-      }
-    }
-  }
-`;
-
-const InvoiceDashboard: React.FC = () => {
-  const [selectedProject, setSelectedProject] = useState<string>("");
-  const [startDate, setStartDate] = useState<string>("");
-  const [endDate, setEndDate] = useState<string>("");
-  const [invoiceData, setInvoiceData] = useState<InvoiceData | null>(null);
-
-  const { data: projectsData } = useQuery(GET_PROJECTS);
-  const { data: teamsData } = useQuery(GET_ALL_TEAMS);
-
-  const {
-    loading: loadingInvoice,
-    error: errorInvoice,
-    data: invoiceDataResponse,
-    refetch,
-  } = useQuery(GET_INVOICE_FOR_PROJECT, {
-    variables: {
-      projectId: selectedProject,
-      startDate: startDate ? new Date(startDate).toISOString() : null,
-      endDate: endDate ? new Date(endDate).toISOString() : null,
-    },
-    skip: !selectedProject || !startDate || !endDate,
-  });
-
-  useEffect(() => {
-    if (invoiceDataResponse) {
-      setInvoiceData(invoiceDataResponse.invoiceForProject);
-    }
-  }, [invoiceDataResponse]);
-
-  useEffect(() => {
-    if (selectedProject && startDate && endDate) {
-      refetch();
-    }
-  }, [selectedProject, startDate, endDate, refetch]);
-
-  interface Team {
-    id: string;
-    name: string;
-  }
-
-  interface Project {
-    id: string;
-    name: string;
-    teamId: string;
-  }
-
-  const teamIdToNameMap = teamsData?.getAllSimpleTeams.reduce(
-    (acc: Record<string, string>, team: Team) => {
-      acc[team.id] = team.name;
-      return acc;
-    },
-    {}
-  );
-
-  const projectTeamName = projectsData?.projects.find(
-    (project: Project) => project.id === invoiceData?.projectId
-  )?.teamId;
-
-  const projectsWithTeamNames = projectsData?.projects.map(
-    (project: Project) => ({
-      ...project,
-      teamName: teamIdToNameMap
-        ? teamIdToNameMap[project.teamId]
-        : "Unknown Team",
-    })
-  );
-
-  useEffect(() => {
-    console.log("teamIdToNameMap", teamIdToNameMap);
-    console.log("invoiceData", invoiceData);
-    console.log("Invoice Data Rates:", invoiceData?.rates);
-
-    if (selectedProject && startDate && endDate) {
-      refetch();
-    }
-  }, [
-    selectedProject,
-    startDate,
-    endDate,
-    refetch,
-    teamIdToNameMap,
-    invoiceData,
-  ]);
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "DKK",
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-      currencyDisplay: "code",
-      notation: "compact",
-    })
-      .format(value)
-      .replace("DKK", "")
-      .trim();
-  };
-
-  return (
-    <div className="p-6 bg-black shadow-md ">
-      <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0 md:space-x-4">
-        <h3 className="text-lg font-bold text-white">Invoice Summary</h3>
-
-        <div className="flex-grow">
-          <ProjectSelector
-            projects={projectsWithTeamNames || []}
-            selectedProject={selectedProject}
-            onProjectChange={setSelectedProject}
-          />
-        </div>
-
-        <div className="flex-grow md:flex md:space-x-4">
-          <input
-            type="date"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            className="w-full p-2 bg-white text-black border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-          />
-          <input
-            type="date"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            className="w-full p-2 bg-white text-black border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-          />
-        </div>
-      </div>
-
-      {/* Handling loading, error, and invoice data display */}
-      {loadingInvoice && <p>Loading...</p>}
-      {errorInvoice && (
-        <div className="bg-red-50 border-l-8 border-red-400 p-4 mb-4">
-          <p className="text-sm text-red-600">{errorInvoice.message}</p>
-        </div>
-      )}
-      {invoiceData && (
-        <div className="mt-4 p-6 bg-white shadow-md rounded-lg">
-          <h4 className="text-md font-bold bg-slate-200">
-            Project: {invoiceData.projectName} - Team:{" "}
-            {teamIdToNameMap && projectTeamName
-              ? teamIdToNameMap[projectTeamName] || "Team Not Found"
-              : "Loading Teams..."}
-          </h4>
-          <p className="border-b border-gray-200 shadow-sm">
-            Total Hours: {invoiceData.totalHours.toFixed(2)}
-          </p>
-          <p className="border-b border-gray-200 shadow-sm">
-            Total Cost: {formatCurrency(invoiceData.totalCost)}
-          </p>
-          <div className="mt-4">
-            <h5 className="font-semibold bg-slate-200">Rates Applied:</h5>
-            <ul>
-              {invoiceData.rates.map((rate: Rate) => (
-                <li
-                  className="border-b border-gray-200 shadow-sm"
-                  key={rate.rateId}
-                >
-                  {rate.rateName}: {rate.hours.toFixed(2)} hours at{" "}
-                  {formatCurrency(rate.cost)} (
-                  {formatCurrency(rate.ratePerHour)} DKK / h)
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-export default InvoiceDashboard;
-
-// ====== FILE: src/app/issues/page.tsx ======
+// ====== FILE: src/app/issuesPage/page.tsx ======
 
 "use client";
 
@@ -3037,942 +3556,6 @@ const Login: React.FC = () => {
 
 export default Login;
 
-// ====== FILE: src/app/nav/page.tsx ======
-
-"use client";
-
-import React, { useState, useEffect } from "react";
-import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
-import logo from "../../../public/logo.svg";
-
-interface NavbarProps {
-  sections: string[];
-  setActiveSection: (section: string) => void;
-  activeSection: string;
-}
-
-const Navbar: React.FC<NavbarProps> = ({
-  sections = [],
-  setActiveSection,
-  activeSection,
-}) => {
-  const [hoveredSection, setHoveredSection] = useState<string | null>(null);
-  const router = useRouter();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-  // Automatically set the menu open on desktop and closed on mobile.
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth >= 1024) {
-        setIsMenuOpen(true);
-      } else {
-        setIsMenuOpen(false);
-      }
-    };
-
-    // Run on mount
-    handleResize();
-
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  const handleSectionClick = (section: string) => {
-    if (section === "Client-Portal") {
-      router.push("/login");
-    } else {
-      setActiveSection(section);
-    }
-    // On mobile, close the menu after selection.
-    if (window.innerWidth < 1024) {
-      setIsMenuOpen(false);
-    }
-  };
-
-  const menuIconVariants = {
-    opened: {
-      rotate: 90,
-      scale: 1.2,
-      transition: { duration: 0.2 },
-    },
-    closed: {
-      rotate: 0,
-      scale: 1,
-      transition: { duration: 0.2 },
-    },
-  };
-
-  const menuVariants = {
-    opened: {
-      opacity: 1,
-      y: 0,
-      display: "flex",
-      transition: {
-        y: { stiffness: 100, velocity: -100, type: "spring" },
-        opacity: { duration: 0.3 },
-      },
-    },
-    closed: {
-      opacity: 0,
-      y: "-100%",
-      transition: {
-        y: { stiffness: 100 },
-        opacity: { duration: 0.3 },
-      },
-      transitionEnd: {
-        display: "none",
-      },
-    },
-  };
-
-  return (
-    <nav
-      className="relative flex items-center justify-center p-4"
-      style={{ minHeight: "64px" }}
-    >
-      <div className="absolute left-0 pl-4">
-        <Image src={logo} alt="Logo" priority />
-      </div>
-      {/* Burger Icon – visible on mobile only */}
-      <motion.div
-        className="lg:hidden z-20 absolute right-4 cursor-pointer"
-        onClick={() => setIsMenuOpen(!isMenuOpen)}
-        variants={menuIconVariants}
-        animate={isMenuOpen ? "opened" : "closed"}
-      >
-        <svg
-          className="w-6 h-6"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-            d={isMenuOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"}
-          ></path>
-        </svg>
-      </motion.div>
-      {/* Menu Container */}
-      <motion.div
-        variants={menuVariants}
-        initial="closed"
-        animate={isMenuOpen ? "opened" : "closed"}
-        className="menu-container absolute md:top-auto md:relative md:flex md:flex-row md:items-center md:space-x-4"
-      >
-        {sections.map((section) => (
-          <div
-            key={section}
-            className="flex items-center"
-            onMouseEnter={() => setHoveredSection(section)}
-            onMouseLeave={() => setHoveredSection(null)}
-          >
-            <div
-              className={`h-4 w-4 rounded-full cursor-pointer transition duration-800 ease-in-out ${
-                activeSection === section
-                  ? "bg-green-500"
-                  : hoveredSection === section
-                  ? "bg-gray-500"
-                  : "bg-transparent border-2 border-black"
-              }`}
-              onClick={() => handleSectionClick(section)}
-            />
-            <button
-              className={`py-2 px-4 ${
-                section === "Contact"
-                  ? "text-white font-bold rounded-lg px-2 mx-2 py-0 bg-green-700"
-                  : "text-black"
-              }`}
-              onClick={() => handleSectionClick(section)}
-            >
-              {section}
-            </button>
-          </div>
-        ))}
-      </motion.div>
-    </nav>
-  );
-};
-
-export default Navbar;
-
-// ====== FILE: src/app/people/page.tsx ======
-
-"use client";
-
-import React from "react";
-import Image from "next/image";
-
-interface Person {
-  name: string;
-  roles: string[];
-  images: [string, string];
-}
-
-const peopleData: Person[] = [
-  {
-    name: "Gustav Duus",
-    images: ["/members/ceo_1.jpg", "/members/ceo_2.jpg"],
-    roles: ["CEO", "Co-Founder"],
-  },
-  {
-    name: "Joakim Larsen",
-    images: ["/members/m_1.jpg", "/members/m_2.jpg"],
-    roles: ["Co-Founder"],
-  },
-  {
-    name: "George Aftincai",
-    images: ["/members/gerorge_1.jpg", "/members/gerorge_2.jpg"],
-    roles: ["Front-end"],
-  },
-  {
-    name: "Riccardo Conti",
-    images: ["/members/ricardo_1.jpg", "/members/ricardo_2.jpg"],
-    roles: ["Front-end", "Mobile"],
-  },
-  {
-    name: "Sam Hakimane",
-    images: ["/members/sam_1.jpg", "/members/sam_2.jpg"],
-    roles: ["Back-end"],
-  },
-  {
-    name: "Jedrzej Lagodzinski",
-    images: ["/members/j_1.jpg", "/members/j_2.jpg"],
-    roles: ["Front-end"],
-  },
-  {
-    name: "David Lin",
-    images: ["/members/david_1.jpg", "/members/david_2.jpg"],
-    roles: ["Front-end", "Design"],
-  },
-];
-
-interface PeopleSectionProps {
-  isActive: boolean;
-}
-
-const PeopleSection: React.FC<PeopleSectionProps> = ({ isActive }) => {
-  if (!isActive) return null;
-  return (
-    <div className="p-4">
-      <h2 className="text-3xl font-pt-sans-bold-900 mb-4 mx-4">People</h2>
-      <div className="people-section grid grid-cols-1 sm:grid-cols-3 gap-4 p-4">
-        {peopleData.map((person, index) => (
-          <PersonCard key={index} person={person} />
-        ))}
-      </div>
-    </div>
-  );
-};
-
-interface PersonCardProps {
-  person: Person;
-}
-
-// Define the type for the mapping object
-type RoleIconMappingType = {
-  [roleName: string]: string;
-};
-
-// Define the mapping from role names to icon filenames
-const roleIconMapping: RoleIconMappingType = {
-  CEO: "ceo.svg",
-  "Co-Founder": "founder.svg",
-  "Front-end": "front.svg",
-  Mobile: "mobile.svg",
-  "Back-end": "back.svg",
-  Design: "design.svg",
-};
-
-// Function to return the icon path based on the role, with a fallback
-const getIconPath = (role: string): string => {
-  return `/icons/${roleIconMapping[role] || "default-icon.svg"}`;
-};
-
-const PersonCard: React.FC<PersonCardProps> = ({ person }) => {
-  const [isHovered, setIsHovered] = React.useState(false);
-  return (
-    <div
-      className="person-card cursor-pointer overflow-hidden relative w-full h-auto shadow-lg"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      <div
-        className="relative w-full md:w-auto lg:w-full aspect-w-1 aspect-h-1"
-        style={{ paddingTop: "calc(512 / 342 * 100%)" }}
-      >
-        <div
-          className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
-            isHovered ? "opacity-0" : "opacity-100"
-          }`}
-          style={{ paddingTop: "calc(512 / 342 * 100%)" }}
-        >
-          <Image
-            src={person.images[0]}
-            alt={`${person.name} - Base`}
-            fill
-            sizes="(max-width: 768px) 100vw, 50vw"
-            className="rounded-lg"
-          />
-        </div>
-        <div
-          className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
-            isHovered ? "opacity-100" : "opacity-0"
-          }`}
-          style={{ paddingTop: "calc(512 / 342 * 100%)" }}
-        >
-          <Image
-            src={person.images[1]}
-            alt={`${person.name} - Hover`}
-            fill
-            sizes="(max-width: 768px) 100vw, 50vw"
-            className="rounded-lg"
-          />
-        </div>
-      </div>
-      <div className="absolute inset-0 flex flex-col justify-end p-4 rounded-lg">
-        <div
-          style={{ width: "fit-content" }}
-          className="bg-black bg-opacity-40 lg:p-2 sm:p-1"
-        >
-          <h3 className="text-white lg:text-xl md:text-sm font-bold">
-            {person.name}
-          </h3>
-        </div>
-        {person.roles.map((role, index) => (
-          <div key={index} style={{ width: "fit-content" }}>
-            <div className="bg-black bg-opacity-40 flex items-center">
-              <div className="relative mr-1 flex justify-center items-center w-8 h-8 sm:w-[3vw] sm:h-[3vw] lg:w-[2vw] lg:h-[2vw] md:w-[3vw] md:h-[3vw]">
-                <Image
-                  src={getIconPath(role)}
-                  alt={`${role} icon`}
-                  fill
-                  className="filter invert"
-                />
-              </div>
-              <span className="text-white lg:text-lg md:text-sm mr-2">
-                {role}
-              </span>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
-
-export default PeopleSection;
-
-// ====== FILE: src/app/projects/page.tsx ======
-
-"use client";
-import React, { useState, useEffect, FC } from "react";
-
-const Projects: FC = () => {
-  const [projects, setProjects] = useState<any[]>([]);
-
-  useEffect(() => {
-    const fetchProjects = async () => {
-      const token = localStorage.getItem("token");
-
-      try {
-        const response = await fetch(`http://localhost:8080/graphql`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            query: `
-              query {
-                projects {
-                  id
-                  name
-                  teamId
-                }
-              }
-            `,
-          }),
-        });
-
-        if (response.status !== 200) {
-          throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        console.log("Server Response:", data);
-
-        if (data && data.data && data.data.projects) {
-          setProjects(data.data.projects);
-        } else if (data.errors && data.errors.length > 0) {
-          alert(`Error: ${data.errors[0].message}`);
-        } else {
-          alert("An unexpected error occurred.");
-        }
-      } catch (error: any) {
-        alert(
-          `Network error: ${error.message || "Cannot connect to the server."}`
-        );
-      }
-    };
-
-    fetchProjects();
-  }, []);
-
-  return (
-    <div className="bg-gray-50 min-h-screen p-4">
-      <h2 className="text-2xl text-stone-950 font-semibold mb-4">Projects</h2>
-      <ul className="bg-white shadow rounded p-4">
-        {projects.map((project) => (
-          <li key={project.id} className="border-b border-gray-200 py-2">
-            <span className="font-medium text-stone-700">
-              Project Name: {project.name}
-            </span>{" "}
-            (<span className="text-green-800">Team ID:</span>{" "}
-            <span className="text-stone-700">{project.teamId}</span>)
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-};
-
-export default Projects;
-
-// ====== FILE: src/app/ratesManager/page.tsx ======
-
-"use client";
-
-import React, { useState } from "react";
-import { useQuery, useMutation, gql, ApolloError } from "@apollo/client";
-
-interface Team {
-  id: string;
-  name: string;
-}
-
-interface Rate {
-  id: number;
-  name: string;
-  teamId: string;
-  rate: number;
-}
-
-// GraphQL Queries and Mutations
-const GET_ALL_SIMPLE_TEAMS = gql`
-  query GetAllSimpleTeams {
-    getAllSimpleTeams {
-      id
-      name
-    }
-  }
-`;
-
-const CREATE_RATE = gql`
-  mutation CreateRate($name: String!, $rate: Int!, $teamId: String!) {
-    createRate(rateInputCreate: { name: $name, rate: $rate, teamId: $teamId }) {
-      id
-      name
-      rate
-      teamId
-    }
-  }
-`;
-
-const DELETE_RATE = gql`
-  mutation DeleteRate($rateId: Int!) {
-    deleteRate(rateId: $rateId) {
-      id
-    }
-  }
-`;
-
-const GET_RATES = gql`
-  query GetRates($teamId: String!) {
-    rates(teamId: $teamId) {
-      id
-      name
-      rate
-    }
-  }
-`;
-
-const RatesManager = () => {
-  const [selectedTeamId, setSelectedTeamId] = useState("");
-  const [rateName, setRateName] = useState("");
-  const [rateValue, setRateValue] = useState(0);
-
-  const [error, setError] = useState<ApolloError | null>(null);
-
-  const {
-    loading: teamsLoading,
-    data: teamsData,
-    error: teamsError,
-  } = useQuery(GET_ALL_SIMPLE_TEAMS, {
-    context: { useLinearApi: false },
-    onError: (error) => {
-      setError(error);
-    },
-  });
-
-  const {
-    loading: ratesLoading,
-    data: ratesData,
-    refetch: refetchRates,
-  } = useQuery(GET_RATES, {
-    variables: { teamId: selectedTeamId },
-    skip: !selectedTeamId,
-  });
-  const [createRate] = useMutation(CREATE_RATE, {
-    onCompleted: () => refetchRates(),
-  });
-  const [deleteRate] = useMutation(DELETE_RATE, {
-    onCompleted: () => refetchRates(),
-    onError: (error) => {
-      console.error("Error deleting rate:", error);
-    },
-  });
-
-  const handleCreateRate = () => {
-    if (selectedTeamId) {
-      createRate({
-        variables: { name: rateName, rate: rateValue, teamId: selectedTeamId },
-      });
-      setRateName("");
-      setRateValue(0);
-    }
-  };
-
-  const handleDeleteRate = (rateId: number) => {
-    console.log("Attempting to delete rate with ID:", rateId); // Debugging log
-    deleteRate({ variables: { rateId } }).catch((error) => {
-      setError(error);
-    });
-  };
-  if (error) return <p>Error: {error.message}</p>;
-  if (teamsLoading || ratesLoading) return <p>Loading...</p>;
-  if (!teamsData || !teamsData.getAllSimpleTeams)
-    return <p>No data available.</p>;
-
-  return (
-    <div className="p-6 bg-black shadow-md flex flex-row justify-between items-center">
-      <h3 className="font-bold text-lg text-white">Manage Rates</h3>
-
-      <div>
-        <select
-          id="teamSelector"
-          className="w-full p-2 mt-1 border border-gray-300 rounded"
-          onChange={(e) => setSelectedTeamId(e.target.value)}
-          value={selectedTeamId}
-        >
-          <option value="">Select a Team</option>
-          {teamsData.getAllSimpleTeams.map((team: Team) => (
-            <option key={team.id} value={team.id}>
-              {team.name}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div>
-        <input
-          type="text"
-          id="rateName"
-          className="w-full p-2 mt-1 border border-gray-300 rounded"
-          value={rateName}
-          onChange={(e) => setRateName(e.target.value)}
-          placeholder="Rate Name"
-        />
-      </div>
-
-      <div>
-        <input
-          type="number"
-          id="rateValue"
-          className="w-full p-2 mt-1 border border-gray-300 rounded"
-          value={rateValue}
-          onChange={(e) => setRateValue(parseInt(e.target.value) || 0)}
-          placeholder="Amount"
-        />
-      </div>
-
-      <div>
-        <button
-          className="w-full p-2 bg-white text-black rounded hover:bg-blue-600 font-bold"
-          onClick={handleCreateRate}
-        >
-          Create Rate
-        </button>
-      </div>
-
-      <div>
-        {ratesData &&
-          ratesData.rates.map((rate: Rate) => (
-            <div
-              key={rate.id}
-              className="flex justify-between items-center p-1 bg-gray-100 border border-gray-200 rounded m-2"
-            >
-              <span className="font-semibold mr-2">
-                {rate.name} - {rate.rate}
-              </span>
-              <button
-                className="p-1 bg-red-500 text-white rounded hover:bg-red-600"
-                onClick={() => handleDeleteRate(rate.id)}
-              >
-                Delete
-              </button>
-            </div>
-          ))}
-      </div>
-    </div>
-  );
-};
-
-export default RatesManager;
-
-// ====== FILE: src/app/section/page.tsx ======
-
-"use client";
-
-import { motion, useAnimation } from "framer-motion";
-import React, { useEffect } from "react";
-import { ContentWrapper } from "../components/contentWrapper";
-import PeopleSection from "@/app/people/page";
-import AboutComponent from "@/app/about/page";
-import ServicesComponent from "@/app/services/page";
-
-interface SectionProps {
-  id: string;
-  content: string;
-  isActive: boolean;
-  color: string;
-  zIndex: number;
-  videoSrc?: string;
-  isContactFormActive: boolean;
-  // children?: React.ReactNode;
-}
-
-const getSectionVariants = (isContactFormActive: boolean) => ({
-  inactive: isContactFormActive
-    ? {
-        opacity: 1,
-        scale: 1,
-        y: 0,
-        zIndex: 6,
-      }
-    : {
-        y: -40,
-        opacity: 0.7,
-        scale: 0.95,
-        zIndex: 6,
-        transition: {
-          duration: 0.5,
-          ease: "easeInOut",
-        },
-      },
-  active: {
-    y: 0,
-    opacity: 1,
-    scale: 1,
-    zIndex: 6,
-    transition: {
-      y: {
-        duration: 0.2,
-        type: "spring",
-        from: "40vh",
-        stiffness: 70,
-        damping: 15,
-      },
-      opacity: { duration: 0.2 },
-      scale: { duration: 0.2 },
-    },
-  },
-  exit: {
-    y: 50,
-    opacity: 0,
-    transition: { duration: 0.5 },
-  },
-});
-
-const Section: React.FC<SectionProps> = ({
-  id,
-  content,
-  isActive,
-  color,
-  zIndex,
-  videoSrc,
-  isContactFormActive,
-}) => {
-  const controls = useAnimation();
-  const sectionVariants = getSectionVariants(isContactFormActive);
-
-  useEffect(() => {
-    controls.start(isActive ? "active" : "inactive");
-  }, [isActive, controls, isContactFormActive]);
-
-  const videoSrcConditional = isActive ? videoSrc : "";
-
-  return (
-    <motion.div
-      layoutId={id}
-      variants={sectionVariants}
-      initial="initial"
-      animate={controls}
-      exit="inactive"
-      transition={{ duration: 0.5, type: "easeOut" }}
-      className={`section border-2 border-green-600 rounded-tl-3xl rounded-tr-3xl shadow-lg ${color} responsive-section`}
-      style={{
-        position: "absolute",
-        width: "75%",
-        top: 100,
-        right: 0,
-        bottom: 0,
-        boxSizing: "border-box",
-        zIndex: zIndex,
-      }}
-    >
-      {id === "People" ? (
-        <div
-          className="overflow-y-auto"
-          style={{ maxHeight: "calc(100vh - 200px)" }}
-        >
-          <PeopleSection isActive={isActive} />
-        </div>
-      ) : id === "About" ? (
-        <AboutComponent />
-      ) : id === "Services" ? (
-        <ServicesComponent />
-      ) : videoSrc ? (
-        <div className="w-full h-full">
-          <video
-            className="video w-full h-full overflow-hidden rounded-tl-3xl rounded-tr-3xl object-cover"
-            autoPlay
-            loop
-            muted
-            playsInline
-          >
-            <source src={videoSrc} type="video/mp4" />
-            Your browser does not support the video tag.
-          </video>
-          <div className="flex overlay-text lg:bottom-48 p-4 lg:relative md:flex ">
-            <h2 className="lg:text-4xl font-bold text-white p-4 bg-black bg-opacity-50 rounded-lg sm:text-lg">
-              We enable Collaborators
-              <br /> to create delightful technical solutions
-            </h2>
-          </div>
-        </div>
-      ) : (
-        <ContentWrapper isActive={isActive}>
-          <h2 className="text-2xl font-bold mb-4">{content}</h2>
-          <p className="text-gray-700">
-            Placeholder content for the {content} section.
-          </p>
-        </ContentWrapper>
-      )}
-    </motion.div>
-  );
-};
-
-export default Section;
-
-// ====== FILE: src/app/services/page.tsx ======
-
-"use client";
-
-import React, { JSX } from "react";
-import Image from "next/image";
-
-interface IFeature {
-  name: string;
-  icon: string;
-}
-
-interface IService {
-  title: string;
-  description: string[];
-  icon: string;
-  features?: IFeature[];
-  imageUrl: string;
-}
-
-const servicesData: IService[] = [
-  {
-    title: "Digital Product Development",
-    description: [
-      "Do you know the feeling of navigating a website or a mobile application and it is either hideous or you are getting lost in the pages all the time?",
-      "UI and UX is the art of creating beautiful applications that offer a smooth user experience whether it is a web or mobile application.",
-      "Both are essential for creating a successful application. UI design ensures that the application looks visually appealing and attractive to users, while UX design ensures that the application is intuitive and easy to use.",
-      "Let us enable you to balance both.",
-    ],
-    icon: "/icons/digital.svg",
-    imageUrl: "/images/dpd.jpg",
-    features: [
-      {
-        name: "E-commerce & Websites",
-        icon: "/icons/e-commerce.svg",
-      },
-      {
-        name: "Mobile apps & Web applications",
-        icon: "/icons/mobile.svg",
-      },
-      {
-        name: "Digital Solutions & Platforms",
-        icon: "/icons/platforms.svg",
-      },
-    ],
-  },
-  {
-    title: "Climate Reporting",
-    description: [
-      "Searching for the right data? Preparing to report scope 1, 2 or 3? Or are you looking for internal tracking to make data-driven decisions to lower your climate footprint?",
-      "At Enablment, we have the technical skills to integrate with the correct data sources and align that data for trustworthy reporting. We can set up automated reporting flows from multiple data sources for internal tracking.",
-    ],
-    icon: "/icons/climate.svg",
-    imageUrl: "/images/climate.jpg",
-  },
-  {
-    title: "Insights through Data",
-    description: [
-      "On the journey of digitalization, automating and optimizing processes and data collection create the best fundamentals for an effective digital solution.",
-      "Luckily, we are more than stoked to help you with following.",
-    ],
-    icon: "/icons/data.svg",
-    imageUrl: "/images/data.jpg",
-  },
-  {
-    title: "Data Consolidation (Cloud)",
-    description: [
-      "Is it difficult, and time consuming gathering data, and structuring it for data analytics/insight?",
-      "This is the first step within data analytics and all companies will inevitably go through this transformation at some point. Once implemented there will be a consistent and reliable data foundation for all data analysis. Plus a setup like this is fully automated.",
-    ],
-    icon: "/icons/cloud.svg",
-    imageUrl: "/images/cloud.jpg",
-  },
-  {
-    title: "Business Intelligence (BI)",
-    description: [
-      "Do you have a database that is automatically sourcing the data for you? And is your data then, consequently, consolidated in one place and might even be structured? Now you want insight from your data?",
-      "This is Business Intelligence. We conduct a data analysis and transform your data, then we create dashboards to visualize the insight.",
-    ],
-    icon: "/icons/bi.svg",
-    imageUrl: "/images/bi.jpg",
-  },
-  {
-    title: "Machine Learning & Artificial Intelligence (ML & AI)",
-    description: [
-      "Is your decision-making process supplemented with insight and a descriptive data analysis through BI? Are you ready to let a data model offer you suggestions?",
-      "Certain trends and causalities that might not be visible to the human eye or the data input is simply too big. This is when you move from the descriptive to the prescriptive data analysis. A machine learning model can highlight causalities and forecast development.",
-    ],
-    icon: "/icons/ai.svg",
-    imageUrl: "/images/AI-ML.jpg",
-  },
-];
-const formatText = (text: string, maxLength: number): JSX.Element[] => {
-  const words = text.split(" ");
-  const formattedLines: JSX.Element[] = [];
-  let currentLine = "";
-
-  words.forEach((word, index) => {
-    if ((currentLine + word).length > maxLength) {
-      formattedLines.push(
-        <span key={index}>
-          {currentLine.trim()}
-          <br />
-        </span>
-      );
-      currentLine = word + " ";
-    } else {
-      currentLine += word + " ";
-    }
-  });
-
-  // Add the last line
-  if (currentLine) {
-    formattedLines.push(<span key={words.length}>{currentLine.trim()}</span>);
-  }
-
-  return formattedLines;
-};
-const ServicesComponent: React.FC = () => {
-  return (
-    <div className="space-y-8 p-4 sm:p-6">
-      <h2 className="text-3xl font-pt-sans-bold-900 mb-4">Services</h2>
-      <div
-        style={{
-          maxHeight: "calc(100vh - 300px)",
-          overflowY: "auto",
-        }}
-      >
-        {servicesData.map((service, index) => (
-          <div key={index} className="mb-6">
-            <div className="flex flex-wrap items-stretch shadow-lg rounded-lg overflow-hidden lg:justify-start sm:justify-center lg:flex-nowrap space-x-4">
-              <div className="relative w-full flex-grow tablet:flex-grow-0 md:w-1/2  services-image-container">
-                <Image
-                  src={service.imageUrl}
-                  alt={`${service.title}`}
-                  layout="fill"
-                  objectFit="cover"
-                  sizes="(min-width: 768px) 50vw, 100vw"
-                />
-              </div>
-              {/* Rest of the Content */}
-              <div className="text-container lg:w-1/2 sm:mt-4">
-                <div className="flex items-center space-x-2">
-                  <Image
-                    src={service.icon}
-                    alt={`${service.title} Icon`}
-                    width={24}
-                    height={24}
-                  />
-                  <h3 className="text-2xl font-semibold mb-2">
-                    {service.title}
-                  </h3>
-                </div>
-                {service.description.map((paragraph, pIndex) => (
-                  <p
-                    key={pIndex}
-                    style={{ lineHeight: "1.4" }}
-                    className="text-lg mb-3"
-                  >
-                    {/* {formatText(paragraph, 75)} */}
-                    {paragraph}
-                  </p>
-                ))}
-                {service.features && (
-                  <div className="flex flex-col space-y-2 mt-4">
-                    {service.features.map((feature, fIndex) => (
-                      <div
-                        key={fIndex}
-                        className="flex items-center space-x-2 "
-                      >
-                        <Image
-                          src={feature.icon}
-                          alt={`${feature.name} Icon`}
-                          width={20}
-                          height={20}
-                        />
-                        <span style={{ lineHeight: "1.4" }} className="text-lg">
-                          {feature.name}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
-
-export default ServicesComponent;
-
 // ====== FILE: src/app/signup/page.tsx ======
 
 "use client";
@@ -4106,357 +3689,6 @@ const Signup: React.FC = () => {
 };
 
 export default Signup;
-
-// ====== FILE: src/app/table/page.tsx ======
-
-"use client";
-
-import React from "react";
-
-// Define the TypeScript type for the table data
-type ClientServiceData = {
-  client: string;
-  year: number;
-  services: string;
-};
-interface ServiceTableProps {
-  onContactClick: () => void;
-}
-
-// Sample data array
-const tableData: ClientServiceData[] = [
-  {
-    client: "Modstrøm",
-    year: 2023,
-    services: "Climate Footprint Reporting: Scope 1 and 2",
-  },
-  { client: "Junkfood", year: 2023, services: "Climate Footprint Reporting" },
-  { client: "Confidential", year: 2023, services: "Cloud, User Platform" },
-  { client: "Shipping Company", year: 2023, services: "Cloud, User Platform" },
-  { client: "B93", year: 2023, services: "Website, UI & UX" },
-  {
-    client: "B:A:M",
-    year: 2024,
-    services: "Video Streaming Platform and Mobil App",
-  },
-  { client: "H5", year: 2024, services: "Website" },
-];
-
-const ServiceTable: React.FC<ServiceTableProps> = ({ onContactClick }) => {
-  return (
-    <div className="flex flex-col mx-2 z-10">
-      <p className="text-3xl font-semibold mb-2 text-center bg-white shadow rounded-lg sm:text-2xl">
-        Our Happy Collaborators
-      </p>
-      {tableData.map((item, index) => (
-        <div key={index} className="w-full pb-2">
-          <div className="bg-white shadow rounded-lg sm:p-1 sm:text-sm">
-            <h3 className="text-lg sm:text-md font-semibold">{item.client}</h3>
-            <p className="text-gray-900 font-roboto">Year: {item.year}</p>
-            <p className="text-gray-900 font-roboto">
-              Services: {item.services}
-            </p>
-          </div>
-        </div>
-      ))}
-      <div className="flex mt-2">
-        <button
-          className="bg-green-700 hover:bg-green-500 text-white font-bold py-2 px-4 rounded-full transition-colors duration-300 "
-          onClick={onContactClick}
-        >
-          Shall we collaborate ?
-        </button>
-      </div>
-    </div>
-  );
-};
-
-export default ServiceTable;
-
-// ====== FILE: src/app/teamSync/page.tsx ======
-
-"use client";
-
-import React, { useEffect } from "react";
-
-const TeamSyncAndFetch: React.FC = () => {
-  // const [teams, setTeams] = useState<Team[]>([]);
-
-  const syncTeams = async () => {
-    const token = localStorage.getItem("token");
-
-    try {
-      const response = await fetch(
-        `http://localhost:8080/team-synchronize/teams`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-        }
-      );
-
-      const data = await response.json();
-      console.log("Sync Response:", data);
-    } catch (error) {
-      console.error("Error during sync:", error);
-    }
-  };
-
-  useEffect(() => {
-    const fetchDataAndSync = async () => {
-      await syncTeams();
-      // await fetchTeams();
-    };
-
-    fetchDataAndSync();
-  }, []);
-
-  return (
-    <button
-      onClick={syncTeams}
-      className="p-2 bg-black text-white rounded-full hover:bg-blue-600 flex flex-col items-center justify-center relative"
-      style={{ width: "120px", height: "120px" }}
-    >
-      <div
-        className="absolute w-full flex flex-col items-center justify-center"
-        style={{ top: "46%", transform: "translateY(-50%)" }}
-      >
-        <span className="text-center text-xs">Sync</span>
-        <span className="text-center text-xs mt-1">Teams</span>
-      </div>
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        x="0px"
-        y="0px"
-        width="100"
-        height="100"
-        viewBox="0 0 24 24"
-        fill="currentColor"
-      >
-        <path d="M16 15L24 15 20 20zM8 9L0 9 4 4z"></path>
-        <path d="M21 6c0-1.654-1.346-3-3-3H7.161l1.6 2H18c.551 0 1 .448 1 1v10h2V6zM3 18c0 1.654 1.346 3 3 3h10.839l-1.6-2H6c-.551 0-1-.448-1-1V8H3V18z"></path>
-      </svg>
-    </button>
-  );
-};
-
-export default TeamSyncAndFetch;
-
-// ====== FILE: src/app/time/page.tsx ======
-
-"use client";
-
-import React, { useState, useEffect } from "react";
-import { useQuery } from "@apollo/client";
-import gql from "graphql-tag";
-import { currentUserVar } from "../lib/apolloClient";
-
-const GET_DROPDOWN_OPTIONS = gql`
-  query {
-    users {
-      id
-      email
-    }
-    projects {
-      id
-      name
-    }
-  }
-`;
-
-const GET_TOTAL_TIME_SPENT = gql`
-  query GetTotalTimeSpent(
-    $userId: Float!
-    $projectId: String!
-    $startDate: String!
-    $endDate: String!
-  ) {
-    getTotalTimeSpent(
-      userId: $userId
-      projectId: $projectId
-      startDate: $startDate
-      endDate: $endDate
-    )
-  }
-`;
-
-const GET_USER_PROJECTS = gql`
-  query GetUserProjects {
-    users {
-      id
-      teams {
-        name
-        projects {
-          id
-          name
-        }
-      }
-    }
-  }
-`;
-
-const getCurrentDate = () => new Date().toISOString().split("T")[0];
-
-const TotalTimeSpent: React.FC = () => {
-  const [totalTime, setTotalTime] = useState(0);
-  const [selectedProject, setSelectedProject] = useState<string | null>(null);
-  const [startDate, setStartDate] = useState(getCurrentDate());
-  const [endDate, setEndDate] = useState(getCurrentDate());
-
-  const loggedInUser = currentUserVar();
-  const [userProjects, setUserProjects] = useState<any[]>([]);
-
-  const {
-    loading: loadingUserProjects,
-    error: errorUserProjects,
-    data: userProjectsData,
-  } = useQuery(GET_USER_PROJECTS, {
-    skip: !loggedInUser,
-  });
-
-  const {
-    loading: loadingOptions,
-    error: errorOptions,
-    data: optionsData,
-  } = useQuery(GET_DROPDOWN_OPTIONS);
-  const {
-    loading: loadingTime,
-    error: errorTime,
-    data: timeData,
-    refetch,
-  } = useQuery(GET_TOTAL_TIME_SPENT, {
-    variables: {
-      userId: loggedInUser ? parseFloat(loggedInUser.id) : null,
-      projectId: selectedProject,
-      startDate,
-      endDate,
-    },
-    skip: !loggedInUser || !selectedProject,
-  });
-
-  useEffect(() => {
-    if (userProjectsData && loggedInUser) {
-      const userWithProjects = userProjectsData.users.find(
-        (user: any) => user.id === loggedInUser.id
-      );
-      if (userWithProjects) {
-        const projectsWithTeamName = userWithProjects.teams.flatMap(
-          (team: any) =>
-            team.projects.map((project: any) => ({
-              ...project,
-              teamName: team.name,
-            }))
-        );
-        setUserProjects(projectsWithTeamName);
-      }
-    }
-  }, [userProjectsData, loggedInUser]);
-
-  useEffect(() => {
-    if (selectedProject) {
-      refetch();
-    }
-  }, [selectedProject, startDate, endDate, refetch]);
-
-  useEffect(() => {
-    if (timeData) {
-      setTotalTime(timeData.getTotalTimeSpent);
-    }
-  }, [timeData]);
-
-  const formatMilliseconds = (ms: number) => {
-    const seconds = Math.floor((ms / 1000) % 60);
-    const minutes = Math.floor((ms / (1000 * 60)) % 60);
-    const hours = Math.floor(ms / (1000 * 60 * 60));
-    return `${hours.toString().padStart(2, "0")}:${minutes
-      .toString()
-      .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
-  };
-
-  if (loadingTime) return <p>Loading...</p>;
-  if (errorOptions || errorTime?.message) {
-    const errorMessage = errorOptions
-      ? errorOptions.message
-      : errorTime?.message;
-    return (
-      <div className="bg-red-50 border-l-8 border-red-400 p-4 mb-4">
-        <div className="flex">
-          <div className="flex-shrink-0">
-            <svg
-              className="h-5 w-5 text-red-400"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-              aria-hidden="true"
-            >
-              <path
-                fillRule="evenodd"
-                d="M8.257 3.099c.366-.47.977-.751 1.743-.751s1.377.281 1.743.75l6.857 8.8c.38.487.4 1.128.06 1.625a1.162 1.162 0 01-.86.426H2.25c-.334 0-.65-.14-.86-.426a1.163 1.163 0 01-.06-1.625l6.857-8.8z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </div>
-          <div className="ml-3">
-            <h3 className="text-sm font-medium text-red-800">Error</h3>
-            <div className="text-sm text-red-600">
-              <p>{errorMessage}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="p-6 bg-black shadow-md flex flex-row justify-between items-center">
-      <h3 className="text-lg font-bold text-white">
-        Get Time Spent on Project
-      </h3>
-      <div>
-        <select
-          id="projectSelector"
-          value={selectedProject || ""}
-          onChange={(e) => setSelectedProject(e.target.value)}
-          className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-        >
-          <option value="">Select a Project</option>
-          {userProjects.map((project: any) => (
-            <option key={project.id} value={project.id}>
-              {project.name} (Team: {project.teamName})
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* Date Pickers */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <input
-          type="date"
-          id="startDatePicker"
-          value={startDate}
-          onChange={(e) => setStartDate(e.target.value)}
-          className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-        />
-        <input
-          type="date"
-          id="endDatePicker"
-          value={endDate}
-          onChange={(e) => setEndDate(e.target.value)}
-          className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-        />
-      </div>
-
-      {/* Total Time Display */}
-      <p className="text-lg font-medium text-white">
-        Total Time: {formatMilliseconds(totalTime)}
-      </p>
-    </div>
-  );
-};
-
-export default TotalTimeSpent;
 
 // ====== FILE: src/app/timeKeeper/page.tsx ======
 
@@ -4865,6 +4097,724 @@ const UserTable: React.FC<UserTableProps> = ({
 );
 
 export default UserTable;
+
+// ====== FILE: src/app/components/Admin/invoiceSummary.tsx ======
+
+"use client";
+
+import React, { useState, useEffect } from "react";
+import { useQuery } from "@apollo/client";
+import gql from "graphql-tag";
+import ProjectSelector from "../ProjectSelector";
+
+interface Rate {
+  rateId: string;
+  rateName: string;
+  hours: number;
+  cost: number;
+  ratePerHour: number;
+}
+
+interface InvoiceData {
+  projectId: string;
+  projectName: string;
+  totalHours: number;
+  totalCost: number;
+  rates: Rate[];
+}
+
+// GraphQL queries
+const GET_PROJECTS = gql`
+  query {
+    projects {
+      id
+      name
+      teamId
+    }
+  }
+`;
+
+const GET_ALL_TEAMS = gql`
+  query {
+    getAllSimpleTeams {
+      id
+      name
+    }
+  }
+`;
+
+const GET_INVOICE_FOR_PROJECT = gql`
+  query InvoiceForProject(
+    $projectId: String!
+    $startDate: DateTime!
+    $endDate: DateTime!
+  ) {
+    invoiceForProject(
+      projectId: $projectId
+      startDate: $startDate
+      endDate: $endDate
+    ) {
+      projectId
+      projectName
+      totalHours
+      totalCost
+      rates {
+        rateId
+        rateName
+        hours
+        cost
+        ratePerHour
+      }
+    }
+  }
+`;
+
+const InvoiceSummary: React.FC = () => {
+  const [selectedProject, setSelectedProject] = useState<string>("");
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
+  const [invoiceData, setInvoiceData] = useState<InvoiceData | null>(null);
+
+  const { data: projectsData } = useQuery(GET_PROJECTS);
+  const { data: teamsData } = useQuery(GET_ALL_TEAMS);
+
+  const {
+    loading: loadingInvoice,
+    error: errorInvoice,
+    data: invoiceDataResponse,
+    refetch,
+  } = useQuery(GET_INVOICE_FOR_PROJECT, {
+    variables: {
+      projectId: selectedProject,
+      startDate: startDate ? new Date(startDate).toISOString() : null,
+      endDate: endDate ? new Date(endDate).toISOString() : null,
+    },
+    skip: !selectedProject || !startDate || !endDate,
+  });
+
+  useEffect(() => {
+    if (invoiceDataResponse) {
+      setInvoiceData(invoiceDataResponse.invoiceForProject);
+    }
+  }, [invoiceDataResponse]);
+
+  useEffect(() => {
+    if (selectedProject && startDate && endDate) {
+      refetch();
+    }
+  }, [selectedProject, startDate, endDate, refetch]);
+
+  interface Team {
+    id: string;
+    name: string;
+  }
+
+  interface Project {
+    id: string;
+    name: string;
+    teamId: string;
+  }
+
+  const teamIdToNameMap = teamsData?.getAllSimpleTeams.reduce(
+    (acc: Record<string, string>, team: Team) => {
+      acc[team.id] = team.name;
+      return acc;
+    },
+    {}
+  );
+
+  const projectTeamName = projectsData?.projects.find(
+    (project: Project) => project.id === invoiceData?.projectId
+  )?.teamId;
+
+  const projectsWithTeamNames = projectsData?.projects.map(
+    (project: Project) => ({
+      ...project,
+      teamName: teamIdToNameMap
+        ? teamIdToNameMap[project.teamId]
+        : "Unknown Team",
+    })
+  );
+
+  useEffect(() => {
+    console.log("teamIdToNameMap", teamIdToNameMap);
+    console.log("invoiceData", invoiceData);
+    console.log("Invoice Data Rates:", invoiceData?.rates);
+
+    if (selectedProject && startDate && endDate) {
+      refetch();
+    }
+  }, [
+    selectedProject,
+    startDate,
+    endDate,
+    refetch,
+    teamIdToNameMap,
+    invoiceData,
+  ]);
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "DKK",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+      currencyDisplay: "code",
+      notation: "compact",
+    })
+      .format(value)
+      .replace("DKK", "")
+      .trim();
+  };
+
+  return (
+    <div className="p-6 bg-black shadow-md ">
+      <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0 md:space-x-4">
+        <h3 className="text-lg font-bold text-white">Invoice Summary</h3>
+
+        <div className="flex-grow">
+          <ProjectSelector
+            projects={projectsWithTeamNames || []}
+            selectedProject={selectedProject}
+            onProjectChange={setSelectedProject}
+          />
+        </div>
+
+        <div className="flex-grow md:flex md:space-x-4">
+          <input
+            type="date"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            className="w-full p-2 bg-white text-black border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+          />
+          <input
+            type="date"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            className="w-full p-2 bg-white text-black border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+          />
+        </div>
+      </div>
+
+      {/* Handling loading, error, and invoice data display */}
+      {loadingInvoice && <p>Loading...</p>}
+      {errorInvoice && (
+        <div className="bg-red-50 border-l-8 border-red-400 p-4 mb-4">
+          <p className="text-sm text-red-600">{errorInvoice.message}</p>
+        </div>
+      )}
+      {invoiceData && (
+        <div className="mt-4 p-6 bg-white shadow-md rounded-lg">
+          <h4 className="text-md font-bold bg-slate-200">
+            Project: {invoiceData.projectName} - Team:{" "}
+            {teamIdToNameMap && projectTeamName
+              ? teamIdToNameMap[projectTeamName] || "Team Not Found"
+              : "Loading Teams..."}
+          </h4>
+          <p className="border-b border-gray-200 shadow-sm">
+            Total Hours: {invoiceData.totalHours.toFixed(2)}
+          </p>
+          <p className="border-b border-gray-200 shadow-sm">
+            Total Cost: {formatCurrency(invoiceData.totalCost)}
+          </p>
+          <div className="mt-4">
+            <h5 className="font-semibold bg-slate-200">Rates Applied:</h5>
+            <ul>
+              {invoiceData.rates.map((rate: Rate) => (
+                <li
+                  className="border-b border-gray-200 shadow-sm"
+                  key={rate.rateId}
+                >
+                  {rate.rateName}: {rate.hours.toFixed(2)} hours at{" "}
+                  {formatCurrency(rate.cost)} (
+                  {formatCurrency(rate.ratePerHour)} DKK / h)
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default InvoiceSummary;
+
+// ====== FILE: src/app/components/Admin/ratesManager.tsx ======
+
+"use client";
+
+import React, { useState } from "react";
+import { useQuery, useMutation, gql, ApolloError } from "@apollo/client";
+
+interface Team {
+  id: string;
+  name: string;
+}
+
+interface Rate {
+  id: number;
+  name: string;
+  teamId: string;
+  rate: number;
+}
+
+// GraphQL Queries and Mutations
+const GET_ALL_SIMPLE_TEAMS = gql`
+  query GetAllSimpleTeams {
+    getAllSimpleTeams {
+      id
+      name
+    }
+  }
+`;
+
+const CREATE_RATE = gql`
+  mutation CreateRate($name: String!, $rate: Int!, $teamId: String!) {
+    createRate(rateInputCreate: { name: $name, rate: $rate, teamId: $teamId }) {
+      id
+      name
+      rate
+      teamId
+    }
+  }
+`;
+
+const DELETE_RATE = gql`
+  mutation DeleteRate($rateId: Int!) {
+    deleteRate(rateId: $rateId) {
+      id
+    }
+  }
+`;
+
+const GET_RATES = gql`
+  query GetRates($teamId: String!) {
+    rates(teamId: $teamId) {
+      id
+      name
+      rate
+    }
+  }
+`;
+
+const RatesManager = () => {
+  const [selectedTeamId, setSelectedTeamId] = useState("");
+  const [rateName, setRateName] = useState("");
+  const [rateValue, setRateValue] = useState(0);
+
+  const [error, setError] = useState<ApolloError | null>(null);
+
+  const {
+    loading: teamsLoading,
+    data: teamsData,
+    error: teamsError,
+  } = useQuery(GET_ALL_SIMPLE_TEAMS, {
+    context: { useLinearApi: false },
+    onError: (error) => {
+      setError(error);
+    },
+  });
+
+  const {
+    loading: ratesLoading,
+    data: ratesData,
+    refetch: refetchRates,
+  } = useQuery(GET_RATES, {
+    variables: { teamId: selectedTeamId },
+    skip: !selectedTeamId,
+  });
+  const [createRate] = useMutation(CREATE_RATE, {
+    onCompleted: () => refetchRates(),
+  });
+  const [deleteRate] = useMutation(DELETE_RATE, {
+    onCompleted: () => refetchRates(),
+    onError: (error) => {
+      console.error("Error deleting rate:", error);
+    },
+  });
+
+  const handleCreateRate = () => {
+    if (selectedTeamId) {
+      createRate({
+        variables: { name: rateName, rate: rateValue, teamId: selectedTeamId },
+      });
+      setRateName("");
+      setRateValue(0);
+    }
+  };
+
+  const handleDeleteRate = (rateId: number) => {
+    console.log("Attempting to delete rate with ID:", rateId); // Debugging log
+    deleteRate({ variables: { rateId } }).catch((error) => {
+      setError(error);
+    });
+  };
+  if (error) return <p>Error: {error.message}</p>;
+  if (teamsLoading || ratesLoading) return <p>Loading...</p>;
+  if (!teamsData || !teamsData.getAllSimpleTeams)
+    return <p>No data available.</p>;
+
+  return (
+    <div className="p-6 bg-black shadow-md flex flex-row justify-between items-center">
+      <h3 className="font-bold text-lg text-white">Manage Rates</h3>
+
+      <div>
+        <select
+          id="teamSelector"
+          className="w-full p-2 mt-1 border border-gray-300 rounded"
+          onChange={(e) => setSelectedTeamId(e.target.value)}
+          value={selectedTeamId}
+        >
+          <option value="">Select a Team</option>
+          {teamsData.getAllSimpleTeams.map((team: Team) => (
+            <option key={team.id} value={team.id}>
+              {team.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div>
+        <input
+          type="text"
+          id="rateName"
+          className="w-full p-2 mt-1 border border-gray-300 rounded"
+          value={rateName}
+          onChange={(e) => setRateName(e.target.value)}
+          placeholder="Rate Name"
+        />
+      </div>
+
+      <div>
+        <input
+          type="number"
+          id="rateValue"
+          className="w-full p-2 mt-1 border border-gray-300 rounded"
+          value={rateValue}
+          onChange={(e) => setRateValue(parseInt(e.target.value) || 0)}
+          placeholder="Amount"
+        />
+      </div>
+
+      <div>
+        <button
+          className="w-full p-2 bg-white text-black rounded hover:bg-blue-600 font-bold"
+          onClick={handleCreateRate}
+        >
+          Create Rate
+        </button>
+      </div>
+
+      <div>
+        {ratesData &&
+          ratesData.rates.map((rate: Rate) => (
+            <div
+              key={rate.id}
+              className="flex justify-between items-center p-1 bg-gray-100 border border-gray-200 rounded m-2"
+            >
+              <span className="font-semibold mr-2">
+                {rate.name} - {rate.rate}
+              </span>
+              <button
+                className="p-1 bg-red-500 text-white rounded hover:bg-red-600"
+                onClick={() => handleDeleteRate(rate.id)}
+              >
+                Delete
+              </button>
+            </div>
+          ))}
+      </div>
+    </div>
+  );
+};
+
+export default RatesManager;
+
+// ====== FILE: src/app/components/Admin/teamSynch.tsx ======
+
+"use client";
+
+import React, { useEffect } from "react";
+
+const TeamSync: React.FC = () => {
+  // const [teams, setTeams] = useState<Team[]>([]);
+
+  const syncTeams = async () => {
+    const token = localStorage.getItem("token");
+
+    try {
+      const response = await fetch(
+        `http://localhost:8080/team-synchronize/teams`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        }
+      );
+
+      const data = await response.json();
+      console.log("Sync Response:", data);
+    } catch (error) {
+      console.error("Error during sync:", error);
+    }
+  };
+
+  useEffect(() => {
+    const fetchDataAndSync = async () => {
+      await syncTeams();
+      // await fetchTeams();
+    };
+
+    fetchDataAndSync();
+  }, []);
+
+  return (
+    <button
+      onClick={syncTeams}
+      className="p-2 bg-black text-white rounded-full hover:bg-blue-600 flex flex-col items-center justify-center relative"
+      style={{ width: "120px", height: "120px" }}
+    >
+      <div
+        className="absolute w-full flex flex-col items-center justify-center"
+        style={{ top: "46%", transform: "translateY(-50%)" }}
+      >
+        <span className="text-center text-xs">Sync</span>
+        <span className="text-center text-xs mt-1">Teams</span>
+      </div>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        x="0px"
+        y="0px"
+        width="100"
+        height="100"
+        viewBox="0 0 24 24"
+        fill="currentColor"
+      >
+        <path d="M16 15L24 15 20 20zM8 9L0 9 4 4z"></path>
+        <path d="M21 6c0-1.654-1.346-3-3-3H7.161l1.6 2H18c.551 0 1 .448 1 1v10h2V6zM3 18c0 1.654 1.346 3 3 3h10.839l-1.6-2H6c-.551 0-1-.448-1-1V8H3V18z"></path>
+      </svg>
+    </button>
+  );
+};
+
+export default TeamSync;
+
+// ====== FILE: src/app/components/Admin/totalTimeSpent.tsx ======
+
+"use client";
+
+import React, { useState, useEffect } from "react";
+import { useQuery } from "@apollo/client";
+import gql from "graphql-tag";
+import { currentUserVar } from "@/app/lib/apolloClient";
+
+const GET_DROPDOWN_OPTIONS = gql`
+  query {
+    users {
+      id
+      email
+    }
+    projects {
+      id
+      name
+    }
+  }
+`;
+
+const GET_TOTAL_TIME_SPENT = gql`
+  query GetTotalTimeSpent(
+    $userId: Float!
+    $projectId: String!
+    $startDate: String!
+    $endDate: String!
+  ) {
+    getTotalTimeSpent(
+      userId: $userId
+      projectId: $projectId
+      startDate: $startDate
+      endDate: $endDate
+    )
+  }
+`;
+
+const GET_USER_PROJECTS = gql`
+  query GetUserProjects {
+    users {
+      id
+      teams {
+        name
+        projects {
+          id
+          name
+        }
+      }
+    }
+  }
+`;
+
+const getCurrentDate = () => new Date().toISOString().split("T")[0];
+
+const TotalTimeSpent: React.FC = () => {
+  const [totalTime, setTotalTime] = useState(0);
+  const [selectedProject, setSelectedProject] = useState<string | null>(null);
+  const [startDate, setStartDate] = useState(getCurrentDate());
+  const [endDate, setEndDate] = useState(getCurrentDate());
+
+  const loggedInUser = currentUserVar();
+  const [userProjects, setUserProjects] = useState<any[]>([]);
+
+  const {
+    loading: loadingUserProjects,
+    error: errorUserProjects,
+    data: userProjectsData,
+  } = useQuery(GET_USER_PROJECTS, {
+    skip: !loggedInUser,
+  });
+
+  const {
+    loading: loadingOptions,
+    error: errorOptions,
+    data: optionsData,
+  } = useQuery(GET_DROPDOWN_OPTIONS);
+  const {
+    loading: loadingTime,
+    error: errorTime,
+    data: timeData,
+    refetch,
+  } = useQuery(GET_TOTAL_TIME_SPENT, {
+    variables: {
+      userId: loggedInUser ? parseFloat(loggedInUser.id) : null,
+      projectId: selectedProject,
+      startDate,
+      endDate,
+    },
+    skip: !loggedInUser || !selectedProject,
+  });
+
+  useEffect(() => {
+    if (userProjectsData && loggedInUser) {
+      const userWithProjects = userProjectsData.users.find(
+        (user: any) => user.id === loggedInUser.id
+      );
+      if (userWithProjects) {
+        const projectsWithTeamName = userWithProjects.teams.flatMap(
+          (team: any) =>
+            team.projects.map((project: any) => ({
+              ...project,
+              teamName: team.name,
+            }))
+        );
+        setUserProjects(projectsWithTeamName);
+      }
+    }
+  }, [userProjectsData, loggedInUser]);
+
+  useEffect(() => {
+    if (selectedProject) {
+      refetch();
+    }
+  }, [selectedProject, startDate, endDate, refetch]);
+
+  useEffect(() => {
+    if (timeData) {
+      setTotalTime(timeData.getTotalTimeSpent);
+    }
+  }, [timeData]);
+
+  const formatMilliseconds = (ms: number) => {
+    const seconds = Math.floor((ms / 1000) % 60);
+    const minutes = Math.floor((ms / (1000 * 60)) % 60);
+    const hours = Math.floor(ms / (1000 * 60 * 60));
+    return `${hours.toString().padStart(2, "0")}:${minutes
+      .toString()
+      .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+  };
+
+  if (loadingTime) return <p>Loading...</p>;
+  if (errorOptions || errorTime?.message) {
+    const errorMessage = errorOptions
+      ? errorOptions.message
+      : errorTime?.message;
+    return (
+      <div className="bg-red-50 border-l-8 border-red-400 p-4 mb-4">
+        <div className="flex">
+          <div className="flex-shrink-0">
+            <svg
+              className="h-5 w-5 text-red-400"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                fillRule="evenodd"
+                d="M8.257 3.099c.366-.47.977-.751 1.743-.751s1.377.281 1.743.75l6.857 8.8c.38.487.4 1.128.06 1.625a1.162 1.162 0 01-.86.426H2.25c-.334 0-.65-.14-.86-.426a1.163 1.163 0 01-.06-1.625l6.857-8.8z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </div>
+          <div className="ml-3">
+            <h3 className="text-sm font-medium text-red-800">Error</h3>
+            <div className="text-sm text-red-600">
+              <p>{errorMessage}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-6 bg-black shadow-md flex flex-row justify-between items-center">
+      <h3 className="text-lg font-bold text-white">
+        Get Time Spent on Project
+      </h3>
+      <div>
+        <select
+          id="projectSelector"
+          value={selectedProject || ""}
+          onChange={(e) => setSelectedProject(e.target.value)}
+          className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+        >
+          <option value="">Select a Project</option>
+          {userProjects.map((project: any) => (
+            <option key={project.id} value={project.id}>
+              {project.name} (Team: {project.teamName})
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Date Pickers */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <input
+          type="date"
+          id="startDatePicker"
+          value={startDate}
+          onChange={(e) => setStartDate(e.target.value)}
+          className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+        />
+        <input
+          type="date"
+          id="endDatePicker"
+          value={endDate}
+          onChange={(e) => setEndDate(e.target.value)}
+          className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+        />
+      </div>
+
+      {/* Total Time Display */}
+      <p className="text-lg font-medium text-white">
+        Total Time: {formatMilliseconds(totalTime)}
+      </p>
+    </div>
+  );
+};
+
+export default TotalTimeSpent;
 
 // ====== FILE: src/app/components/ui/background-beams.tsx ======
 

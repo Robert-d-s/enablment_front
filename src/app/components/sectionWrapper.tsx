@@ -3,9 +3,9 @@
 import { motion, useAnimation } from "framer-motion";
 import React, { useEffect } from "react";
 import { ContentWrapper } from "../components/contentWrapper";
-import PeopleSection from "@/app/people/page";
-import AboutComponent from "@/app/about/page";
-import ServicesComponent from "@/app/services/page";
+import PeopleSection from "@/app/components/peopleSection";
+import AboutSection from "@/app/components/aboutSection";
+import ServicesSection from "@/app/components/servicesSection";
 
 interface SectionProps {
   id: string;
@@ -59,7 +59,7 @@ const getSectionVariants = (isContactFormActive: boolean) => ({
   },
 });
 
-const Section: React.FC<SectionProps> = ({
+const SectionWrapper: React.FC<SectionProps> = ({
   id,
   content,
   isActive,
@@ -102,9 +102,9 @@ const Section: React.FC<SectionProps> = ({
           <PeopleSection isActive={isActive} />
         </div>
       ) : id === "About" ? (
-        <AboutComponent />
+        <AboutSection />
       ) : id === "Services" ? (
-        <ServicesComponent />
+        <ServicesSection />
       ) : videoSrc ? (
         <div className="w-full h-full">
           <video
@@ -136,4 +136,4 @@ const Section: React.FC<SectionProps> = ({
   );
 };
 
-export default Section;
+export default SectionWrapper;

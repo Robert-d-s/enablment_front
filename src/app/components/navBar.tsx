@@ -12,7 +12,7 @@ interface NavbarProps {
   activeSection: string;
 }
 
-const Navbar: React.FC<NavbarProps> = ({
+const NavBar: React.FC<NavbarProps> = ({
   sections = [],
   setActiveSection,
   activeSection,
@@ -157,4 +157,4 @@ const Navbar: React.FC<NavbarProps> = ({
   );
 };
 
-export default Navbar;
+export default NavBar;
