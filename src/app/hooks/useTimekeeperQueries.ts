@@ -1,18 +1,18 @@
-// src/app/hooks/useTimeKeeperQueries.ts
 import { useQuery, useMutation } from "@apollo/client";
 import {
   RATES_QUERY,
   TOTAL_TIME_QUERY,
   CREATE_TIME_MUTATION,
+  UPDATE_TIME_MUTATION,
 } from "@/app/graphql/timeKeeperOperations";
-import type { TimeEntry } from "../types";
+import type { TimeEntry, Rate } from "../types";
 
 export const useTimeKeeperQueries = (
   currentTeamId: string,
   selectedProject: string,
   userId: string
 ) => {
-  const { data: ratesData } = useQuery(RATES_QUERY, {
+  const { data: ratesData } = useQuery<{ rates: Rate[] }>(RATES_QUERY, {
     variables: { teamId: currentTeamId },
     skip: !currentTeamId,
   });
@@ -30,15 +30,12 @@ export const useTimeKeeperQueries = (
     skip: !userId || !selectedProject,
   });
 
-  // Wrap the mutation function so that it accepts only an object with variables.
-  const [rawCreateTimeEntry] = useMutation<{ createTime: TimeEntry }>(
+  const [createTimeEntryMutation] = useMutation<{ createTime: TimeEntry }>(
     CREATE_TIME_MUTATION
   );
-  const createTimeEntry = async (variables: {
-    timeInputCreate: Partial<TimeEntry>;
-  }): Promise<void> => {
-    await rawCreateTimeEntry({ variables });
-  };
+  const [updateTimeEntryMutation] = useMutation<{ updateTime: TimeEntry }>(
+    UPDATE_TIME_MUTATION
+  );
 
   return {
     ratesData,
@@ -46,6 +43,21 @@ export const useTimeKeeperQueries = (
     totalTimeLoading,
     totalTimeError,
     refetch,
-    createTimeEntry,
+    createTimeEntry: (options: {
+      timeInputCreate: Partial<TimeEntry>;
+    }): Promise<{ data: { createTime: TimeEntry } }> =>
+      createTimeEntryMutation({ variables: options }) as Promise<{
+        data: { createTime: TimeEntry };
+      }>,
+    updateTime: (options: {
+      timeInputUpdate: {
+        id: number;
+        endTime: string;
+        totalElapsedTime: number;
+      };
+    }): Promise<{ data: { updateTime: TimeEntry } }> =>
+      updateTimeEntryMutation({ variables: options }) as Promise<{
+        data: { updateTime: TimeEntry };
+      }>,
   };
 };

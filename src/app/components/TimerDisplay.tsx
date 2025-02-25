@@ -1,4 +1,3 @@
-"use client";
 import React from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -11,16 +10,15 @@ import { formatISO } from "date-fns";
 interface TimerDisplayProps {
   isRunning: boolean;
   displayTime: string;
-  startTime: Date | null;
-  startDate: Date;
+  // Use a new prop for original start time:
+  initialStartTime: Date | null;
   handleDateChange: (date: Date | null) => void;
 }
 
 const TimerDisplay: React.FC<TimerDisplayProps> = ({
   isRunning,
   displayTime,
-  startTime,
-  startDate,
+  initialStartTime,
   handleDateChange,
 }) => {
   return (
@@ -55,17 +53,17 @@ const TimerDisplay: React.FC<TimerDisplayProps> = ({
       </div>
       <div className="mb-2">
         Started at:{" "}
-        {startTime
-          ? formatDateForDisplay(startTime) +
+        {initialStartTime
+          ? formatDateForDisplay(initialStartTime) +
             " " +
-            formatTimeFromISOString(formatISO(startTime))
+            formatTimeFromISOString(formatISO(initialStartTime))
           : "Not Started"}
       </div>
       <div className="flex justify-center">
         <DatePicker
           inline
           id="startDate"
-          selected={startDate}
+          selected={initialStartTime || new Date()}
           onChange={handleDateChange}
           showTimeSelect
           dateFormat="MMMM d, yyyy HH:mm"

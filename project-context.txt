@@ -524,8 +524,8 @@ export default Home;
 
 // ====== FILE: src/app/types.ts ======
 
-// src/app/types.ts
 export interface TimeEntry {
+  id: number; // <-- Added to match the backend response
   startTime: string;
   endTime: string;
   projectId: string;
@@ -535,7 +535,21 @@ export interface TimeEntry {
 }
 
 export interface CreateTimeEntryVariables {
-  timeInputCreate: TimeEntry;
+  timeInputCreate: Partial<TimeEntry>;
+}
+
+export interface UpdateTimeEntryVariables {
+  timeInputUpdate: {
+    id: number;
+    endTime: string;
+    totalElapsedTime: number;
+  };
+}
+
+export interface Rate {
+  id: string;
+  name: string;
+  rate: number;
 }
 
 export interface FeedbackState {
@@ -1176,7 +1190,6 @@ export default TimerControls;
 
 // ====== FILE: src/app/components/TimerDisplay.tsx ======
 
-"use client";
 import React from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -1189,16 +1202,15 @@ import { formatISO } from "date-fns";
 interface TimerDisplayProps {
   isRunning: boolean;
   displayTime: string;
-  startTime: Date | null;
-  startDate: Date;
+  // Use a new prop for original start time:
+  initialStartTime: Date | null;
   handleDateChange: (date: Date | null) => void;
 }
 
 const TimerDisplay: React.FC<TimerDisplayProps> = ({
   isRunning,
   displayTime,
-  startTime,
-  startDate,
+  initialStartTime,
   handleDateChange,
 }) => {
   return (
@@ -1233,17 +1245,17 @@ const TimerDisplay: React.FC<TimerDisplayProps> = ({
       </div>
       <div className="mb-2">
         Started at:{" "}
-        {startTime
-          ? formatDateForDisplay(startTime) +
+        {initialStartTime
+          ? formatDateForDisplay(initialStartTime) +
             " " +
-            formatTimeFromISOString(formatISO(startTime))
+            formatTimeFromISOString(formatISO(initialStartTime))
           : "Not Started"}
       </div>
       <div className="flex justify-center">
         <DatePicker
           inline
           id="startDate"
-          selected={startDate}
+          selected={initialStartTime || new Date()}
           onChange={handleDateChange}
           showTimeSelect
           dateFormat="MMMM d, yyyy HH:mm"
@@ -1760,6 +1772,17 @@ export const CREATE_TIME_MUTATION = gql`
   }
 `;
 
+export const UPDATE_TIME_MUTATION = gql`
+  mutation UpdateTime($timeInputUpdate: TimeInputUpdate!) {
+    updateTime(timeInputUpdate: $timeInputUpdate) {
+      id
+      startTime
+      endTime
+      totalElapsedTime
+    }
+  }
+`;
+
 // ====== FILE: src/app/hooks/useFeedbackState.ts ======
 
 // src/app/hooks/useFeedbackState.ts
@@ -1905,18 +1928,25 @@ export default useTimeKeeperData;
 
 // ====== FILE: src/app/hooks/useTimekeeperHandlers.ts ======
 
-// src/app/hooks/useTimeKeeperHandlers.ts
-import { formatISO } from "date-fns";
+import { formatISO, differenceInSeconds } from "date-fns";
 import type { TimerState, TimeEntry } from "../types";
 
 interface HandlersConfig {
-  timerState: TimerState;
+  timerState: TimerState & {
+    initialStartTime: Date | null;
+    elapsedBeforePause: number;
+  };
   selectedProject: string;
   selectedRate: string;
   userId: string;
-  createTimeEntry: (variables: {
+  createTimeEntry: (options: {
     timeInputCreate: Partial<TimeEntry>;
-  }) => Promise<void>;
+  }) => Promise<{ data: { createTime: TimeEntry } }>;
+  updateTime: (options: {
+    timeInputUpdate: { id: number; endTime: string; totalElapsedTime: number };
+  }) => Promise<{ data: { updateTime: TimeEntry } }>;
+  currentEntryId: number | null;
+  setCurrentEntryId: (id: number) => void;
   showSuccessMessage: () => void;
   setSubmissionError: (error: string) => void;
   showDateAlert: (message: string) => void;
@@ -1929,6 +1959,9 @@ export const useTimeKeeperHandlers = ({
   selectedRate,
   userId,
   createTimeEntry,
+  updateTime,
+  currentEntryId,
+  setCurrentEntryId,
   showSuccessMessage,
   setSubmissionError,
   showDateAlert,
@@ -1945,38 +1978,58 @@ export const useTimeKeeperHandlers = ({
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!timerState.startTime || !selectedProject || !userId || !selectedRate) {
+    if (
+      !timerState.initialStartTime ||
+      !selectedProject ||
+      !userId ||
+      !selectedRate
+    ) {
       console.error("Missing required data for time entry.");
       return;
     }
 
     try {
       const submissionTime = new Date();
+      const additionalElapsed = timerState.startTime
+        ? differenceInSeconds(submissionTime, timerState.startTime)
+        : 0;
       const totalElapsedTime =
-        submissionTime.getTime() - timerState.startTime.getTime();
+        timerState.elapsedBeforePause + additionalElapsed;
 
-      await createTimeEntry({
-        timeInputCreate: {
-          startTime: formatISO(timerState.startTime),
-          endTime: formatISO(submissionTime),
-          projectId: selectedProject,
-          userId,
-          rateId: parseFloat(selectedRate),
-          totalElapsedTime,
-        },
-      });
-
+      if (currentEntryId) {
+        // Update existing time entry
+        await updateTime({
+          timeInputUpdate: {
+            id: currentEntryId,
+            endTime: formatISO(submissionTime),
+            totalElapsedTime,
+          },
+        });
+      } else {
+        // Create new time entry and store its ID
+        const result = await createTimeEntry({
+          timeInputCreate: {
+            startTime: formatISO(timerState.initialStartTime),
+            endTime: formatISO(submissionTime),
+            projectId: selectedProject,
+            userId,
+            rateId: parseFloat(selectedRate),
+            totalElapsedTime,
+          },
+        });
+        setCurrentEntryId(result.data.createTime.id);
+      }
       showSuccessMessage();
-    } catch (error) {
-      setSubmissionError(
-        `Error with time entry: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`
-      );
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        setSubmissionError(`Error with time entry: ${error.message}`);
+      } else {
+        setSubmissionError("Unknown error");
+      }
     }
   };
 
-  const handleReset = () => {
+  const handleReset = (): void => {
     timerState.reset();
     showResetMessage();
   };
@@ -1990,21 +2043,21 @@ export const useTimeKeeperHandlers = ({
 
 // ====== FILE: src/app/hooks/useTimekeeperQueries.ts ======
 
-// src/app/hooks/useTimeKeeperQueries.ts
 import { useQuery, useMutation } from "@apollo/client";
 import {
   RATES_QUERY,
   TOTAL_TIME_QUERY,
   CREATE_TIME_MUTATION,
+  UPDATE_TIME_MUTATION,
 } from "@/app/graphql/timeKeeperOperations";
-import type { TimeEntry } from "../types";
+import type { TimeEntry, Rate } from "../types";
 
 export const useTimeKeeperQueries = (
   currentTeamId: string,
   selectedProject: string,
   userId: string
 ) => {
-  const { data: ratesData } = useQuery(RATES_QUERY, {
+  const { data: ratesData } = useQuery<{ rates: Rate[] }>(RATES_QUERY, {
     variables: { teamId: currentTeamId },
     skip: !currentTeamId,
   });
@@ -2022,15 +2075,12 @@ export const useTimeKeeperQueries = (
     skip: !userId || !selectedProject,
   });
 
-  // Wrap the mutation function so that it accepts only an object with variables.
-  const [rawCreateTimeEntry] = useMutation<{ createTime: TimeEntry }>(
+  const [createTimeEntryMutation] = useMutation<{ createTime: TimeEntry }>(
     CREATE_TIME_MUTATION
   );
-  const createTimeEntry = async (variables: {
-    timeInputCreate: Partial<TimeEntry>;
-  }): Promise<void> => {
-    await rawCreateTimeEntry({ variables });
-  };
+  const [updateTimeEntryMutation] = useMutation<{ updateTime: TimeEntry }>(
+    UPDATE_TIME_MUTATION
+  );
 
   return {
     ratesData,
@@ -2038,7 +2088,22 @@ export const useTimeKeeperQueries = (
     totalTimeLoading,
     totalTimeError,
     refetch,
-    createTimeEntry,
+    createTimeEntry: (options: {
+      timeInputCreate: Partial<TimeEntry>;
+    }): Promise<{ data: { createTime: TimeEntry } }> =>
+      createTimeEntryMutation({ variables: options }) as Promise<{
+        data: { createTime: TimeEntry };
+      }>,
+    updateTime: (options: {
+      timeInputUpdate: {
+        id: number;
+        endTime: string;
+        totalElapsedTime: number;
+      };
+    }): Promise<{ data: { updateTime: TimeEntry } }> =>
+      updateTimeEntryMutation({ variables: options }) as Promise<{
+        data: { updateTime: TimeEntry };
+      }>,
   };
 };
 
@@ -2048,22 +2113,22 @@ import { useState, useEffect, useRef } from "react";
 import { differenceInSeconds, format } from "date-fns";
 import type { TimerState } from "../types";
 
-export const useTimer = (): TimerState => {
+export const useTimer = (): TimerState & {
+  initialStartTime: Date | null;
+  elapsedBeforePause: number;
+} => {
   const [isRunning, setIsRunning] = useState<boolean>(false);
-  // We'll keep the "official" start time in both state and a ref.
+  const [initialStartTime, setInitialStartTime] = useState<Date | null>(null);
+  const [currentStartTime, setCurrentStartTime] = useState<Date | null>(null);
+  const [elapsedBeforePause, setElapsedBeforePause] = useState<number>(0);
   const [displayTime, setDisplayTime] = useState<string>("00:00:00");
-  const startTimeRef = useRef<Date | null>(null);
-  const [elapsedBeforePause, setElapsedBeforePause] = useState<number>(0); // accumulated paused time in seconds
   const timerRef = useRef<number | null>(null);
 
-  // We still store startTime in state for dependency tracking if needed.
-  const [startTime, setStartTime] = useState<Date | null>(null);
-
   const updateDisplay = () => {
-    if (!startTimeRef.current) return;
+    if (!currentStartTime) return;
     const now = new Date();
     const elapsedSeconds =
-      elapsedBeforePause + differenceInSeconds(now, startTimeRef.current);
+      elapsedBeforePause + differenceInSeconds(now, currentStartTime);
     const formattedTime = format(
       new Date(0, 0, 0, 0, 0, elapsedSeconds),
       "HH:mm:ss"
@@ -2078,7 +2143,7 @@ export const useTimer = (): TimerState => {
   };
 
   useEffect(() => {
-    if (isRunning && startTimeRef.current) {
+    if (isRunning && currentStartTime) {
       console.log("Timer started, setting interval");
       timerRef.current = window.setInterval(updateDisplay, 1000);
     } else if (!isRunning && timerRef.current) {
@@ -2092,30 +2157,39 @@ export const useTimer = (): TimerState => {
         console.log("Cleaning up interval");
       }
     };
-  }, [isRunning, elapsedBeforePause]);
+  }, [isRunning, currentStartTime, elapsedBeforePause]);
 
   const start = () => {
-    // When resuming, set the new start time immediately in the ref.
-    const newStartTime = new Date();
-    console.log("Starting/resuming timer, new startTime:", newStartTime);
-    startTimeRef.current = newStartTime;
-    setStartTime(newStartTime);
+    const now = new Date();
+    if (!initialStartTime) {
+      console.log("Timer starting at:", now);
+      setInitialStartTime(now);
+      setCurrentStartTime(now);
+    } else if (!isRunning) {
+      console.log(
+        "Resuming timer; initialStartTime remains:",
+        initialStartTime,
+        "New currentStartTime:",
+        now
+      );
+      setCurrentStartTime(now);
+    }
     setIsRunning(true);
   };
 
   const pause = () => {
-    if (isRunning && startTimeRef.current) {
+    if (isRunning && currentStartTime) {
       const now = new Date();
-      const elapsed = differenceInSeconds(now, startTimeRef.current);
+      const elapsed = differenceInSeconds(now, currentStartTime);
       console.log("Pausing timer. Elapsed this run:", elapsed, "seconds");
       setElapsedBeforePause((prev) => {
-        const newElapsed = prev + elapsed;
+        const newTotal = prev + elapsed;
         console.log(
           "Total elapsedBeforePause updated to:",
-          newElapsed,
+          newTotal,
           "seconds"
         );
-        return newElapsed;
+        return newTotal;
       });
     }
     setIsRunning(false);
@@ -2124,20 +2198,27 @@ export const useTimer = (): TimerState => {
   const reset = () => {
     console.log("Resetting timer");
     setIsRunning(false);
-    startTimeRef.current = null;
-    setStartTime(null);
+    setInitialStartTime(null);
+    setCurrentStartTime(null);
     setElapsedBeforePause(0);
     setDisplayTime("00:00:00");
   };
 
   return {
     isRunning,
-    startTime,
+    startTime: currentStartTime,
     displayTime,
     start,
     pause,
     reset,
-    setStartTime, // Although now startTimeRef is used, you may still want to expose the setter if needed.
+    setStartTime: (date: Date | null) => {
+      setCurrentStartTime(date);
+      if (!initialStartTime) {
+        setInitialStartTime(date);
+      }
+    },
+    initialStartTime,
+    elapsedBeforePause, // <-- Now returning this property
   };
 };
 
@@ -2691,7 +2772,6 @@ import {
   createHttpLink,
   from,
   makeVar,
-  split,
 } from "@apollo/client";
 import { setContext } from "@apollo/client/link/context";
 import { onError } from "@apollo/client/link/error";
@@ -4382,7 +4462,7 @@ export default TotalTimeSpent;
 
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useTimer } from "@/app/hooks/useTimer";
 import { currentUserVar } from "@/app/lib/apolloClient";
 import useStore from "@/app/lib/store";
@@ -4403,6 +4483,8 @@ const TimeKeeper: React.FC = () => {
   const { userProjects, currentTeamId } = useTimeKeeperData();
   const feedbackState = useFeedbackState();
 
+  const [currentEntryId, setCurrentEntryId] = useState<number | null>(null);
+
   const loggedInUser = currentUserVar();
   const {
     ratesData,
@@ -4411,6 +4493,7 @@ const TimeKeeper: React.FC = () => {
     totalTimeError,
     refetch,
     createTimeEntry,
+    updateTime,
   } = useTimeKeeperQueries(
     currentTeamId!,
     selectedProject,
@@ -4424,7 +4507,13 @@ const TimeKeeper: React.FC = () => {
       selectedRate,
       userId: loggedInUser?.id || "",
       createTimeEntry,
-      ...feedbackState.actions,
+      updateTime,
+      currentEntryId,
+      setCurrentEntryId,
+      showSuccessMessage: feedbackState.actions.showSuccessMessage,
+      setSubmissionError: feedbackState.actions.setSubmissionError,
+      showDateAlert: feedbackState.actions.showDateAlert,
+      showResetMessage: feedbackState.actions.showResetMessage,
     }
   );
 
@@ -4441,7 +4530,7 @@ const TimeKeeper: React.FC = () => {
         <FeedbackMessages {...feedbackState.state} />
         <TimerDisplay
           {...timerState}
-          startDate={timerState.startTime ?? new Date()}
+          initialStartTime={timerState.initialStartTime}
           handleDateChange={handleDateChange}
         />
         <TimerControls
@@ -4449,12 +4538,11 @@ const TimeKeeper: React.FC = () => {
           handleStartStop={
             timerState.isRunning ? timerState.pause : timerState.start
           }
-          // handleReset={timerState.reset}
           handleReset={handleReset}
           handleSubmit={handleSubmit}
           disabledStartPause={!selectedProject || !selectedRate}
-          disabledReset={!timerState.startTime}
-          disabledSubmit={timerState.isRunning || !timerState.startTime}
+          disabledReset={!timerState.initialStartTime}
+          disabledSubmit={timerState.isRunning || !timerState.initialStartTime}
         />
         <ProjectRateSelectors
           userProjects={userProjects}

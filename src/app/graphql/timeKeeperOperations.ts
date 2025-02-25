@@ -51,3 +51,14 @@ export const CREATE_TIME_MUTATION = gql`
     }
   }
 `;
+
+export const UPDATE_TIME_MUTATION = gql`
+  mutation UpdateTime($timeInputUpdate: TimeInputUpdate!) {
+    updateTime(timeInputUpdate: $timeInputUpdate) {
+      id
+      startTime
+      endTime
+      totalElapsedTime
+    }
+  }
+`;

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useTimer } from "@/app/hooks/useTimer";
 import { currentUserVar } from "@/app/lib/apolloClient";
 import useStore from "@/app/lib/store";
@@ -21,6 +21,8 @@ const TimeKeeper: React.FC = () => {
   const { userProjects, currentTeamId } = useTimeKeeperData();
   const feedbackState = useFeedbackState();
 
+  const [currentEntryId, setCurrentEntryId] = useState<number | null>(null);
+
   const loggedInUser = currentUserVar();
   const {
     ratesData,
@@ -29,6 +31,7 @@ const TimeKeeper: React.FC = () => {
     totalTimeError,
     refetch,
     createTimeEntry,
+    updateTime,
   } = useTimeKeeperQueries(
     currentTeamId!,
     selectedProject,
@@ -42,7 +45,13 @@ const TimeKeeper: React.FC = () => {
       selectedRate,
       userId: loggedInUser?.id || "",
       createTimeEntry,
-      ...feedbackState.actions,
+      updateTime,
+      currentEntryId,
+      setCurrentEntryId,
+      showSuccessMessage: feedbackState.actions.showSuccessMessage,
+      setSubmissionError: feedbackState.actions.setSubmissionError,
+      showDateAlert: feedbackState.actions.showDateAlert,
+      showResetMessage: feedbackState.actions.showResetMessage,
     }
   );
 
@@ -59,7 +68,7 @@ const TimeKeeper: React.FC = () => {
         <FeedbackMessages {...feedbackState.state} />
         <TimerDisplay
           {...timerState}
-          startDate={timerState.startTime ?? new Date()}
+          initialStartTime={timerState.initialStartTime}
           handleDateChange={handleDateChange}
         />
         <TimerControls
@@ -67,12 +76,11 @@ const TimeKeeper: React.FC = () => {
           handleStartStop={
             timerState.isRunning ? timerState.pause : timerState.start
           }
-          // handleReset={timerState.reset}
           handleReset={handleReset}
           handleSubmit={handleSubmit}
           disabledStartPause={!selectedProject || !selectedRate}
-          disabledReset={!timerState.startTime}
-          disabledSubmit={timerState.isRunning || !timerState.startTime}
+          disabledReset={!timerState.initialStartTime}
+          disabledSubmit={timerState.isRunning || !timerState.initialStartTime}
         />
         <ProjectRateSelectors
           userProjects={userProjects}

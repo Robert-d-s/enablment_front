@@ -1,5 +1,5 @@
-// src/app/types.ts
 export interface TimeEntry {
+  id: number; // <-- Added to match the backend response
   startTime: string;
   endTime: string;
   projectId: string;
@@ -9,7 +9,21 @@ export interface TimeEntry {
 }
 
 export interface CreateTimeEntryVariables {
-  timeInputCreate: TimeEntry;
+  timeInputCreate: Partial<TimeEntry>;
+}
+
+export interface UpdateTimeEntryVariables {
+  timeInputUpdate: {
+    id: number;
+    endTime: string;
+    totalElapsedTime: number;
+  };
+}
+
+export interface Rate {
+  id: string;
+  name: string;
+  rate: number;
 }
 
 export interface FeedbackState {

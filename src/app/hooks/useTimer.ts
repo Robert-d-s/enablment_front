@@ -2,22 +2,22 @@ import { useState, useEffect, useRef } from "react";
 import { differenceInSeconds, format } from "date-fns";
 import type { TimerState } from "../types";
 
-export const useTimer = (): TimerState => {
+export const useTimer = (): TimerState & {
+  initialStartTime: Date | null;
+  elapsedBeforePause: number;
+} => {
   const [isRunning, setIsRunning] = useState<boolean>(false);
-  // We'll keep the "official" start time in both state and a ref.
+  const [initialStartTime, setInitialStartTime] = useState<Date | null>(null);
+  const [currentStartTime, setCurrentStartTime] = useState<Date | null>(null);
+  const [elapsedBeforePause, setElapsedBeforePause] = useState<number>(0);
   const [displayTime, setDisplayTime] = useState<string>("00:00:00");
-  const startTimeRef = useRef<Date | null>(null);
-  const [elapsedBeforePause, setElapsedBeforePause] = useState<number>(0); // accumulated paused time in seconds
   const timerRef = useRef<number | null>(null);
 
-  // We still store startTime in state for dependency tracking if needed.
-  const [startTime, setStartTime] = useState<Date | null>(null);
-
   const updateDisplay = () => {
-    if (!startTimeRef.current) return;
+    if (!currentStartTime) return;
     const now = new Date();
     const elapsedSeconds =
-      elapsedBeforePause + differenceInSeconds(now, startTimeRef.current);
+      elapsedBeforePause + differenceInSeconds(now, currentStartTime);
     const formattedTime = format(
       new Date(0, 0, 0, 0, 0, elapsedSeconds),
       "HH:mm:ss"
@@ -32,7 +32,7 @@ export const useTimer = (): TimerState => {
   };
 
   useEffect(() => {
-    if (isRunning && startTimeRef.current) {
+    if (isRunning && currentStartTime) {
       console.log("Timer started, setting interval");
       timerRef.current = window.setInterval(updateDisplay, 1000);
     } else if (!isRunning && timerRef.current) {
@@ -46,30 +46,39 @@ export const useTimer = (): TimerState => {
         console.log("Cleaning up interval");
       }
     };
-  }, [isRunning, elapsedBeforePause]);
+  }, [isRunning, currentStartTime, elapsedBeforePause]);
 
   const start = () => {
-    // When resuming, set the new start time immediately in the ref.
-    const newStartTime = new Date();
-    console.log("Starting/resuming timer, new startTime:", newStartTime);
-    startTimeRef.current = newStartTime;
-    setStartTime(newStartTime);
+    const now = new Date();
+    if (!initialStartTime) {
+      console.log("Timer starting at:", now);
+      setInitialStartTime(now);
+      setCurrentStartTime(now);
+    } else if (!isRunning) {
+      console.log(
+        "Resuming timer; initialStartTime remains:",
+        initialStartTime,
+        "New currentStartTime:",
+        now
+      );
+      setCurrentStartTime(now);
+    }
     setIsRunning(true);
   };
 
   const pause = () => {
-    if (isRunning && startTimeRef.current) {
+    if (isRunning && currentStartTime) {
       const now = new Date();
-      const elapsed = differenceInSeconds(now, startTimeRef.current);
+      const elapsed = differenceInSeconds(now, currentStartTime);
       console.log("Pausing timer. Elapsed this run:", elapsed, "seconds");
       setElapsedBeforePause((prev) => {
-        const newElapsed = prev + elapsed;
+        const newTotal = prev + elapsed;
         console.log(
           "Total elapsedBeforePause updated to:",
-          newElapsed,
+          newTotal,
           "seconds"
         );
-        return newElapsed;
+        return newTotal;
       });
     }
     setIsRunning(false);
@@ -78,19 +87,26 @@ export const useTimer = (): TimerState => {
   const reset = () => {
     console.log("Resetting timer");
     setIsRunning(false);
-    startTimeRef.current = null;
-    setStartTime(null);
+    setInitialStartTime(null);
+    setCurrentStartTime(null);
     setElapsedBeforePause(0);
     setDisplayTime("00:00:00");
   };
 
   return {
     isRunning,
-    startTime,
+    startTime: currentStartTime,
     displayTime,
     start,
     pause,
     reset,
-    setStartTime, // Although now startTimeRef is used, you may still want to expose the setter if needed.
+    setStartTime: (date: Date | null) => {
+      setCurrentStartTime(date);
+      if (!initialStartTime) {
+        setInitialStartTime(date);
+      }
+    },
+    initialStartTime,
+    elapsedBeforePause, // <-- Now returning this property
   };
 };
