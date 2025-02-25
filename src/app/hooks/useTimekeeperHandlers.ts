@@ -7,6 +7,7 @@ interface HandlersConfig {
     elapsedBeforePause: number;
     pauseTimes: Date[];
     resumeTimes: Date[];
+    calculateTotalActiveTime: () => number; // Use the function from useTimer
   };
   selectedProject: string;
   selectedRate: string;
@@ -48,51 +49,6 @@ export const useTimeKeeperHandlers = ({
     }
   };
 
-  // Function to calculate total active time for submission
-  const calculateTotalActiveTime = (): number => {
-    const now = new Date();
-
-    // If timer has never started, return 0
-    if (!timerState.initialStartTime) {
-      return 0;
-    }
-
-    // Calculate total elapsed time since initial start
-    let totalActiveTime = 0;
-
-    // Add time from first segment (initial start to first pause, or now if no pauses)
-    const firstPauseTime =
-      timerState.pauseTimes.length > 0
-        ? timerState.pauseTimes[0]
-        : timerState.isRunning
-        ? now
-        : null;
-
-    if (firstPauseTime && timerState.initialStartTime) {
-      totalActiveTime +=
-        firstPauseTime.getTime() - timerState.initialStartTime.getTime();
-    }
-
-    // Add time from all resume-pause segments
-    for (let i = 0; i < timerState.resumeTimes.length; i++) {
-      const resumeTime = timerState.resumeTimes[i];
-      // The end of this segment is either the next pause or now (if currently running)
-      const endTime =
-        i < timerState.pauseTimes.length - 1
-          ? timerState.pauseTimes[i + 1]
-          : timerState.isRunning && i === timerState.pauseTimes.length - 1
-          ? now
-          : null;
-
-      if (endTime) {
-        totalActiveTime += endTime.getTime() - resumeTime.getTime();
-      }
-    }
-
-    console.log("Total active time for submission:", totalActiveTime);
-    return Math.max(totalActiveTime, 0);
-  };
-
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (
@@ -108,8 +64,8 @@ export const useTimeKeeperHandlers = ({
     try {
       const submissionTime = new Date();
 
-      // Calculate total elapsed time in milliseconds
-      const totalElapsedTimeMs = calculateTotalActiveTime();
+      // Use the calculation function from timerState
+      const totalElapsedTimeMs = timerState.calculateTotalActiveTime();
       console.log(
         "Total elapsed time calculated for submission (ms):",
         totalElapsedTimeMs

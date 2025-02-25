@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { differenceInMilliseconds, format } from "date-fns";
+import { format } from "date-fns";
 import type { TimerState } from "../types";
 
 export const useTimer = (): TimerState & {
@@ -7,6 +7,7 @@ export const useTimer = (): TimerState & {
   elapsedBeforePause: number;
   pauseTimes: Date[];
   resumeTimes: Date[];
+  calculateTotalActiveTime: () => number; // Expose this function
 } => {
   const [isRunning, setIsRunning] = useState<boolean>(false);
   const [initialStartTime, setInitialStartTime] = useState<Date | null>(null);
@@ -17,7 +18,8 @@ export const useTimer = (): TimerState & {
   const [resumeTimes, setResumeTimes] = useState<Date[]>([]);
   const timerRef = useRef<number | null>(null);
 
-  const calculateElapsedTime = (): number => {
+  // Function to calculate total active time
+  const calculateTotalActiveTime = (): number => {
     const now = new Date();
 
     // If timer has never started, return 0
@@ -31,11 +33,9 @@ export const useTimer = (): TimerState & {
     // Add time from first segment (initial start to first pause, or now if no pauses)
     const firstPauseTime =
       pauseTimes.length > 0 ? pauseTimes[0] : isRunning ? now : null;
-    if (firstPauseTime) {
-      totalActiveTime += differenceInMilliseconds(
-        firstPauseTime,
-        initialStartTime
-      );
+
+    if (firstPauseTime && initialStartTime) {
+      totalActiveTime += firstPauseTime.getTime() - initialStartTime.getTime();
     }
 
     // Add time from all resume-pause segments
@@ -50,7 +50,7 @@ export const useTimer = (): TimerState & {
           : null;
 
       if (endTime) {
-        totalActiveTime += differenceInMilliseconds(endTime, resumeTime);
+        totalActiveTime += endTime.getTime() - resumeTime.getTime();
       }
     }
 
@@ -59,7 +59,7 @@ export const useTimer = (): TimerState & {
   };
 
   const updateDisplay = () => {
-    const elapsedMs = calculateElapsedTime();
+    const elapsedMs = calculateTotalActiveTime();
     // Convert milliseconds to seconds for formatting
     const elapsedSeconds = Math.floor(elapsedMs / 1000);
 
@@ -159,5 +159,6 @@ export const useTimer = (): TimerState & {
     elapsedBeforePause,
     pauseTimes,
     resumeTimes,
+    calculateTotalActiveTime, // Expose the calculation function
   };
 };
