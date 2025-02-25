@@ -12,7 +12,7 @@ import {
   REMOVE_USER_FROM_TEAM,
 } from "@/app/graphql/adminOperations";
 import TotalTimeSpent from "../time/page";
-import RatesManager from "../ratesManager/page";
+import RatesManager from "@/app/components/Admin/ratesManager";
 import InvoiceDashboard from "../invoice/page";
 import TeamSyncAndFetch from "../teamSync/page";
 
