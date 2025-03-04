@@ -3,6 +3,7 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { gql, useQuery, useSubscription } from "@apollo/client";
 import NavigationBar from "../components/NavigationBar";
+import client from "@/app/lib/apolloClient";
 
 type Label = {
   id: string;
@@ -86,10 +87,12 @@ const ISSUE_UPDATED_SUBSCRIPTION = gql`
 
 const IssuesComponent: React.FC = () => {
   const { loading, error, data, refetch } = useQuery<{ issues: Issue[] }>(
-    GET_ISSUES
+    GET_ISSUES,
+    { client }
   );
   const { data: subscriptionData, error: subscriptionError } = useSubscription(
-    ISSUE_UPDATED_SUBSCRIPTION
+    ISSUE_UPDATED_SUBSCRIPTION,
+    { client }
   );
 
   const [selectedAssignee, setSelectedAssignee] = useState<string | null>(null);

@@ -5,9 +5,12 @@ export async function GET(request: NextRequest) {
 
   try {
     // Call your backend profile endpoint (adjust URL if needed)
-    const backendRes = await fetch("http://localhost:8080/auth/profile", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const backendRes = await fetch(
+      `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/profile`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
 
     if (!backendRes.ok) {
       return NextResponse.json(

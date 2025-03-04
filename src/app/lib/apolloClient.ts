@@ -54,8 +54,6 @@ const errorLink = onError(
 export const isForbiddenVar = makeVar(false);
 export const currentUserVar = makeVar<User | null>(null);
 
-// `${process.env.NEXT_PUBLIC_BACKEND_URL}/graphql`
-
 const client = new ApolloClient({
   link: from([
     errorLink,
@@ -63,8 +61,8 @@ const client = new ApolloClient({
     createHttpLink({
       uri: (operation) =>
         operation.getContext().useLinearApi
-          ? `https://api.linear.app/graphql`
-          : `http://localhost:8080/graphql`,
+          ? `${process.env.NEXT_PUBLIC_LINEAR_API_URL}` // Use Linear API URL
+          : `${process.env.NEXT_PUBLIC_BACKEND_URL}/graphql`, // Use local backend URL
       fetchOptions: {
         method: "POST",
       },

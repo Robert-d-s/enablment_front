@@ -10,7 +10,7 @@ const TeamSync: React.FC = () => {
 
     try {
       const response = await fetch(
-        `http://localhost:8080/team-synchronize/teams`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/team-synchronize/teams`,
         {
           method: "GET",
           headers: {
