@@ -28,7 +28,32 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
-    domains: ["public.linear.app", "localhost"],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "public.linear.app",
+        pathname: "/**",
+      },
+      {
+        protocol: "http",
+        hostname: "localhost",
+        pathname: "/**",
+      },
+    ],
+  },
+
+  async headers() {
+    return [
+      {
+        source: "/favicon.ico",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=86400",
+          },
+        ],
+      },
+    ];
   },
 };
 
@@ -359,13 +384,13 @@ export default function RootLayout({
 import React from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import type { NextPage } from "next";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import NavBar from "@/app/components/navBar";
-import SectionWrapper from "@/app/components/sectionWrapper";
 import { BackgroundBeams } from "@/app/components/ui/background-beams";
 import ContactForm from "@/app/components/contactForm";
 import ClientColab from "@/app/components/clientColab";
 import Footer from "@/app/components/footer";
+import SectionAnimation from "@/app/components/sectionAnimation";
 
 const Home: NextPage = () => {
   const sections = [
@@ -377,55 +402,15 @@ const Home: NextPage = () => {
     "Client-Portal",
   ];
 
-  console.log("Page - sections data:", sections);
-
   const [activeSection, setActiveSection] = useState<string>(sections[0]);
   const isContactActive = activeSection === "Contact";
+  const [navigationDirection, setNavigationDirection] = useState<
+    "forward" | "backward"
+  >("forward");
 
   const closeContactForm = () => {
     setActiveSection("Home");
   };
-
-  // Initialize sectionProps with all sections and their default properties
-  interface SectionProps {
-    [key: string]: { zIndex: number; opacity: number };
-  }
-
-  const [sectionProps] = useState<SectionProps>(
-    sections.reduce((acc, section, index) => {
-      acc[section as keyof SectionProps] = {
-        zIndex: sections.length - index, // Stack sections with initial z-index
-        opacity: section === "Home" ? 1 : 0.5, // Only the Home section is fully opaque initially
-      };
-      return acc;
-    }, {} as SectionProps)
-  );
-
-  const sectionColors = ["bg-gray-200"];
-
-  useEffect(() => {
-    console.log("Component re-rendered");
-    // Update sectionProps when activeSection changes
-    const updatedProps = {
-      ...sectionProps,
-      [activeSection]: {
-        ...sectionProps[activeSection],
-        zIndex: sections.length,
-        opacity: 1,
-      }, // Bring active section to front and make it fully opaque
-    };
-
-    // Update the zIndex and opacity for inactive sections
-    sections.forEach((section) => {
-      if (section !== activeSection) {
-        updatedProps[section] = {
-          ...updatedProps[section],
-          zIndex: updatedProps[section].zIndex - 1, // Move back
-          opacity: 0.5, // Fade
-        };
-      }
-    });
-  }, [activeSection]);
 
   const handleFormSubmit = (data: {
     name: string;
@@ -433,11 +418,16 @@ const Home: NextPage = () => {
     message: string;
   }) => {
     console.log("Form Data:", data);
-
     setActiveSection("Home");
   };
-  const isActiveSectionCorrectlySet = (section: string) =>
-    activeSection === section;
+
+  const handleSectionChange = (section: string) => {
+    // Determine direction based on section index
+    const currentIndex = sections.indexOf(activeSection);
+    const nextIndex = sections.indexOf(section);
+    setNavigationDirection(nextIndex > currentIndex ? "forward" : "backward");
+    setActiveSection(section);
+  };
 
   return (
     <>
@@ -445,74 +435,66 @@ const Home: NextPage = () => {
       <div className="relative overflow-hidden" style={{ minHeight: "100vh" }}>
         <NavBar
           sections={sections}
-          setActiveSection={setActiveSection}
+          setActiveSection={handleSectionChange}
           activeSection={activeSection}
         />
 
-        <div className="sections-container flex flex-col st-top">
-          <AnimatePresence>
-            {isContactActive && (
-              <motion.div
-                className="fixed inset-0 z-40 flex justify-center items-center"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                key="contactOverlay"
-              >
-                <div
-                  className="absolute inset-0 bg-black bg-opacity-50"
-                  onClick={closeContactForm}
-                ></div>
-                <div className="z-50">
-                  <ContactForm
-                    onSubmit={handleFormSubmit}
-                    onClose={closeContactForm}
-                  />
-                </div>
-              </motion.div>
-            )}
+        {/* Contact form overlay */}
+        <AnimatePresence>
+          {isContactActive && (
+            <ContactForm
+              onSubmit={handleFormSubmit}
+              onClose={closeContactForm}
+            />
+          )}
+        </AnimatePresence>
 
-            <div className="flex pt-6">
+        <div className="grid grid-cols-12 pt-6" style={{ minHeight: "60vh" }}>
+          {/* Client collaboration component for Home section - Take 3 columns on the left */}
+          <div className="col-span-3">
+            <AnimatePresence>
               {activeSection === "Home" && (
-                <div className="flex justify-center items-start client-table">
+                <motion.div
+                  className="flex justify-center items-start client-table"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
                   <ClientColab
                     onContactClick={() => setActiveSection("Contact")}
                   />
-                </div>
+                </motion.div>
               )}
+            </AnimatePresence>
+          </div>
 
-              {sections
-                .filter(
-                  (section) =>
-                    section !== "Contact" &&
-                    isActiveSectionCorrectlySet(section)
-                )
-                .map((section, index) => {
-                  // Determine the videoSrc based on the section name
-                  let videoSrc;
-                  if (section === "Home") {
-                    videoSrc = "/video/136259 (1080p).mp4";
-                  }
+          {/* Main section content - Take 9 columns on the right */}
+          <div className="col-span-9 relative">
+            <AnimatePresence mode="wait">
+              {sections.map((section) => {
+                if (section === "Contact") {
+                  return null;
+                }
+                let videoSrc;
+                if (section === "Home") {
+                  videoSrc = "/video/hero_vid.mp4";
+                }
 
-                  return (
-                    <SectionWrapper
+                // Only render active section
+                return (
+                  activeSection === section && (
+                    <SectionAnimation
                       key={section}
-                      id={section}
-                      content={section}
-                      isActive={activeSection === section}
-                      color={sectionColors[index % sectionColors.length]}
-                      zIndex={
-                        activeSection === section
-                          ? sections.length
-                          : sections.length - index
-                      }
+                      section={section}
+                      navigationDirection={navigationDirection}
                       videoSrc={videoSrc}
-                      isContactFormActive={isContactActive}
                     />
-                  );
-                })}
-            </div>
-          </AnimatePresence>
+                  )
+                );
+              })}
+            </AnimatePresence>
+          </div>
         </div>
       </div>
       <Footer />
@@ -1369,17 +1351,20 @@ export default ClientColab;
 
 import React, { useState } from "react";
 import Image from "next/image";
+import { motion } from "framer-motion";
 
 interface ContactFormProps {
   onSubmit: (data: { name: string; email: string; message: string }) => void;
   onClose: () => void;
   className?: string;
+  isOverlay?: boolean;
 }
 
 const ContactForm: React.FC<ContactFormProps> = ({
   onSubmit,
   onClose,
-  className,
+  className = "",
+  isOverlay = true,
 }) => {
   const [formData, setFormData] = useState({
     name: "",
@@ -1398,177 +1383,195 @@ const ContactForm: React.FC<ContactFormProps> = ({
     onSubmit(formData);
   };
 
-  return (
-    <div
-      className={`fixed inset-0 flex justify-center items-center ${className}`}
-    >
-      <div className="bg-white flex gap-4 rounded-lg shadow-lg p-8 m-4 lg:w-10/12 max-h-full overflow-y-auto contact-form-container">
-        <div>
-          <video
-            width="100%"
-            height="auto"
-            className="rounded-lg lazy"
-            autoPlay
-            loop
-            muted
-            playsInline
-            preload="metadata"
-          >
-            <source src="/video/email.mp4" type="video/mp4" />
-            Your browser does not support the video tag.
-          </video>
-          <div className="flex justify-between ">
-            <div className="text-sm mt-4 w-1/2">
-              <p>Øster Allé 56 6. sal</p>
-              <p>2100 København Ø</p>
-              <p>CVR: 42309648</p>
-              <div className="lg:mt-6 flex flex-col space-y-2 lg:flex-row sm:mt-2 sm:space-y-0 lg:space-x-2 CandP">
-                <a href="#" className="text-blue-700 hover:underline">
-                  Cookie policy
-                </a>
-                <span className="hidden lg:inline">•</span>
-                <a href="#" className="text-blue-700 hover:underline">
-                  Privacy policy
-                </a>
-              </div>
-            </div>
-            <div className="flex flex-col items-end gap-2">
-              <div className="flex mt-4">
-                <span className="mr-3">
-                  <Image
-                    src="/icons/instagram.svg"
-                    alt="instagram"
-                    width={24}
-                    height={24}
-                  />
-                </span>
-                <span className="mr-3">
-                  <Image
-                    src="/icons/facebook.svg"
-                    alt="facebook"
-                    width={24}
-                    height={24}
-                  />
-                </span>
-                <span className="mr-4">
-                  <Image
-                    src="/icons/linkedin.svg"
-                    alt="linkedin"
-                    width={24}
-                    height={24}
-                  />
-                </span>
-                <span>
-                  <Image
-                    src="/icons/twitter.svg"
-                    alt="twitter"
-                    width={24}
-                    height={24}
-                  />
-                </span>
-              </div>
-              <div className="flex gap-1 items-center mt-4">
-                <span className="text-green-700">(+45) 22 92 67 80</span>
-                <Image
-                  src="/icons/phone.svg"
-                  alt="call"
-                  width={24}
-                  height={24}
-                  className="align-middle"
-                />
-              </div>
-              <div className="flex gap-1 items-center ">
-                <span className="text-green-700 mb-1">gd@enablment.com</span>
-                <Image
-                  src="/icons/mail.svg"
-                  alt="email"
-                  width={24}
-                  height={24}
-                  className="align-middle"
-                />
-              </div>
+  const formContent = (
+    <div className="bg-white flex gap-4 rounded-lg shadow-lg p-8 m-4 lg:w-10/12 max-h-full overflow-y-auto contact-form-container">
+      <div>
+        <video
+          width="100%"
+          height="auto"
+          className="rounded-lg lazy"
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="metadata"
+        >
+          <source src="/video/email.mp4" type="video/mp4" />
+          Your browser does not support the video tag.
+        </video>
+        <div className="flex justify-between ">
+          <div className="text-sm mt-4 w-1/2">
+            <p>Øster Allé 56 6. sal</p>
+            <p>2100 København Ø</p>
+            <p>CVR: 42309648</p>
+            <div className="lg:mt-6 flex flex-col space-y-2 lg:flex-row sm:mt-2 sm:space-y-0 lg:space-x-2 CandP">
+              <a href="#" className="text-blue-700 hover:underline">
+                Cookie policy
+              </a>
+              <span className="hidden lg:inline">•</span>
+              <a href="#" className="text-blue-700 hover:underline">
+                Privacy policy
+              </a>
             </div>
           </div>
-        </div>
-        <div>
-          <div className="flex flex-col justify-between h-full">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg text-gray-900">
-                To: <span className="text-green-600 font-bold">Enablment</span>
-              </h2>
-              <button
-                className="flex-none w-12 h-12 bg-black text-xl text-white rounded-full hover:bg-red-500 hover:scale-105 transition transform duration-200 ease-in-out"
-                onClick={onClose}
-              >
-                ✕
-              </button>
+          <div className="flex flex-col items-end gap-2">
+            <div className="flex mt-4">
+              <span className="mr-3">
+                <Image
+                  src="/icons/instagram.svg"
+                  alt="instagram"
+                  width={24}
+                  height={24}
+                />
+              </span>
+              <span className="mr-3">
+                <Image
+                  src="/icons/facebook.svg"
+                  alt="facebook"
+                  width={24}
+                  height={24}
+                />
+              </span>
+              <span className="mr-4">
+                <Image
+                  src="/icons/linkedin.svg"
+                  alt="linkedin"
+                  width={24}
+                  height={24}
+                />
+              </span>
+              <span>
+                <Image
+                  src="/icons/twitter.svg"
+                  alt="twitter"
+                  width={24}
+                  height={24}
+                />
+              </span>
             </div>
-            <form onSubmit={handleSubmit} className="flex flex-col flex-grow">
-              <div className="flex-grow">
-                <input
-                  type="text"
-                  name="name"
-                  placeholder="Name"
-                  className="w-full mb-4 p-2 border border-gray-500 rounded"
-                  onChange={handleChange}
-                  required
-                />
-                <input
-                  type="email"
-                  name="email"
-                  placeholder="E-mail"
-                  className="w-full mb-4 p-2 border border-gray-500 rounded"
-                  onChange={handleChange}
-                  required
-                />
-                <textarea
-                  name="message"
-                  placeholder="Your message"
-                  className="w-full mb-4 p-2 border border-gray-500 rounded"
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-              <div className="flex items-center mt-4 sm:mt-0">
-                <div className="text-xs text-gray-500 flex-grow">
-                  This site is protected by reCAPTCHA and the Google
-                  <a href="#" className="text-blue-700 hover:underline">
-                    {" "}
-                    Privacy Policy
-                  </a>{" "}
-                  and
-                  <a href="#" className="text-blue-700 hover:underline">
-                    {" "}
-                    Terms of Service
-                  </a>{" "}
-                  apply.
-                </div>
-                <button
-                  type="submit"
-                  className="flex-none flex items-center justify-center w-12 h-12 bg-black text-white p-2 rounded-full hover:bg-green-500 hover:scale-105 transition transform duration-200 ease-in-out"
-                  aria-label="Send"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    className="w-6 h-6 text-white"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M14 5l7 7m0 0l-7 7m7-7H3"
-                    />
-                  </svg>
-                </button>
-              </div>
-            </form>
+            <div className="flex gap-1 items-center mt-4">
+              <span className="text-green-700">(+45) 22 92 67 80</span>
+              <Image
+                src="/icons/phone.svg"
+                alt="call"
+                width={24}
+                height={24}
+                className="align-middle"
+              />
+            </div>
+            <div className="flex gap-1 items-center ">
+              <span className="text-green-700 mb-1">gd@enablment.com</span>
+              <Image
+                src="/icons/mail.svg"
+                alt="email"
+                width={24}
+                height={24}
+                className="align-middle"
+              />
+            </div>
           </div>
         </div>
       </div>
+      <div>
+        <div className="flex flex-col justify-between h-full">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg text-gray-900">
+              To: <span className="text-green-600 font-bold">Enablment</span>
+            </h2>
+            <button
+              className="flex-none w-12 h-12 bg-black text-xl text-white rounded-full hover:bg-red-500 hover:scale-105 transition transform duration-200 ease-in-out"
+              onClick={onClose}
+            >
+              ✕
+            </button>
+          </div>
+          <form onSubmit={handleSubmit} className="flex flex-col flex-grow">
+            <div className="flex-grow">
+              <input
+                type="text"
+                name="name"
+                placeholder="Name"
+                className="w-full mb-4 p-2 border border-gray-500 rounded"
+                onChange={handleChange}
+                required
+              />
+              <input
+                type="email"
+                name="email"
+                placeholder="E-mail"
+                className="w-full mb-4 p-2 border border-gray-500 rounded"
+                onChange={handleChange}
+                required
+              />
+              <textarea
+                name="message"
+                placeholder="Your message"
+                className="w-full mb-4 p-2 border border-gray-500 rounded"
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div className="flex items-center mt-4 sm:mt-0">
+              <div className="text-xs text-gray-500 flex-grow">
+                This site is protected by reCAPTCHA and the Google
+                <a href="#" className="text-blue-700 hover:underline">
+                  {" "}
+                  Privacy Policy
+                </a>{" "}
+                and
+                <a href="#" className="text-blue-700 hover:underline">
+                  {" "}
+                  Terms of Service
+                </a>{" "}
+                apply.
+              </div>
+              <button
+                type="submit"
+                className="flex-none flex items-center justify-center w-12 h-12 bg-black text-white p-2 rounded-full hover:bg-green-500 hover:scale-105 transition transform duration-200 ease-in-out"
+                aria-label="Send"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  className="w-6 h-6 text-white"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M14 5l7 7m0 0l-7 7m7-7H3"
+                  />
+                </svg>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
+  );
+
+  // If not used as an overlay, just return the form content
+  if (!isOverlay) {
+    return formContent;
+  }
+
+  // Use as a modal overlay with animation
+  return (
+    <motion.div
+      className={`fixed inset-0 flex justify-center items-center z-40 ${className}`}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.3 }}
+    >
+      <div
+        className="absolute inset-0 bg-black bg-opacity-50"
+        onClick={onClose}
+      ></div>
+      <div className="z-50">{formContent}</div>
+    </motion.div>
   );
 };
 
@@ -2019,13 +2022,65 @@ const PersonCard: React.FC<PersonCardProps> = ({ person }) => {
 
 export default PeopleSection;
 
+// ====== FILE: src/app/components/sectionAnimation.tsx ======
+
+"use client";
+
+import React from "react";
+import { motion } from "framer-motion";
+import SectionWrapper from "@/app/components/sectionWrapper";
+
+interface SectionAnimationProps {
+  section: string;
+  navigationDirection: "forward" | "backward";
+  videoSrc?: string;
+}
+
+const SectionAnimation: React.FC<SectionAnimationProps> = ({
+  section,
+  navigationDirection,
+  videoSrc,
+}) => {
+  return (
+    <motion.div
+      key={section}
+      className="w-full"
+      initial={{
+        opacity: 0,
+        x: navigationDirection === "forward" ? 100 : -100,
+      }}
+      animate={{
+        opacity: 1,
+        x: 0,
+      }}
+      exit={{
+        opacity: 0,
+        x: navigationDirection === "forward" ? -100 : 100,
+      }}
+      transition={{
+        type: "spring",
+        stiffness: 80,
+        damping: 15,
+        mass: 1,
+      }}
+    >
+      <SectionWrapper
+        id={section}
+        content={section}
+        color={"bg-gray-200"}
+        videoSrc={videoSrc}
+      />
+    </motion.div>
+  );
+};
+
+export default SectionAnimation;
+
 // ====== FILE: src/app/components/sectionWrapper.tsx ======
 
 "use client";
 
-import { motion, useAnimation } from "framer-motion";
-import React, { useEffect } from "react";
-import { ContentWrapper } from "../components/contentWrapper";
+import React from "react";
 import PeopleSection from "@/app/components/peopleSection";
 import AboutSection from "@/app/components/aboutSection";
 import ServicesSection from "@/app/components/servicesSection";
@@ -2033,88 +2088,22 @@ import ServicesSection from "@/app/components/servicesSection";
 interface SectionProps {
   id: string;
   content: string;
-  isActive: boolean;
   color: string;
-  zIndex: number;
   videoSrc?: string;
-  isContactFormActive: boolean;
 }
-
-const getSectionVariants = (isContactFormActive: boolean) => ({
-  inactive: isContactFormActive
-    ? {
-        opacity: 1,
-        scale: 1,
-        y: 0,
-        zIndex: 6,
-      }
-    : {
-        y: -40,
-        opacity: 0.7,
-        scale: 0.95,
-        zIndex: 6,
-        transition: {
-          duration: 0.5,
-          ease: "easeInOut",
-        },
-      },
-  active: {
-    y: 0,
-    opacity: 1,
-    scale: 1,
-    zIndex: 6,
-    transition: {
-      y: {
-        duration: 0.2,
-        type: "spring",
-        from: "40vh",
-        stiffness: 70,
-        damping: 15,
-      },
-      opacity: { duration: 0.2 },
-      scale: { duration: 0.2 },
-    },
-  },
-  exit: {
-    y: 50,
-    opacity: 0,
-    transition: { duration: 0.5 },
-  },
-});
 
 const SectionWrapper: React.FC<SectionProps> = ({
   id,
   content,
-  isActive,
   color,
-  zIndex,
   videoSrc,
-  isContactFormActive,
 }) => {
-  const controls = useAnimation();
-  const sectionVariants = getSectionVariants(isContactFormActive);
-
-  useEffect(() => {
-    controls.start(isActive ? "active" : "inactive");
-  }, [isActive, controls, isContactFormActive]);
-
   return (
-    <motion.div
-      layoutId={id}
-      variants={sectionVariants}
-      initial="initial"
-      animate={controls}
-      exit="exit"
-      transition={{ duration: 0.5, type: "easeOut" }}
+    <div
       className={`section border-2 border-green-600 rounded-tl-3xl rounded-tr-3xl shadow-lg ${color} responsive-section`}
       style={{
-        position: "absolute",
-        width: "75%",
-        top: 100,
-        right: 0,
-        bottom: 0,
+        width: "100%",
         boxSizing: "border-box",
-        zIndex: zIndex,
       }}
     >
       {id === "People" ? (
@@ -2122,7 +2111,7 @@ const SectionWrapper: React.FC<SectionProps> = ({
           className="overflow-y-auto"
           style={{ maxHeight: "calc(100vh - 200px)" }}
         >
-          <PeopleSection isActive={isActive} />
+          <PeopleSection isActive={true} />
         </div>
       ) : id === "About" ? (
         <AboutSection />
@@ -2148,14 +2137,14 @@ const SectionWrapper: React.FC<SectionProps> = ({
           </div>
         </div>
       ) : (
-        <ContentWrapper isActive={isActive}>
+        <>
           <h2 className="text-2xl font-bold mb-4">{content}</h2>
           <p className="text-gray-700">
             Placeholder content for the {content} section.
           </p>
-        </ContentWrapper>
+        </>
       )}
-    </motion.div>
+    </div>
   );
 };
 
@@ -2990,6 +2979,7 @@ export const useTimer = (): TimerState & {
 import React, { useMemo, useState, useEffect } from "react";
 import { gql, useQuery, useSubscription } from "@apollo/client";
 import NavigationBar from "../components/NavigationBar";
+import client from "@/app/lib/apolloClient";
 
 type Label = {
   id: string;
@@ -3073,10 +3063,12 @@ const ISSUE_UPDATED_SUBSCRIPTION = gql`
 
 const IssuesComponent: React.FC = () => {
   const { loading, error, data, refetch } = useQuery<{ issues: Issue[] }>(
-    GET_ISSUES
+    GET_ISSUES,
+    { client }
   );
   const { data: subscriptionData, error: subscriptionError } = useSubscription(
-    ISSUE_UPDATED_SUBSCRIPTION
+    ISSUE_UPDATED_SUBSCRIPTION,
+    { client }
   );
 
   const [selectedAssignee, setSelectedAssignee] = useState<string | null>(null);
@@ -3339,8 +3331,6 @@ const errorLink = onError(
 export const isForbiddenVar = makeVar(false);
 export const currentUserVar = makeVar<User | null>(null);
 
-// `${process.env.NEXT_PUBLIC_BACKEND_URL}/graphql`
-
 const client = new ApolloClient({
   link: from([
     errorLink,
@@ -3348,8 +3338,8 @@ const client = new ApolloClient({
     createHttpLink({
       uri: (operation) =>
         operation.getContext().useLinearApi
-          ? `https://api.linear.app/graphql`
-          : `http://localhost:8080/graphql`,
+          ? `${process.env.NEXT_PUBLIC_LINEAR_API_URL}` // Use Linear API URL
+          : `${process.env.NEXT_PUBLIC_BACKEND_URL}/graphql`, // Use local backend URL
       fetchOptions: {
         method: "POST",
       },
@@ -3469,16 +3459,19 @@ const Login: React.FC = () => {
   const router = useRouter();
   const handleLogin = async () => {
     try {
-      const response = await fetch(`http://localhost:8080/auth/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email,
-          password,
-        }),
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/login`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email,
+            password,
+          }),
+        }
+      );
 
       const data = await response.json();
       if (data && data.access_token) {
@@ -3561,7 +3554,7 @@ export default Login;
 "use client";
 import React, { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 
 const Signup: React.FC = () => {
@@ -3604,16 +3597,19 @@ const Signup: React.FC = () => {
     }
 
     try {
-      const response = await fetch(`http://localhost:8080/auth/signup`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email,
-          password,
-        }),
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/signup`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email,
+            password,
+          }),
+        }
+      );
 
       if (response.status === 409) {
         setErrors({
@@ -3890,9 +3886,12 @@ export async function GET(request: NextRequest) {
 
   try {
     // Call your backend profile endpoint (adjust URL if needed)
-    const backendRes = await fetch("http://localhost:8080/auth/profile", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const backendRes = await fetch(
+      `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/profile`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
 
     if (!backendRes.ok) {
       return NextResponse.json(
@@ -4545,7 +4544,7 @@ const TeamSync: React.FC = () => {
 
     try {
       const response = await fetch(
-        `http://localhost:8080/team-synchronize/teams`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/team-synchronize/teams`,
         {
           method: "GET",
           headers: {
@@ -4921,7 +4920,11 @@ export const BackgroundBeams = React.memo(
                   x1: ["0%", "100%"],
                   x2: ["0%", "95%"],
                   y1: ["0%", "100%"],
-                  y2: ["0%", `${93 + Math.random() * 8}%`],
+                  // y2: ["0%", `${93 + Math.random() * 8}%`],
+                  y2: [
+                    "0%",
+                    `${Math.max(1, Math.min(100, 93 + Math.random() * 8))}%`,
+                  ],
                 }}
                 transition={{
                   duration: Math.random() * 10 + 10,

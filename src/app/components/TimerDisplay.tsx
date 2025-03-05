@@ -10,7 +10,6 @@ import { formatISO } from "date-fns";
 interface TimerDisplayProps {
   isRunning: boolean;
   displayTime: string;
-  // Use a new prop for original start time:
   initialStartTime: Date | null;
   handleDateChange: (date: Date | null) => void;
 }
