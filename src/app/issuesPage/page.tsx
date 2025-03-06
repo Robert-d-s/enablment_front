@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useMemo, useState, useEffect } from "react";
-import { gql, useQuery, useSubscription } from "@apollo/client";
+import React, { useMemo, useState } from "react";
+import { gql, useQuery } from "@apollo/client";
 import NavigationBar from "../components/NavigationBar";
 import client from "@/app/lib/apolloClient";
 
@@ -59,49 +59,18 @@ const GET_ISSUES = gql`
   }
 `;
 
-const ISSUE_UPDATED_SUBSCRIPTION = gql`
-  subscription OnIssueUpdated {
-    issueUpdated {
-      id
-      createdAt
-      updatedAt
-      title
-      dueDate
-      projectId
-      priorityLabel
-      identifier
-      assigneeName
-      projectName
-      state
-      teamKey
-      teamName
-      labels {
-        id
-        name
-        color
-        parentId
-      }
-    }
-  }
-`;
-
 const IssuesComponent: React.FC = () => {
   const { loading, error, data, refetch } = useQuery<{ issues: Issue[] }>(
     GET_ISSUES,
     { client }
   );
-  const { data: subscriptionData, error: subscriptionError } = useSubscription(
-    ISSUE_UPDATED_SUBSCRIPTION,
-    { client }
-  );
 
   const [selectedAssignee, setSelectedAssignee] = useState<string | null>(null);
+  const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
 
   const handleSelectAssignee = (assignee: string) => {
     setSelectedAssignee(assignee);
   };
-
-  const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
 
   const handleSelectTeam = (team: string) => {
     setSelectedTeam(team);
@@ -111,6 +80,7 @@ const IssuesComponent: React.FC = () => {
     setSelectedTeam(null);
     setSelectedAssignee(null);
   };
+
   const uniqueTeams = useMemo(() => {
     const teams = new Set<string>();
     data?.issues.forEach((issue) => teams.add(issue.teamName));
@@ -145,26 +115,16 @@ const IssuesComponent: React.FC = () => {
     return groups;
   }, [filteredIssues]);
 
-  useEffect(() => {
-    if (subscriptionData) {
-      console.log("Subscription data received:", subscriptionData);
-      refetch();
-    }
-    if (subscriptionError) {
-      console.error("Subscription error:", subscriptionError);
-    }
-  }, [subscriptionData, subscriptionError, refetch]);
-
-  //   console.log("GraphQL Response:", { loading, error, data });
-
   if (loading) return <p>Loading issues...</p>;
   if (error) {
     console.error("Error loading issues:", error);
     return <p>Error loading issues: {error.message}</p>;
   }
+
   const handleRefresh = () => {
     refetch();
   };
+
   return (
     <>
       <NavigationBar />
@@ -230,16 +190,16 @@ const IssuesComponent: React.FC = () => {
         </div>
         {Object.keys(groupedIssues).length > 0 ? (
           Object.entries(groupedIssues)
-            .filter(([state, issues]) => {
+            .filter(([, issues]) => {
               if (selectedTeam) {
                 return issues.some((issue) => issue.teamName === selectedTeam);
               }
               return true;
             })
-            .map(([state, issues]) => (
-              <div key={state}>
+            .map(([stateName, issues]) => (
+              <div key={stateName}>
                 <h2 className="text-2xl text-white font-bold mb-4 bg-black p-2">
-                  {state}
+                  {stateName}
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {issues.map((issue) => (
