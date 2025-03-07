@@ -132,7 +132,7 @@ export default nextConfig;
   "exclude": ["node_modules"]
 }
 
-// ====== FILE: src/app/ApolloWrapper.tsx ======
+// ====== FILE: src\app\ApolloWrapper.tsx ======
 
 // src/app/ApolloWrapper.tsx
 "use client";
@@ -149,7 +149,7 @@ export default function ApolloWrapper({ children }: ApolloWrapperProps) {
   return <ApolloProvider client={client}>{children}</ApolloProvider>;
 }
 
-// ====== FILE: src/app/globals.css ======
+// ====== FILE: src\app\globals.css ======
 
 @import "tailwindcss";
 /*
@@ -307,7 +307,7 @@ export default function ApolloWrapper({ children }: ApolloWrapperProps) {
   }
 }
 
-// ====== FILE: src/app/layout.tsx ======
+// ====== FILE: src\app\layout.tsx ======
 
 // import { ApolloProvider } from "@apollo/client/react";
 import ApolloWrapper from "../app/ApolloWrapper";
@@ -377,7 +377,7 @@ export default function RootLayout({
   );
 }
 
-// ====== FILE: src/app/page.tsx ======
+// ====== FILE: src\app\page.tsx ======
 
 "use client";
 
@@ -504,7 +504,7 @@ const Home: NextPage = () => {
 
 export default Home;
 
-// ====== FILE: src/app/types.ts ======
+// ====== FILE: src\app\types.ts ======
 
 export interface TimeEntry {
   id: number; // <-- Added to match the backend response
@@ -551,7 +551,7 @@ export interface TimerState {
   setStartTime: (date: Date | null) => void;
 }
 
-// ====== FILE: src/lib/utils.ts ======
+// ====== FILE: src\lib\utils.ts ======
 
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
@@ -560,7 +560,7 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-// ====== FILE: src/app/adminPage/page.tsx ======
+// ====== FILE: src\app\adminPage\page.tsx ======
 
 "use client";
 
@@ -695,435 +695,7 @@ const AdminPage: React.FC = () => {
 
 export default AdminPage;
 
-// ====== FILE: src/app/components/FeedbackMessages.tsx ======
-
-"use client";
-import React from "react";
-
-interface FeedbackMessagesProps {
-  submissionSuccess: boolean;
-  submissionError: string;
-  resetMessage: boolean;
-  dateAlertMessage: string | null;
-}
-
-const FeedbackMessages: React.FC<FeedbackMessagesProps> = ({
-  submissionSuccess,
-  submissionError,
-  resetMessage,
-  dateAlertMessage,
-}) => {
-  return (
-    <div className="absolute top-5 right-5 z-50 flex flex-col items-end space-y-2">
-      {submissionSuccess && (
-        <div className="bg-green-100 text-green-800 text-sm font-semibold px-4 py-2 rounded-lg shadow-lg transition ease-out duration-300">
-          Time entry saved!
-        </div>
-      )}
-      {submissionError && (
-        <div className="bg-red-100 text-red-800 text-sm font-semibold px-4 py-2 rounded-lg shadow-lg transition ease-out duration-300">
-          {submissionError}
-        </div>
-      )}
-      {resetMessage && (
-        <div className="bg-yellow-500 text-blue-800 text-sm font-semibold px-4 py-2 rounded-lg shadow-lg transition ease-out duration-300">
-          Timer reset!
-        </div>
-      )}
-      {dateAlertMessage && (
-        <div className="bg-red-100 text-red-800 text-sm font-semibold px-4 py-2 rounded-lg shadow-lg transition ease-out duration-300">
-          {dateAlertMessage}
-        </div>
-      )}
-    </div>
-  );
-};
-
-export default FeedbackMessages;
-
-// ====== FILE: src/app/components/NavigationBar.tsx ======
-
-"use client";
-
-import React from "react";
-import Image from "next/image";
-import Link from "next/link";
-import { logout, currentUserVar } from "../lib/apolloClient";
-
-const NavigationBar: React.FC = () => {
-  const loggedInUser = currentUserVar();
-  const handleLogout = () => {
-    logout();
-  };
-  return (
-    <nav className="flex items-center justify-between p-4 bg-white shadow font-roboto-condensed uppercase">
-      <Link href="/">
-        <Image
-          src="/logo.svg"
-          alt="Enablment-tt Logo"
-          width={200}
-          height={40}
-          style={{ cursor: "pointer" }}
-        />
-      </Link>
-      <div className="flex-grow font-semibold text-lg mx-4 flex items-center justify-center">
-        <Link href="/issuesPage" className="mr-4">
-          Issues
-        </Link>
-        <Link href="/adminPage" className="mr-4">
-          Admin
-        </Link>
-        <Link href="/timeKeeper">Timekeeper</Link>
-      </div>
-      <div>
-        <div>
-          {loggedInUser ? (
-            <h2
-              className="bg-gray-800 text-white px-4  m-1 rounded"
-              // style={{ fontSize: "16px" }}
-            >
-              {loggedInUser.email}
-            </h2>
-          ) : (
-            <p className="text-md text-gray-500">Loading user data...</p>
-          )}
-        </div>
-        <button
-          className="bg-black text-white rounded hover:bg-gray-800 font-bold py-1 px-4 float-right font-roboto-condensed uppercase"
-          style={{ fontSize: "12px" }}
-          onClick={handleLogout}
-        >
-          Logout
-        </button>
-      </div>
-    </nav>
-  );
-};
-
-export default NavigationBar;
-
-// ====== FILE: src/app/components/ProjectRateSelectors.tsx ======
-
-"use client";
-
-import React from "react";
-import ProjectSelector from "./ProjectSelector";
-import RateSelector from "./RateSelector";
-import { ApolloError } from "@apollo/client";
-import { formatTimeFromMilliseconds } from "../utils/timeUtils";
-
-interface Project {
-  id: string;
-  name: string;
-  teamName: string;
-}
-
-interface Rate {
-  id: string;
-  name: string;
-  rate: number;
-}
-
-interface ProjectRateSelectorsProps {
-  userProjects: Project[];
-  selectedProject: string | null;
-  setSelectedProject: (projectId: string) => void;
-  rates: Rate[];
-  selectedRate: string | null;
-  setSelectedRate: (rateId: string) => void;
-  totalTimeLoading: boolean;
-  totalTimeError: ApolloError | undefined;
-  totalTime: number;
-}
-
-const ProjectRateSelectors: React.FC<ProjectRateSelectorsProps> = ({
-  userProjects,
-  selectedProject,
-  setSelectedProject,
-  rates,
-  selectedRate,
-  setSelectedRate,
-  totalTimeLoading,
-  totalTimeError,
-  totalTime,
-}) => {
-  return (
-    <div className="mt-6">
-      <div className="mb-4">
-        <ProjectSelector
-          projects={userProjects}
-          selectedProject={selectedProject ?? ""}
-          onProjectChange={setSelectedProject}
-        />
-      </div>
-      <div className="mb-4">
-        <RateSelector
-          rates={rates}
-          selectedRate={selectedRate ?? ""}
-          onRateChange={setSelectedRate}
-        />
-      </div>
-      <div className="mt-4">
-        {totalTimeLoading ? (
-          <p>Loading total time...</p>
-        ) : totalTimeError ? (
-          <p>Error loading total time: {totalTimeError.message}</p>
-        ) : (
-          <p>
-            Your time on project so far: {formatTimeFromMilliseconds(totalTime)}
-          </p>
-        )}
-      </div>
-    </div>
-  );
-};
-
-export default ProjectRateSelectors;
-
-// ====== FILE: src/app/components/ProjectSelector.tsx ======
-
-"use client";
-
-import React from "react";
-
-type ProjectSelectorProps = {
-  projects: { id: string; name: string; teamName: string }[];
-  selectedProject: string;
-  onProjectChange: (projectId: string) => void;
-  className?: string;
-};
-
-const ProjectSelector: React.FC<ProjectSelectorProps> = ({
-  projects,
-  selectedProject,
-  onProjectChange,
-}) => {
-  return (
-    <select
-      value={selectedProject}
-      onChange={(e) => onProjectChange(e.target.value)}
-      className="form-input block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-    >
-      <option value="" disabled>
-        Select a project
-      </option>
-      {projects.map((project) => (
-        <option key={project.id} value={project.id}>
-          {project.name} (Team: {project.teamName})
-        </option>
-      ))}
-    </select>
-  );
-};
-
-export default ProjectSelector;
-
-// ====== FILE: src/app/components/RateSelector.tsx ======
-
-"use client";
-
-import React from "react";
-
-type RateSelectorProps = {
-  rates: { id: string; name: string; rate: number }[];
-  selectedRate: string;
-  onRateChange: (rateId: string) => void;
-};
-
-const RateSelector: React.FC<RateSelectorProps> = ({
-  rates,
-  selectedRate,
-  onRateChange,
-}) => {
-  return (
-    <select
-      value={selectedRate}
-      onChange={(e) => onRateChange(e.target.value)}
-      className="form-input block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-    >
-      <option value="" disabled>
-        Select a rate
-      </option>
-      {rates.map((rate) => (
-        <option key={rate.id} value={rate.id}>
-          {rate.name} ({rate.rate})
-        </option>
-      ))}
-    </select>
-  );
-};
-
-export default RateSelector;
-
-// ====== FILE: src/app/components/TimerControls.tsx ======
-
-"use client";
-import React from "react";
-
-interface TimerControlsProps {
-  isRunning: boolean;
-  handleStartStop: () => void;
-  handleReset: () => void;
-  handleSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
-  disabledStartPause: boolean;
-  disabledReset: boolean;
-  disabledSubmit: boolean;
-}
-
-const TimerControls: React.FC<TimerControlsProps> = ({
-  isRunning,
-  handleStartStop,
-  handleReset,
-  handleSubmit,
-  disabledStartPause,
-  disabledReset,
-  disabledSubmit,
-}) => {
-  return (
-    <form onSubmit={handleSubmit}>
-      <div className="flex justify-center mt-auto py-6">
-        <button
-          type="button"
-          onClick={handleStartStop}
-          className={`px-6 py-6 ${
-            isRunning ? "bg-red-500" : "bg-green-500"
-          } text-white text-2xl rounded-full`}
-          disabled={disabledStartPause}
-        >
-          {isRunning ? "Pause" : "Start"}
-        </button>
-        <button
-          type="button"
-          onClick={handleReset}
-          className="px-6 py-8 bg-yellow-500 text-white text-2xl rounded-full ml-4"
-          disabled={disabledReset}
-        >
-          Reset
-        </button>
-        <button
-          type="submit"
-          className="px-3 py-8 bg-blue-500 text-white text-2xl rounded-full ml-4"
-          disabled={disabledSubmit}
-        >
-          Submit
-        </button>
-      </div>
-    </form>
-  );
-};
-
-export default TimerControls;
-
-// ====== FILE: src/app/components/TimerDisplay.tsx ======
-
-import React from "react";
-import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
-import {
-  formatDateForDisplay,
-  formatTimeFromISOString,
-} from "../utils/timeUtils";
-import { formatISO } from "date-fns";
-
-interface TimerDisplayProps {
-  isRunning: boolean;
-  displayTime: string;
-  // Use a new prop for original start time:
-  initialStartTime: Date | null;
-  handleDateChange: (date: Date | null) => void;
-}
-
-const TimerDisplay: React.FC<TimerDisplayProps> = ({
-  isRunning,
-  displayTime,
-  initialStartTime,
-  handleDateChange,
-}) => {
-  return (
-    <div className="flex flex-col items-center justify-center">
-      <div
-        className={`clock-icon h-6 w-6 ${
-          isRunning ? "animate-spin" : ""
-        } text-gray-500`}
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <circle cx="12" cy="12" r="10" />
-          <line x1="12" y1="12" x2="12" y2="8" />
-          <line
-            x1="12"
-            y1="12"
-            x2="16"
-            y2="12"
-            className={isRunning ? "animate-spin" : ""}
-          />
-        </svg>
-      </div>
-      <div className="text-7xl font-digital text-black flex items-center justify-center">
-        {displayTime}
-      </div>
-      <div className="mb-2">
-        Started at:{" "}
-        {initialStartTime
-          ? formatDateForDisplay(initialStartTime) +
-            " " +
-            formatTimeFromISOString(formatISO(initialStartTime))
-          : "Not Started"}
-      </div>
-      <div className="flex justify-center">
-        <DatePicker
-          inline
-          id="startDate"
-          selected={initialStartTime || new Date()}
-          onChange={handleDateChange}
-          showTimeSelect
-          dateFormat="MMMM d, yyyy HH:mm"
-          timeIntervals={10}
-          className="form-input block w-52 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-        />
-      </div>
-    </div>
-  );
-};
-
-export default TimerDisplay;
-
-// ====== FILE: src/app/components/UserSelector.tsx ======
-
-"use client";
-
-const UserSelector: React.FC<{
-  users: { id: string; email: string }[];
-  selectedUser: string;
-  onUserChange: (userId: string) => void;
-}> = ({ users, selectedUser, onUserChange }) => {
-  return (
-    <select
-      value={selectedUser}
-      onChange={(e) => onUserChange(e.target.value)}
-      className="form-input block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-    >
-      <option value="" disabled>
-        Select a user
-      </option>
-      {users.map((user) => (
-        <option key={user.id} value={user.id}>
-          {user.email}
-        </option>
-      ))}
-    </select>
-  );
-};
-export default UserSelector;
-
-// ====== FILE: src/app/components/aboutSection.tsx ======
+// ====== FILE: src\app\components\aboutSection.tsx ======
 
 import React from "react";
 
@@ -1279,7 +851,7 @@ const AboutSection: React.FC = () => {
 
 export default AboutSection;
 
-// ====== FILE: src/app/components/clientColab.tsx ======
+// ====== FILE: src\app\components\clientColab.tsx ======
 
 "use client";
 
@@ -1345,7 +917,7 @@ const ClientColab: React.FC<ServiceTableProps> = ({ onContactClick }) => {
 
 export default ClientColab;
 
-// ====== FILE: src/app/components/contactForm.tsx ======
+// ====== FILE: src\app\components\contactForm.tsx ======
 
 "use client";
 
@@ -1577,7 +1149,7 @@ const ContactForm: React.FC<ContactFormProps> = ({
 
 export default ContactForm;
 
-// ====== FILE: src/app/components/contentWrapper.tsx ======
+// ====== FILE: src\app\components\contentWrapper.tsx ======
 
 "use client";
 
@@ -1619,7 +1191,53 @@ export const ContentWrapper: React.FC<
   );
 };
 
-// ====== FILE: src/app/components/footer.tsx ======
+// ====== FILE: src\app\components\FeedbackMessages.tsx ======
+
+"use client";
+import React from "react";
+
+interface FeedbackMessagesProps {
+  submissionSuccess: boolean;
+  submissionError: string;
+  resetMessage: boolean;
+  dateAlertMessage: string | null;
+}
+
+const FeedbackMessages: React.FC<FeedbackMessagesProps> = ({
+  submissionSuccess,
+  submissionError,
+  resetMessage,
+  dateAlertMessage,
+}) => {
+  return (
+    <div className="absolute top-5 right-5 z-50 flex flex-col items-end space-y-2">
+      {submissionSuccess && (
+        <div className="bg-green-100 text-green-800 text-sm font-semibold px-4 py-2 rounded-lg shadow-lg transition ease-out duration-300">
+          Time entry saved!
+        </div>
+      )}
+      {submissionError && (
+        <div className="bg-red-100 text-red-800 text-sm font-semibold px-4 py-2 rounded-lg shadow-lg transition ease-out duration-300">
+          {submissionError}
+        </div>
+      )}
+      {resetMessage && (
+        <div className="bg-yellow-500 text-blue-800 text-sm font-semibold px-4 py-2 rounded-lg shadow-lg transition ease-out duration-300">
+          Timer reset!
+        </div>
+      )}
+      {dateAlertMessage && (
+        <div className="bg-red-100 text-red-800 text-sm font-semibold px-4 py-2 rounded-lg shadow-lg transition ease-out duration-300">
+          {dateAlertMessage}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default FeedbackMessages;
+
+// ====== FILE: src\app\components\footer.tsx ======
 
 // FooterComponent.tsx
 import React from "react";
@@ -1692,7 +1310,7 @@ const Footer: React.FC = () => {
 
 export default Footer;
 
-// ====== FILE: src/app/components/navBar.tsx ======
+// ====== FILE: src\app\components\navBar.tsx ======
 
 "use client";
 
@@ -1855,7 +1473,68 @@ const NavBar: React.FC<NavbarProps> = ({
 
 export default NavBar;
 
-// ====== FILE: src/app/components/peopleSection.tsx ======
+// ====== FILE: src\app\components\NavigationBar.tsx ======
+
+"use client";
+
+import React from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { logout, currentUserVar } from "../lib/apolloClient";
+
+const NavigationBar: React.FC = () => {
+  const loggedInUser = currentUserVar();
+  const handleLogout = () => {
+    logout();
+  };
+  return (
+    <nav className="flex items-center justify-between p-4 bg-white shadow font-roboto-condensed uppercase">
+      <Link href="/">
+        <Image
+          src="/logo.svg"
+          alt="Enablment-tt Logo"
+          width={200}
+          height={40}
+          style={{ cursor: "pointer" }}
+        />
+      </Link>
+      <div className="flex-grow font-semibold text-lg mx-4 flex items-center justify-center">
+        <Link href="/issuesPage" className="mr-4">
+          Issues
+        </Link>
+        <Link href="/adminPage" className="mr-4">
+          Admin
+        </Link>
+        <Link href="/timeKeeper">Timekeeper</Link>
+      </div>
+      <div>
+        <div>
+          {loggedInUser ? (
+            <h2
+              className="bg-gray-800 text-white px-4  m-1 rounded"
+              // style={{ fontSize: "16px" }}
+            >
+              {loggedInUser.email}
+            </h2>
+          ) : (
+            <p className="text-md text-gray-500">Loading user data...</p>
+          )}
+        </div>
+        <button
+          className="bg-black text-white rounded hover:bg-gray-800 font-bold py-1 px-4 float-right font-roboto-condensed uppercase"
+          style={{ fontSize: "12px" }}
+          onClick={handleLogout}
+        >
+          Logout
+        </button>
+      </div>
+    </nav>
+  );
+};
+
+export default NavigationBar;
+
+// ====== FILE: src\app\components\peopleSection.tsx ======
 
 "use client";
 
@@ -2022,7 +1701,160 @@ const PersonCard: React.FC<PersonCardProps> = ({ person }) => {
 
 export default PeopleSection;
 
-// ====== FILE: src/app/components/sectionAnimation.tsx ======
+// ====== FILE: src\app\components\ProjectRateSelectors.tsx ======
+
+"use client";
+
+import React from "react";
+import ProjectSelector from "./ProjectSelector";
+import RateSelector from "./RateSelector";
+import { ApolloError } from "@apollo/client";
+import { formatTimeFromMilliseconds } from "../utils/timeUtils";
+
+interface Project {
+  id: string;
+  name: string;
+  teamName: string;
+}
+
+interface Rate {
+  id: string;
+  name: string;
+  rate: number;
+}
+
+interface ProjectRateSelectorsProps {
+  userProjects: Project[];
+  selectedProject: string | null;
+  setSelectedProject: (projectId: string) => void;
+  rates: Rate[];
+  selectedRate: string | null;
+  setSelectedRate: (rateId: string) => void;
+  totalTimeLoading: boolean;
+  totalTimeError: ApolloError | undefined;
+  totalTime: number;
+}
+
+const ProjectRateSelectors: React.FC<ProjectRateSelectorsProps> = ({
+  userProjects,
+  selectedProject,
+  setSelectedProject,
+  rates,
+  selectedRate,
+  setSelectedRate,
+  totalTimeLoading,
+  totalTimeError,
+  totalTime,
+}) => {
+  return (
+    <div className="mt-6">
+      <div className="mb-4">
+        <ProjectSelector
+          projects={userProjects}
+          selectedProject={selectedProject ?? ""}
+          onProjectChange={setSelectedProject}
+        />
+      </div>
+      <div className="mb-4">
+        <RateSelector
+          rates={rates}
+          selectedRate={selectedRate ?? ""}
+          onRateChange={setSelectedRate}
+        />
+      </div>
+      <div className="mt-4">
+        {totalTimeLoading ? (
+          <p>Loading total time...</p>
+        ) : totalTimeError ? (
+          <p>Error loading total time: {totalTimeError.message}</p>
+        ) : (
+          <p>
+            Your time on project so far: {formatTimeFromMilliseconds(totalTime)}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default ProjectRateSelectors;
+
+// ====== FILE: src\app\components\ProjectSelector.tsx ======
+
+"use client";
+
+import React from "react";
+
+type ProjectSelectorProps = {
+  projects: { id: string; name: string; teamName: string }[];
+  selectedProject: string;
+  onProjectChange: (projectId: string) => void;
+  className?: string;
+};
+
+const ProjectSelector: React.FC<ProjectSelectorProps> = ({
+  projects,
+  selectedProject,
+  onProjectChange,
+}) => {
+  return (
+    <select
+      value={selectedProject}
+      onChange={(e) => onProjectChange(e.target.value)}
+      className="form-input block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+    >
+      <option value="" disabled>
+        Select a project
+      </option>
+      {projects.map((project) => (
+        <option key={project.id} value={project.id}>
+          {project.name} (Team: {project.teamName})
+        </option>
+      ))}
+    </select>
+  );
+};
+
+export default ProjectSelector;
+
+// ====== FILE: src\app\components\RateSelector.tsx ======
+
+"use client";
+
+import React from "react";
+
+type RateSelectorProps = {
+  rates: { id: string; name: string; rate: number }[];
+  selectedRate: string;
+  onRateChange: (rateId: string) => void;
+};
+
+const RateSelector: React.FC<RateSelectorProps> = ({
+  rates,
+  selectedRate,
+  onRateChange,
+}) => {
+  return (
+    <select
+      value={selectedRate}
+      onChange={(e) => onRateChange(e.target.value)}
+      className="form-input block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+    >
+      <option value="" disabled>
+        Select a rate
+      </option>
+      {rates.map((rate) => (
+        <option key={rate.id} value={rate.id}>
+          {rate.name} ({rate.rate})
+        </option>
+      ))}
+    </select>
+  );
+};
+
+export default RateSelector;
+
+// ====== FILE: src\app\components\sectionAnimation.tsx ======
 
 "use client";
 
@@ -2076,7 +1908,7 @@ const SectionAnimation: React.FC<SectionAnimationProps> = ({
 
 export default SectionAnimation;
 
-// ====== FILE: src/app/components/sectionWrapper.tsx ======
+// ====== FILE: src\app\components\sectionWrapper.tsx ======
 
 "use client";
 
@@ -2150,7 +1982,7 @@ const SectionWrapper: React.FC<SectionProps> = ({
 
 export default SectionWrapper;
 
-// ====== FILE: src/app/components/servicesSection.tsx ======
+// ====== FILE: src\app\components\servicesSection.tsx ======
 
 "use client";
 
@@ -2344,7 +2176,174 @@ const ServicesSection: React.FC = () => {
 
 export default ServicesSection;
 
-// ====== FILE: src/app/graphql/adminOperations.ts ======
+// ====== FILE: src\app\components\TimerControls.tsx ======
+
+"use client";
+import React from "react";
+
+interface TimerControlsProps {
+  isRunning: boolean;
+  handleStartStop: () => void;
+  handleReset: () => void;
+  handleSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
+  disabledStartPause: boolean;
+  disabledReset: boolean;
+  disabledSubmit: boolean;
+}
+
+const TimerControls: React.FC<TimerControlsProps> = ({
+  isRunning,
+  handleStartStop,
+  handleReset,
+  handleSubmit,
+  disabledStartPause,
+  disabledReset,
+  disabledSubmit,
+}) => {
+  return (
+    <form onSubmit={handleSubmit}>
+      <div className="flex justify-center mt-auto py-6">
+        <button
+          type="button"
+          onClick={handleStartStop}
+          className={`px-6 py-6 ${
+            isRunning ? "bg-red-500" : "bg-green-500"
+          } text-white text-2xl rounded-full`}
+          disabled={disabledStartPause}
+        >
+          {isRunning ? "Pause" : "Start"}
+        </button>
+        <button
+          type="button"
+          onClick={handleReset}
+          className="px-6 py-8 bg-yellow-500 text-white text-2xl rounded-full ml-4"
+          disabled={disabledReset}
+        >
+          Reset
+        </button>
+        <button
+          type="submit"
+          className="px-3 py-8 bg-blue-500 text-white text-2xl rounded-full ml-4"
+          disabled={disabledSubmit}
+        >
+          Submit
+        </button>
+      </div>
+    </form>
+  );
+};
+
+export default TimerControls;
+
+// ====== FILE: src\app\components\TimerDisplay.tsx ======
+
+import React from "react";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import {
+  formatDateForDisplay,
+  formatTimeFromISOString,
+} from "../utils/timeUtils";
+import { formatISO } from "date-fns";
+
+interface TimerDisplayProps {
+  isRunning: boolean;
+  displayTime: string;
+  initialStartTime: Date | null;
+  handleDateChange: (date: Date | null) => void;
+}
+
+const TimerDisplay: React.FC<TimerDisplayProps> = ({
+  isRunning,
+  displayTime,
+  initialStartTime,
+  handleDateChange,
+}) => {
+  return (
+    <div className="flex flex-col items-center justify-center">
+      <div
+        className={`clock-icon h-6 w-6 ${
+          isRunning ? "animate-spin" : ""
+        } text-gray-500`}
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <circle cx="12" cy="12" r="10" />
+          <line x1="12" y1="12" x2="12" y2="8" />
+          <line
+            x1="12"
+            y1="12"
+            x2="16"
+            y2="12"
+            className={isRunning ? "animate-spin" : ""}
+          />
+        </svg>
+      </div>
+      <div className="text-7xl font-digital text-black flex items-center justify-center">
+        {displayTime}
+      </div>
+      <div className="mb-2">
+        Started at:{" "}
+        {initialStartTime
+          ? formatDateForDisplay(initialStartTime) +
+            " " +
+            formatTimeFromISOString(formatISO(initialStartTime))
+          : "Not Started"}
+      </div>
+      <div className="flex justify-center">
+        <DatePicker
+          inline
+          id="startDate"
+          selected={initialStartTime || new Date()}
+          onChange={handleDateChange}
+          showTimeSelect
+          dateFormat="MMMM d, yyyy HH:mm"
+          timeIntervals={10}
+          className="form-input block w-52 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+        />
+      </div>
+    </div>
+  );
+};
+
+export default TimerDisplay;
+
+// ====== FILE: src\app\components\UserSelector.tsx ======
+
+"use client";
+
+const UserSelector: React.FC<{
+  users: { id: string; email: string }[];
+  selectedUser: string;
+  onUserChange: (userId: string) => void;
+}> = ({ users, selectedUser, onUserChange }) => {
+  return (
+    <select
+      value={selectedUser}
+      onChange={(e) => onUserChange(e.target.value)}
+      className="form-input block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+    >
+      <option value="" disabled>
+        Select a user
+      </option>
+      {users.map((user) => (
+        <option key={user.id} value={user.id}>
+          {user.email}
+        </option>
+      ))}
+    </select>
+  );
+};
+export default UserSelector;
+
+// ====== FILE: src\app\graphql\adminOperations.ts ======
 
 import { gql } from "@apollo/client";
 
@@ -2398,7 +2397,7 @@ export const REMOVE_USER_FROM_TEAM = gql`
   }
 `;
 
-// ====== FILE: src/app/graphql/timeKeeperOperations.ts ======
+// ====== FILE: src\app\graphql\timeKeeperOperations.ts ======
 
 import { gql } from "@apollo/client";
 
@@ -2465,7 +2464,7 @@ export const UPDATE_TIME_MUTATION = gql`
   }
 `;
 
-// ====== FILE: src/app/hooks/useFeedbackState.ts ======
+// ====== FILE: src\app\hooks\useFeedbackState.ts ======
 
 // src/app/hooks/useFeedbackState.ts
 import { useState } from "react";
@@ -2508,7 +2507,7 @@ export const useFeedbackState = () => {
   };
 };
 
-// ====== FILE: src/app/hooks/useTimeKeeperData.ts ======
+// ====== FILE: src\app\hooks\useTimeKeeperData.ts ======
 
 import { useQuery } from "@apollo/client";
 import { useEffect, useState } from "react";
@@ -2608,7 +2607,7 @@ const useTimeKeeperData = () => {
 
 export default useTimeKeeperData;
 
-// ====== FILE: src/app/hooks/useTimekeeperHandlers.ts ======
+// ====== FILE: src\app\hooks\useTimekeeperHandlers.ts ======
 
 import { formatISO } from "date-fns";
 import type { TimerState, TimeEntry } from "../types";
@@ -2739,7 +2738,7 @@ export const useTimeKeeperHandlers = ({
   };
 };
 
-// ====== FILE: src/app/hooks/useTimekeeperQueries.ts ======
+// ====== FILE: src\app\hooks\useTimekeeperQueries.ts ======
 
 import { useQuery, useMutation } from "@apollo/client";
 import {
@@ -2805,7 +2804,7 @@ export const useTimeKeeperQueries = (
   };
 };
 
-// ====== FILE: src/app/hooks/useTimer.ts ======
+// ====== FILE: src\app\hooks\useTimer.ts ======
 
 import { useState, useEffect, useRef } from "react";
 import { format } from "date-fns";
@@ -2972,12 +2971,12 @@ export const useTimer = (): TimerState & {
   };
 };
 
-// ====== FILE: src/app/issuesPage/page.tsx ======
+// ====== FILE: src\app\issuesPage\page.tsx ======
 
 "use client";
 
-import React, { useMemo, useState, useEffect } from "react";
-import { gql, useQuery, useSubscription } from "@apollo/client";
+import React, { useMemo, useState } from "react";
+import { gql, useQuery } from "@apollo/client";
 import NavigationBar from "../components/NavigationBar";
 import client from "@/app/lib/apolloClient";
 
@@ -3035,49 +3034,18 @@ const GET_ISSUES = gql`
   }
 `;
 
-const ISSUE_UPDATED_SUBSCRIPTION = gql`
-  subscription OnIssueUpdated {
-    issueUpdated {
-      id
-      createdAt
-      updatedAt
-      title
-      dueDate
-      projectId
-      priorityLabel
-      identifier
-      assigneeName
-      projectName
-      state
-      teamKey
-      teamName
-      labels {
-        id
-        name
-        color
-        parentId
-      }
-    }
-  }
-`;
-
 const IssuesComponent: React.FC = () => {
   const { loading, error, data, refetch } = useQuery<{ issues: Issue[] }>(
     GET_ISSUES,
     { client }
   );
-  const { data: subscriptionData, error: subscriptionError } = useSubscription(
-    ISSUE_UPDATED_SUBSCRIPTION,
-    { client }
-  );
 
   const [selectedAssignee, setSelectedAssignee] = useState<string | null>(null);
+  const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
 
   const handleSelectAssignee = (assignee: string) => {
     setSelectedAssignee(assignee);
   };
-
-  const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
 
   const handleSelectTeam = (team: string) => {
     setSelectedTeam(team);
@@ -3087,6 +3055,7 @@ const IssuesComponent: React.FC = () => {
     setSelectedTeam(null);
     setSelectedAssignee(null);
   };
+
   const uniqueTeams = useMemo(() => {
     const teams = new Set<string>();
     data?.issues.forEach((issue) => teams.add(issue.teamName));
@@ -3121,26 +3090,16 @@ const IssuesComponent: React.FC = () => {
     return groups;
   }, [filteredIssues]);
 
-  useEffect(() => {
-    if (subscriptionData) {
-      console.log("Subscription data received:", subscriptionData);
-      refetch();
-    }
-    if (subscriptionError) {
-      console.error("Subscription error:", subscriptionError);
-    }
-  }, [subscriptionData, subscriptionError, refetch]);
-
-  //   console.log("GraphQL Response:", { loading, error, data });
-
   if (loading) return <p>Loading issues...</p>;
   if (error) {
     console.error("Error loading issues:", error);
     return <p>Error loading issues: {error.message}</p>;
   }
+
   const handleRefresh = () => {
     refetch();
   };
+
   return (
     <>
       <NavigationBar />
@@ -3206,16 +3165,16 @@ const IssuesComponent: React.FC = () => {
         </div>
         {Object.keys(groupedIssues).length > 0 ? (
           Object.entries(groupedIssues)
-            .filter(([state, issues]) => {
+            .filter(([, issues]) => {
               if (selectedTeam) {
                 return issues.some((issue) => issue.teamName === selectedTeam);
               }
               return true;
             })
-            .map(([state, issues]) => (
-              <div key={state}>
+            .map(([stateName, issues]) => (
+              <div key={stateName}>
                 <h2 className="text-2xl text-white font-bold mb-4 bg-black p-2">
-                  {state}
+                  {stateName}
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {issues.map((issue) => (
@@ -3273,7 +3232,7 @@ const IssuesComponent: React.FC = () => {
 
 export default IssuesComponent;
 
-// ====== FILE: src/app/lib/apolloClient.ts ======
+// ====== FILE: src\app\lib\apolloClient.ts ======
 
 "use client";
 
@@ -3382,7 +3341,7 @@ export const logout = () => {
   window.location.href = "/login";
 };
 
-// ====== FILE: src/app/lib/store.ts ======
+// ====== FILE: src\app\lib\store.ts ======
 
 "use client";
 
@@ -3433,7 +3392,7 @@ const useStore = create<Store>((set) => ({
 
 export default useStore;
 
-// ====== FILE: src/app/lib/utils.ts ======
+// ====== FILE: src\app\lib\utils.ts ======
 
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -3442,7 +3401,7 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-// ====== FILE: src/app/login/page.tsx ======
+// ====== FILE: src\app\login\page.tsx ======
 
 "use client";
 
@@ -3549,7 +3508,7 @@ const Login: React.FC = () => {
 
 export default Login;
 
-// ====== FILE: src/app/signup/page.tsx ======
+// ====== FILE: src\app\signup\page.tsx ======
 
 "use client";
 import React, { useState } from "react";
@@ -3686,7 +3645,7 @@ const Signup: React.FC = () => {
 
 export default Signup;
 
-// ====== FILE: src/app/timeKeeper/page.tsx ======
+// ====== FILE: src\app\timeKeeper\page.tsx ======
 
 "use client";
 
@@ -3790,7 +3749,7 @@ const TimeKeeper: React.FC = () => {
 
 export default TimeKeeper;
 
-// ====== FILE: src/app/utils/timeUtils.ts ======
+// ====== FILE: src\app\utils\timeUtils.ts ======
 
 // timeUtils.ts
 
@@ -3840,7 +3799,7 @@ export function formatTimeFromMilliseconds(ms: number): string {
     .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
 }
 
-// ====== FILE: src/app/utils/userProfileUtils.ts ======
+// ====== FILE: src\app\utils\userProfileUtils.ts ======
 
 interface User {
   id: string;
@@ -3877,7 +3836,7 @@ export async function fetchUserProfile(token: string | null): Promise<User> {
   }
 }
 
-// ====== FILE: src/app/api/profile/route.ts ======
+// ====== FILE: src\app\api\profile\route.ts ======
 
 import { NextRequest, NextResponse } from "next/server";
 
@@ -3911,193 +3870,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// ====== FILE: src/app/components/Admin/UserRoleSelect.tsx ======
-
-"use client";
-import React from "react";
-
-export enum UserRole {
-  ADMIN = "ADMIN",
-  ENABLER = "ENABLER",
-  COLLABORATOR = "COLLABORATOR",
-  PENDING = "PENDING",
-}
-
-interface UserRoleSelectProps {
-  currentRole: UserRole;
-  onRoleChange: (newRole: UserRole) => void;
-}
-
-const UserRoleSelect: React.FC<UserRoleSelectProps> = ({
-  currentRole,
-  onRoleChange,
-}) => {
-  return (
-    <select
-      value={currentRole}
-      onChange={(e) => onRoleChange(e.target.value as UserRole)}
-    >
-      {Object.values(UserRole).map((role) => (
-        <option key={role} value={role}>
-          {role}
-        </option>
-      ))}
-    </select>
-  );
-};
-
-export default UserRoleSelect;
-
-// ====== FILE: src/app/components/Admin/UserRow.tsx ======
-
-"use client";
-import React from "react";
-import UserRoleSelect, { UserRole } from "./UserRoleSelect";
-
-export interface Team {
-  id: string;
-  name: string;
-}
-
-export interface User {
-  id: number;
-  email: string;
-  role: UserRole;
-  teams: Team[];
-}
-
-interface UserRowProps {
-  user: User;
-  teams: Team[];
-  onTeamSelect: (userId: number, teamId: string) => void;
-  onAddToTeam: (userId: number) => void;
-  onRemoveFromTeam: (userId: number, teamId: string) => void;
-  onRoleChange: (userId: number, newRole: UserRole) => void;
-}
-
-const UserRow: React.FC<UserRowProps> = ({
-  user,
-  teams,
-  onTeamSelect,
-  onAddToTeam,
-  onRemoveFromTeam,
-  onRoleChange,
-}) => {
-  return (
-    <tr>
-      <td className="px-6 py-4 whitespace-nowrap border-b border-gray-200 shadow-md">
-        {user.email}
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap border-b border-gray-200 shadow-md">
-        {/* Inline team select (skipping separate TeamSelect file) */}
-        <select onChange={(e) => onTeamSelect(user.id, e.target.value)}>
-          <option value="">Select team...</option>
-          {teams.map((team) => (
-            <option key={team.id} value={team.id}>
-              {team.name}
-            </option>
-          ))}
-        </select>
-        <button
-          className="ml-20 bg-black hover:bg-green-700 text-white font-bold py-1 px-2 rounded"
-          onClick={() => onAddToTeam(user.id)}
-        >
-          Add to Team
-        </button>
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap border-b border-gray-200 shadow-md">
-        {user.teams && user.teams.length > 0 ? (
-          <ul className="list-disc list-inside space-y-2">
-            {user.teams.map((team) => (
-              <li
-                key={team.id}
-                className="flex items-center justify-between border-b border-gray-200"
-              >
-                {team.name}
-                <button
-                  onClick={() => onRemoveFromTeam(user.id, team.id)}
-                  className="ml-4 bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded border-b border-gray-200"
-                >
-                  Remove
-                </button>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p>No teams assigned</p>
-        )}
-      </td>
-      <td className="border-b border-gray-200 shadow-md">
-        <UserRoleSelect
-          currentRole={user.role}
-          onRoleChange={(newRole) => onRoleChange(user.id, newRole)}
-        />
-      </td>
-    </tr>
-  );
-};
-
-export default UserRow;
-
-// ====== FILE: src/app/components/Admin/UserTable.tsx ======
-
-"use client";
-import React from "react";
-import UserRow, { User, Team } from "./UserRow";
-
-interface UserTableProps {
-  users: User[];
-  teams: Team[];
-  onTeamSelect: (userId: number, teamId: string) => void;
-  onAddToTeam: (userId: number) => void;
-  onRemoveFromTeam: (userId: number, teamId: string) => void;
-  onRoleChange: (userId: number, newRole: string) => void;
-}
-
-const UserTable: React.FC<UserTableProps> = ({
-  users,
-  teams,
-  onTeamSelect,
-  onAddToTeam,
-  onRemoveFromTeam,
-  onRoleChange,
-}) => (
-  <table className="min-w-full table-auto">
-    <thead className="bg-black">
-      <tr>
-        <th className="px-6 py-3 text-left text-lg font-medium text-white uppercase tracking-wider">
-          User
-        </th>
-        <th className="px-6 py-3 text-left text-lg font-medium text-white uppercase tracking-wider">
-          Teams
-        </th>
-        <th className="px-6 py-3 text-left text-lg font-medium text-white uppercase tracking-wider">
-          Assigned
-        </th>
-        <th className="px-6 py-3 text-left text-lg font-medium text-white uppercase tracking-wider">
-          Role
-        </th>
-      </tr>
-    </thead>
-    <tbody>
-      {users.map((user) => (
-        <UserRow
-          key={user.id}
-          user={user}
-          teams={teams}
-          onTeamSelect={onTeamSelect}
-          onAddToTeam={onAddToTeam}
-          onRemoveFromTeam={onRemoveFromTeam}
-          onRoleChange={onRoleChange}
-        />
-      ))}
-    </tbody>
-  </table>
-);
-
-export default UserTable;
-
-// ====== FILE: src/app/components/Admin/invoiceSummary.tsx ======
+// ====== FILE: src\app\components\Admin\invoiceSummary.tsx ======
 
 "use client";
 
@@ -4339,7 +4112,7 @@ const InvoiceSummary: React.FC = () => {
 
 export default InvoiceSummary;
 
-// ====== FILE: src/app/components/Admin/ratesManager.tsx ======
+// ====== FILE: src\app\components\Admin\ratesManager.tsx ======
 
 "use client";
 
@@ -4530,7 +4303,7 @@ const RatesManager = () => {
 
 export default RatesManager;
 
-// ====== FILE: src/app/components/Admin/teamSynch.tsx ======
+// ====== FILE: src\app\components\Admin\teamSynch.tsx ======
 
 "use client";
 
@@ -4601,7 +4374,7 @@ const TeamSync: React.FC = () => {
 
 export default TeamSync;
 
-// ====== FILE: src/app/components/Admin/totalTimeSpent.tsx ======
+// ====== FILE: src\app\components\Admin\totalTimeSpent.tsx ======
 
 "use client";
 
@@ -4815,7 +4588,193 @@ const TotalTimeSpent: React.FC = () => {
 
 export default TotalTimeSpent;
 
-// ====== FILE: src/app/components/ui/background-beams.tsx ======
+// ====== FILE: src\app\components\Admin\UserRoleSelect.tsx ======
+
+"use client";
+import React from "react";
+
+export enum UserRole {
+  ADMIN = "ADMIN",
+  ENABLER = "ENABLER",
+  COLLABORATOR = "COLLABORATOR",
+  PENDING = "PENDING",
+}
+
+interface UserRoleSelectProps {
+  currentRole: UserRole;
+  onRoleChange: (newRole: UserRole) => void;
+}
+
+const UserRoleSelect: React.FC<UserRoleSelectProps> = ({
+  currentRole,
+  onRoleChange,
+}) => {
+  return (
+    <select
+      value={currentRole}
+      onChange={(e) => onRoleChange(e.target.value as UserRole)}
+    >
+      {Object.values(UserRole).map((role) => (
+        <option key={role} value={role}>
+          {role}
+        </option>
+      ))}
+    </select>
+  );
+};
+
+export default UserRoleSelect;
+
+// ====== FILE: src\app\components\Admin\UserRow.tsx ======
+
+"use client";
+import React from "react";
+import UserRoleSelect, { UserRole } from "./UserRoleSelect";
+
+export interface Team {
+  id: string;
+  name: string;
+}
+
+export interface User {
+  id: number;
+  email: string;
+  role: UserRole;
+  teams: Team[];
+}
+
+interface UserRowProps {
+  user: User;
+  teams: Team[];
+  onTeamSelect: (userId: number, teamId: string) => void;
+  onAddToTeam: (userId: number) => void;
+  onRemoveFromTeam: (userId: number, teamId: string) => void;
+  onRoleChange: (userId: number, newRole: UserRole) => void;
+}
+
+const UserRow: React.FC<UserRowProps> = ({
+  user,
+  teams,
+  onTeamSelect,
+  onAddToTeam,
+  onRemoveFromTeam,
+  onRoleChange,
+}) => {
+  return (
+    <tr>
+      <td className="px-6 py-4 whitespace-nowrap border-b border-gray-200 shadow-md">
+        {user.email}
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap border-b border-gray-200 shadow-md">
+        {/* Inline team select (skipping separate TeamSelect file) */}
+        <select onChange={(e) => onTeamSelect(user.id, e.target.value)}>
+          <option value="">Select team...</option>
+          {teams.map((team) => (
+            <option key={team.id} value={team.id}>
+              {team.name}
+            </option>
+          ))}
+        </select>
+        <button
+          className="ml-20 bg-black hover:bg-green-700 text-white font-bold py-1 px-2 rounded"
+          onClick={() => onAddToTeam(user.id)}
+        >
+          Add to Team
+        </button>
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap border-b border-gray-200 shadow-md">
+        {user.teams && user.teams.length > 0 ? (
+          <ul className="list-disc list-inside space-y-2">
+            {user.teams.map((team) => (
+              <li
+                key={team.id}
+                className="flex items-center justify-between border-b border-gray-200"
+              >
+                {team.name}
+                <button
+                  onClick={() => onRemoveFromTeam(user.id, team.id)}
+                  className="ml-4 bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded border-b border-gray-200"
+                >
+                  Remove
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p>No teams assigned</p>
+        )}
+      </td>
+      <td className="border-b border-gray-200 shadow-md">
+        <UserRoleSelect
+          currentRole={user.role}
+          onRoleChange={(newRole) => onRoleChange(user.id, newRole)}
+        />
+      </td>
+    </tr>
+  );
+};
+
+export default UserRow;
+
+// ====== FILE: src\app\components\Admin\UserTable.tsx ======
+
+"use client";
+import React from "react";
+import UserRow, { User, Team } from "./UserRow";
+
+interface UserTableProps {
+  users: User[];
+  teams: Team[];
+  onTeamSelect: (userId: number, teamId: string) => void;
+  onAddToTeam: (userId: number) => void;
+  onRemoveFromTeam: (userId: number, teamId: string) => void;
+  onRoleChange: (userId: number, newRole: string) => void;
+}
+
+const UserTable: React.FC<UserTableProps> = ({
+  users,
+  teams,
+  onTeamSelect,
+  onAddToTeam,
+  onRemoveFromTeam,
+  onRoleChange,
+}) => (
+  <table className="min-w-full table-auto">
+    <thead className="bg-black">
+      <tr>
+        <th className="px-6 py-3 text-left text-lg font-medium text-white uppercase tracking-wider">
+          User
+        </th>
+        <th className="px-6 py-3 text-left text-lg font-medium text-white uppercase tracking-wider">
+          Teams
+        </th>
+        <th className="px-6 py-3 text-left text-lg font-medium text-white uppercase tracking-wider">
+          Assigned
+        </th>
+        <th className="px-6 py-3 text-left text-lg font-medium text-white uppercase tracking-wider">
+          Role
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      {users.map((user) => (
+        <UserRow
+          key={user.id}
+          user={user}
+          teams={teams}
+          onTeamSelect={onTeamSelect}
+          onAddToTeam={onAddToTeam}
+          onRemoveFromTeam={onRemoveFromTeam}
+          onRoleChange={onRoleChange}
+        />
+      ))}
+    </tbody>
+  </table>
+);
+
+export default UserTable;
+
+// ====== FILE: src\app\components\ui\background-beams.tsx ======
 
 "use client";
 import React from "react";
@@ -4960,7 +4919,7 @@ export const BackgroundBeams = React.memo(
 );
 BackgroundBeams.displayName = "BackgroundBeams";
 
-// ====== FILE: src/app/components/ui/button.tsx ======
+// ====== FILE: src\app\components\ui\button.tsx ======
 
 "use client";
 

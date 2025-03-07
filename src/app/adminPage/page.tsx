@@ -14,7 +14,7 @@ import {
 import TotalTimeSpent from "@/app/components/Admin/totalTimeSpent";
 import RatesManager from "@/app/components/Admin/ratesManager";
 import InvoiceSummary from "@/app/components/Admin/invoiceSummary";
-import TeamSync from "@/app/components/Admin/teamSynch";
+import DBSyncPage from "@/app/dbSynch/page";
 
 const AdminPage: React.FC = () => {
   const [users, setUsers] = useState([]);
@@ -120,9 +120,7 @@ const AdminPage: React.FC = () => {
           <div className="shadow-md">
             <InvoiceSummary />
           </div>
-          <div className="mt-3 float-right">
-            <TeamSync />
-          </div>
+          <DBSyncPage />
         </div>
       </div>
     </>
