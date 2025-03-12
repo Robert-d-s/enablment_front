@@ -1,5 +1,5 @@
 export interface TimeEntry {
-  id: number; // <-- Added to match the backend response
+  id: number;
   startTime: string;
   endTime: string;
   projectId: string;

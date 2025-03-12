@@ -33,10 +33,7 @@ const NavigationBar: React.FC = () => {
       <div>
         <div>
           {loggedInUser ? (
-            <h2
-              className="bg-gray-800 text-white px-4  m-1 rounded"
-              // style={{ fontSize: "16px" }}
-            >
+            <h2 className="bg-gray-800 text-white px-4  m-1 rounded">
               {loggedInUser.email}
             </h2>
           ) : (

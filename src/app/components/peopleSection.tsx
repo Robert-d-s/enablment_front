@@ -69,12 +69,10 @@ interface PersonCardProps {
   person: Person;
 }
 
-// Define the type for the mapping object
 type RoleIconMappingType = {
   [roleName: string]: string;
 };
 
-// Define the mapping from role names to icon filenames
 const roleIconMapping: RoleIconMappingType = {
   CEO: "ceo.svg",
   "Co-Founder": "founder.svg",
@@ -84,7 +82,6 @@ const roleIconMapping: RoleIconMappingType = {
   Design: "design.svg",
 };
 
-// Function to return the icon path based on the role, with a fallback
 const getIconPath = (role: string): string => {
   return `/icons/${roleIconMapping[role] || "default-icon.svg"}`;
 };

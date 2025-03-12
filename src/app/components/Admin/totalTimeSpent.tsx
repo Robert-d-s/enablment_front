@@ -4,6 +4,24 @@ import React, { useState, useEffect } from "react";
 import { useQuery } from "@apollo/client";
 import gql from "graphql-tag";
 import { currentUserVar } from "@/app/lib/apolloClient";
+import { formatTimeFromMilliseconds } from "@/app/utils/timeUtils";
+
+interface Project {
+  id: string;
+  name: string;
+  teamName?: string;
+}
+
+interface Team {
+  name: string;
+  projects: Project[];
+}
+
+interface User {
+  id: string;
+  email: string;
+  teams?: Team[];
+}
 
 const GET_DROPDOWN_OPTIONS = gql`
   query {
@@ -58,21 +76,13 @@ const TotalTimeSpent: React.FC = () => {
   const [endDate, setEndDate] = useState(getCurrentDate());
 
   const loggedInUser = currentUserVar();
-  const [userProjects, setUserProjects] = useState<any[]>([]);
+  const [userProjects, setUserProjects] = useState<Project[]>([]);
 
-  const {
-    loading: loadingUserProjects,
-    error: errorUserProjects,
-    data: userProjectsData,
-  } = useQuery(GET_USER_PROJECTS, {
+  const { data: userProjectsData } = useQuery(GET_USER_PROJECTS, {
     skip: !loggedInUser,
   });
 
-  const {
-    loading: loadingOptions,
-    error: errorOptions,
-    data: optionsData,
-  } = useQuery(GET_DROPDOWN_OPTIONS);
+  const { error: errorOptions } = useQuery(GET_DROPDOWN_OPTIONS);
   const {
     loading: loadingTime,
     error: errorTime,
@@ -91,12 +101,12 @@ const TotalTimeSpent: React.FC = () => {
   useEffect(() => {
     if (userProjectsData && loggedInUser) {
       const userWithProjects = userProjectsData.users.find(
-        (user: any) => user.id === loggedInUser.id
+        (user: User) => user.id === loggedInUser.id
       );
       if (userWithProjects) {
         const projectsWithTeamName = userWithProjects.teams.flatMap(
-          (team: any) =>
-            team.projects.map((project: any) => ({
+          (team: Team) =>
+            team.projects.map((project: Project) => ({
               ...project,
               teamName: team.name,
             }))
@@ -117,15 +127,6 @@ const TotalTimeSpent: React.FC = () => {
       setTotalTime(timeData.getTotalTimeSpent);
     }
   }, [timeData]);
-
-  const formatMilliseconds = (ms: number) => {
-    const seconds = Math.floor((ms / 1000) % 60);
-    const minutes = Math.floor((ms / (1000 * 60)) % 60);
-    const hours = Math.floor(ms / (1000 * 60 * 60));
-    return `${hours.toString().padStart(2, "0")}:${minutes
-      .toString()
-      .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
-  };
 
   if (loadingTime) return <p>Loading...</p>;
   if (errorOptions || errorTime?.message) {
@@ -174,7 +175,7 @@ const TotalTimeSpent: React.FC = () => {
           className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
         >
           <option value="">Select a Project</option>
-          {userProjects.map((project: any) => (
+          {userProjects.map((project: Project) => (
             <option key={project.id} value={project.id}>
               {project.name} (Team: {project.teamName})
             </option>
@@ -202,7 +203,7 @@ const TotalTimeSpent: React.FC = () => {
 
       {/* Total Time Display */}
       <p className="text-lg font-medium text-white">
-        Total Time: {formatMilliseconds(totalTime)}
+        Total Time: {formatTimeFromMilliseconds(totalTime)}
       </p>
     </div>
   );

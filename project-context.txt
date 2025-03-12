@@ -84,6 +84,7 @@ export default nextConfig;
     "react": "^19.0.0",
     "react-datepicker": "^8.0.0",
     "react-dom": "^19.0.0",
+    "socket.io-client": "^4.8.1",
     "tailwind-merge": "^3.0.1",
     "tailwindcss-animate": "^1.0.7",
     "zustand": "^5.0.3"
@@ -2349,6 +2350,33 @@ import React, { useState } from "react";
 import { useQuery, gql } from "@apollo/client";
 import { motion } from "framer-motion";
 
+export interface SimpleTeam {
+  id: string;
+  name: string;
+}
+
+export interface SimpleProject {
+  id: string;
+  name: string;
+  teamId: string;
+}
+
+export interface DBSyncIssue {
+  id: string;
+  title: string;
+  teamKey?: string;
+  projectId?: string;
+  projectName?: string;
+  state?: string;
+  labels?: SimpleLabel[];
+}
+
+export interface SimpleLabel {
+  id: string;
+  name: string;
+  color: string;
+}
+
 // GraphQL queries to fetch data
 const GET_TEAMS = gql`
   query GetAllSimpleTeams {
@@ -2494,13 +2522,20 @@ const DBSyncPage: React.FC = () => {
 
       // Refetch data to show updated state
       await Promise.all([refetchTeams(), refetchProjects(), refetchIssues()]);
-    } catch (err) {
-      setError(err.message || "An error occurred during synchronization");
+    } catch (err: unknown) {
+      let errorMessage: string;
+
+      if (err instanceof Error) {
+        errorMessage =
+          err.message || "An error occurred during synchronization";
+      } else {
+        errorMessage = "An unexpected error occurred";
+        console.error("Unexpected error during synchronization:", err);
+      }
+
+      setError(errorMessage);
       setSyncStatus("Database synchronization failed");
-      setSyncDetails((prev) => [
-        ...prev,
-        `Error: ${err.message || "Unknown error"}`,
-      ]);
+      setSyncDetails((prev) => [...prev, `Error: ${errorMessage}`]);
     } finally {
       setIsSyncing(false);
     }
@@ -2546,19 +2581,21 @@ const DBSyncPage: React.FC = () => {
             <div className="p-4 overflow-y-auto" style={{ maxHeight: "400px" }}>
               {teamsData?.getAllSimpleTeams?.length > 0 ? (
                 <ul className="space-y-2">
-                  {teamsData.getAllSimpleTeams.map((team, index) => (
-                    <motion.li
-                      key={team.id}
-                      variants={itemVariants}
-                      custom={index}
-                      className="bg-gray-50 p-3 rounded-lg hover:bg-gray-100 transition-colors"
-                    >
-                      <div className="font-medium">{team.name}</div>
-                      <div className="text-sm text-gray-500 mt-1">
-                        ID: {team.id}
-                      </div>
-                    </motion.li>
-                  ))}
+                  {teamsData.getAllSimpleTeams.map(
+                    (team: SimpleTeam, index: number) => (
+                      <motion.li
+                        key={team.id}
+                        variants={itemVariants}
+                        custom={index}
+                        className="bg-gray-50 p-3 rounded-lg hover:bg-gray-100 transition-colors"
+                      >
+                        <div className="font-medium">{team.name}</div>
+                        <div className="text-sm text-gray-500 mt-1">
+                          ID: {team.id}
+                        </div>
+                      </motion.li>
+                    )
+                  )}
                 </ul>
               ) : (
                 <p className="text-gray-500 text-center py-8">
@@ -2586,21 +2623,23 @@ const DBSyncPage: React.FC = () => {
             <div className="p-4 overflow-y-auto" style={{ maxHeight: "400px" }}>
               {projectsData?.projects?.length > 0 ? (
                 <ul className="space-y-2">
-                  {projectsData.projects.map((project, index) => (
-                    <motion.li
-                      key={project.id}
-                      variants={itemVariants}
-                      custom={index}
-                      className="bg-gray-50 p-3 rounded-lg hover:bg-gray-100 transition-colors"
-                    >
-                      <div className="font-medium">{project.name}</div>
-                      <div className="text-sm text-gray-500 mt-1">
-                        ID: {project.id}
-                        <br />
-                        Team ID: {project.teamId}
-                      </div>
-                    </motion.li>
-                  ))}
+                  {projectsData.projects.map(
+                    (project: SimpleProject, index: number) => (
+                      <motion.li
+                        key={project.id}
+                        variants={itemVariants}
+                        custom={index}
+                        className="bg-gray-50 p-3 rounded-lg hover:bg-gray-100 transition-colors"
+                      >
+                        <div className="font-medium">{project.name}</div>
+                        <div className="text-sm text-gray-500 mt-1">
+                          ID: {project.id}
+                          <br />
+                          Team ID: {project.teamId}
+                        </div>
+                      </motion.li>
+                    )
+                  )}
                 </ul>
               ) : (
                 <p className="text-gray-500 text-center py-8">
@@ -2628,34 +2667,38 @@ const DBSyncPage: React.FC = () => {
             <div className="p-4 overflow-y-auto" style={{ maxHeight: "400px" }}>
               {issuesData?.issues?.length > 0 ? (
                 <ul className="space-y-2">
-                  {issuesData.issues.map((issue, index) => (
-                    <motion.li
-                      key={issue.id}
-                      variants={itemVariants}
-                      custom={index}
-                      className="bg-gray-50 p-3 rounded-lg hover:bg-gray-100 transition-colors"
-                    >
-                      <div className="font-medium">{issue.title}</div>
-                      <div className="text-sm text-gray-500 mt-1">
-                        Project: {issue.projectName || "N/A"}
-                        <br />
-                        State: {issue.state || "N/A"}
-                      </div>
-                      {issue.labels && issue.labels.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mt-2">
-                          {issue.labels.map((label) => (
-                            <span
-                              key={label.id}
-                              className="text-xs px-2 py-1 rounded-full text-white"
-                              style={{ backgroundColor: label.color || "#888" }}
-                            >
-                              {label.name}
-                            </span>
-                          ))}
+                  {issuesData.issues.map(
+                    (issue: DBSyncIssue, index: number) => (
+                      <motion.li
+                        key={issue.id}
+                        variants={itemVariants}
+                        custom={index}
+                        className="bg-gray-50 p-3 rounded-lg hover:bg-gray-100 transition-colors"
+                      >
+                        <div className="font-medium">{issue.title}</div>
+                        <div className="text-sm text-gray-500 mt-1">
+                          Project: {issue.projectName || "N/A"}
+                          <br />
+                          State: {issue.state || "N/A"}
                         </div>
-                      )}
-                    </motion.li>
-                  ))}
+                        {issue.labels && issue.labels.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {issue.labels.map((label) => (
+                              <span
+                                key={label.id}
+                                className="text-xs px-2 py-1 rounded-full text-white"
+                                style={{
+                                  backgroundColor: label.color || "#888",
+                                }}
+                              >
+                                {label.name}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </motion.li>
+                    )
+                  )}
                 </ul>
               ) : (
                 <p className="text-gray-500 text-center py-8">
@@ -2731,7 +2774,6 @@ const DBSyncPage: React.FC = () => {
 
   return (
     <>
-      {/* <NavigationBar /> */}
       <div className="container mx-auto p-6 font-roboto-condensed">
         <motion.div
           className="bg-white shadow-lg rounded-lg overflow-hidden"
@@ -3578,10 +3620,11 @@ export const useTimer = (): TimerState & {
 
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect, useRef } from "react";
 import { gql, useQuery } from "@apollo/client";
 import NavigationBar from "../components/NavigationBar";
 import client from "@/app/lib/apolloClient";
+import { io, Socket } from "socket.io-client";
 
 type Label = {
   id: string;
@@ -3682,15 +3725,55 @@ const IssuesComponent: React.FC = () => {
     );
   }, [data?.issues, selectedTeam, selectedAssignee]);
 
-  const groupedIssues: GroupedIssues = useMemo(() => {
-    const groups: GroupedIssues = {};
-    filteredIssues.forEach((issue) => {
-      if (!groups[issue.state]) {
-        groups[issue.state] = [];
-      }
-      groups[issue.state].push(issue);
+  // const groupedIssues: GroupedIssues = useMemo(() => {
+  //   const groups: GroupedIssues = {};
+  //   filteredIssues.forEach((issue) => {
+  //     if (!groups[issue.state]) {
+  //       groups[issue.state] = [];
+  //     }
+  //     groups[issue.state].push(issue);
+  //   });
+  //   return groups;
+  // }, [filteredIssues]);
+
+  const [groupedIssues, setGroupedIssues] = useState<GroupedIssues>({}); // CORRECT and SINGLE declaration of groupedIssues state
+
+  const socket = useRef<Socket | null>(null);
+
+  useEffect(() => {
+    socket.current = io(
+      process.env.NEXT_PUBLIC_BACKEND_WEBSOCKET_URL || "http://localhost:8080"
+    );
+
+    const currentSocket = socket.current;
+
+    currentSocket?.on("issueUpdate", (updatedIssue: Issue) => {
+      console.log("Received issue update via WebSocket:", updatedIssue);
+      refetch();
     });
-    return groups;
+
+    currentSocket?.on("connect_error", (err: any) => {
+      console.error("WebSocket connection error:", err);
+    });
+
+    return () => {
+      if (currentSocket) {
+        currentSocket.disconnect();
+      }
+    };
+  }, [refetch]);
+
+  useEffect(() => {
+    if (filteredIssues) {
+      const groups: GroupedIssues = {};
+      filteredIssues.forEach((issue) => {
+        if (!groups[issue.state]) {
+          groups[issue.state] = [];
+        }
+        groups[issue.state].push(issue);
+      });
+      setGroupedIssues(groups);
+    }
   }, [filteredIssues]);
 
   if (loading) return <p>Loading issues...</p>;

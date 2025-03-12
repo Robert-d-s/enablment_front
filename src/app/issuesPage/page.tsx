@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect, useRef } from "react";
 import { gql, useQuery } from "@apollo/client";
 import NavigationBar from "../components/NavigationBar";
 import client from "@/app/lib/apolloClient";
+import { io, Socket } from "socket.io-client";
 
 type Label = {
   id: string;
@@ -67,6 +68,9 @@ const IssuesComponent: React.FC = () => {
 
   const [selectedAssignee, setSelectedAssignee] = useState<string | null>(null);
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
+  const [socketConnected, setSocketConnected] = useState(false);
+  const [groupedIssues, setGroupedIssues] = useState<GroupedIssues>({});
+  const socket = useRef<Socket | null>(null);
 
   const handleSelectAssignee = (assignee: string) => {
     setSelectedAssignee(assignee);
@@ -104,15 +108,69 @@ const IssuesComponent: React.FC = () => {
     );
   }, [data?.issues, selectedTeam, selectedAssignee]);
 
-  const groupedIssues: GroupedIssues = useMemo(() => {
-    const groups: GroupedIssues = {};
-    filteredIssues.forEach((issue) => {
-      if (!groups[issue.state]) {
-        groups[issue.state] = [];
+  useEffect(() => {
+    socket.current = io(
+      process.env.NEXT_PUBLIC_BACKEND_WEBSOCKET_URL || "http://localhost:8080",
+      {
+        transports: ["websocket"], // Force WebSocket transport instead of polling
+        path: "/socket.io",
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
+        timeout: 20000,
       }
-      groups[issue.state].push(issue);
+    );
+
+    const currentSocket = socket.current;
+
+    console.log(
+      "Attempting to connect to:",
+      process.env.NEXT_PUBLIC_BACKEND_WEBSOCKET_URL || "http://localhost:8080"
+    );
+    socket.current.on("error", (error: Error) => {
+      console.error("Socket error:", error);
     });
-    return groups;
+
+    currentSocket?.on("connect", () => {
+      console.log("WebSocket connected successfully");
+      setSocketConnected(true);
+    });
+
+    currentSocket?.on("disconnect", (reason: string) => {
+      console.log("WebSocket disconnected:", reason);
+      setSocketConnected(false);
+    });
+
+    currentSocket?.on("issueUpdate", (updatedIssue: Issue) => {
+      console.log("Received issue update via WebSocket:", updatedIssue);
+      refetch();
+    });
+
+    currentSocket?.on("connect_error", (err: Error) => {
+      console.error("WebSocket connection error:", err);
+    });
+    currentSocket?.on("disconnect", (reason: string) => {
+      console.log("WebSocket disconnected:", reason);
+    });
+
+    return () => {
+      if (currentSocket) {
+        console.log("Cleaning up WebSocket connection");
+        currentSocket.disconnect();
+      }
+    };
+  }, [refetch]);
+
+  useEffect(() => {
+    if (filteredIssues) {
+      const groups: GroupedIssues = {};
+      filteredIssues.forEach((issue) => {
+        if (!groups[issue.state]) {
+          groups[issue.state] = [];
+        }
+        groups[issue.state].push(issue);
+      });
+      setGroupedIssues(groups);
+    }
   }, [filteredIssues]);
 
   if (loading) return <p>Loading issues...</p>;
@@ -186,6 +244,16 @@ const IssuesComponent: React.FC = () => {
                 <path d="M21 6c0-1.654-1.346-3-3-3H7.161l1.6 2H18c.551 0 1 .448 1 1v10h2V6zM3 18c0 1.654 1.346 3 3 3h10.839l-1.6-2H6c-.551 0-1-.448-1-1V8H3V18z"></path>
               </svg>
             </button>
+          </div>
+          <div className="fixed bottom-20 right-20 flex items-center">
+            <div
+              className={`w-3 h-3 rounded-full mr-2 ${
+                socketConnected ? "bg-green-500" : "bg-red-500"
+              }`}
+            ></div>
+            <span className="text-sm">
+              {socketConnected ? "Connected" : "Disconnected"}
+            </span>
           </div>
         </div>
         {Object.keys(groupedIssues).length > 0 ? (

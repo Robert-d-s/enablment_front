@@ -1,4 +1,3 @@
-// import { ApolloProvider } from "@apollo/client/react";
 import ApolloWrapper from "../app/ApolloWrapper";
 import type { Metadata } from "next";
 import {

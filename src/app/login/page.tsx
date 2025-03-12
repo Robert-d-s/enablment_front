@@ -36,7 +36,7 @@ const Login: React.FC = () => {
         setErrorMessage(data.error);
       }
     } catch (error) {
-      // Handle fetch errors
+      console.error("Login error:", error);
       setErrorMessage("An error occurred while logging in. Please try again.");
     }
   };

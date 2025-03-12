@@ -39,35 +39,6 @@ const aboutContent: IAboutContent = {
   ],
 };
 
-// Function to insert line breaks in text to ensure each line does not exceed the max length
-const formatText = (text: string, maxLength: number) => {
-  const words = text.split(" ");
-  const formattedLines: React.ReactNode[] = [];
-  let currentLine = "";
-
-  words.forEach((word, index) => {
-    if ((currentLine + word).length > maxLength) {
-      formattedLines.push(
-        <span key={index}>
-          {currentLine.trim()}
-          <br />
-        </span>
-      );
-      currentLine = word + " ";
-    } else {
-      currentLine += word + " ";
-    }
-  });
-
-  // Add the last line
-  if (currentLine) {
-    formattedLines.push(<span key={words.length}>{currentLine.trim()}</span>);
-  }
-
-  return formattedLines;
-};
-
-// Your AboutComponent, modified to render formatted text
 const AboutSection: React.FC = () => {
   return (
     <div className="space-y-8 p-6">
@@ -78,9 +49,7 @@ const AboutSection: React.FC = () => {
           {aboutContent.definitions.map((def, index) => (
             <div key={index} className="mb-3">
               <p style={{ lineHeight: "1.4" }} className="text-lg">
-                <span className="font-bold">{def.term}:</span>{" "}
-                {/* {formatText(def.description, 75)} */}
-                {def.description}
+                <span className="font-bold">{def.term}:</span> {def.description}
               </p>
             </div>
           ))}
@@ -91,7 +60,6 @@ const AboutSection: React.FC = () => {
             <h3 className="text-2xl font-semibold mb-2">Transparency</h3>
             {aboutContent.transparency.map((item, index) => (
               <div key={index} className="mb-3">
-                {/* <p className="text-lg font-roboto">{formatText(item, 75)}</p> */}
                 <p
                   style={{ lineHeight: "1.4" }}
                   className="text-lg font-roboto"
@@ -121,7 +89,6 @@ const AboutSection: React.FC = () => {
             <h3 className="text-2xl font-semibold mb-2">Organization</h3>
             {aboutContent.organization.map((item, index) => (
               <div key={index} className="mb-3">
-                {/* <p className="text-lg font-roboto">{formatText(item, 75)}</p> */}
                 <p
                   style={{ lineHeight: "1.4" }}
                   className="text-lg font-roboto"

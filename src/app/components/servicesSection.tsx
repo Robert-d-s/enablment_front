@@ -1,6 +1,6 @@
 "use client";
 
-import React, { JSX } from "react";
+import React from "react";
 import Image from "next/image";
 
 interface IFeature {
@@ -88,32 +88,7 @@ const servicesData: IService[] = [
     imageUrl: "/images/AI-ML.jpg",
   },
 ];
-const formatText = (text: string, maxLength: number): JSX.Element[] => {
-  const words = text.split(" ");
-  const formattedLines: JSX.Element[] = [];
-  let currentLine = "";
 
-  words.forEach((word, index) => {
-    if ((currentLine + word).length > maxLength) {
-      formattedLines.push(
-        <span key={index}>
-          {currentLine.trim()}
-          <br />
-        </span>
-      );
-      currentLine = word + " ";
-    } else {
-      currentLine += word + " ";
-    }
-  });
-
-  // Add the last line
-  if (currentLine) {
-    formattedLines.push(<span key={words.length}>{currentLine.trim()}</span>);
-  }
-
-  return formattedLines;
-};
 const ServicesSection: React.FC = () => {
   return (
     <div className="space-y-8 p-4 sm:p-6">
@@ -136,7 +111,6 @@ const ServicesSection: React.FC = () => {
                   sizes="(min-width: 768px) 50vw, 100vw"
                 />
               </div>
-              {/* Rest of the Content */}
               <div className="text-container lg:w-1/2 sm:mt-4">
                 <div className="flex items-center space-x-2">
                   <Image
@@ -155,7 +129,6 @@ const ServicesSection: React.FC = () => {
                     style={{ lineHeight: "1.4" }}
                     className="text-lg mb-3"
                   >
-                    {/* {formatText(paragraph, 75)} */}
                     {paragraph}
                   </p>
                 ))}

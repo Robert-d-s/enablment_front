@@ -1,18 +1,25 @@
 "use client";
 
 import { create } from "zustand";
+import type { Project } from "@/app/hooks/useTimeKeeperData";
+import type { Rate } from "@/app/types";
 
-type User = { id: string; email: string };
+interface StoreUser {
+  id: string;
+  email: string;
+  teams?: { name: string; projects: Project[] }[];
+}
+
 type Store = {
-  users: any[];
-  projects: any[];
-  rates: any[];
+  users: StoreUser[];
+  projects: Project[];
+  rates: Rate[];
   selectedUser: string;
   selectedProject: string;
   selectedRate: string;
-  setUsers: (users: any[]) => void;
-  setProjects: (projects: any[]) => void;
-  setRates: (rates: any[]) => void;
+  setUsers: (users: StoreUser[]) => void;
+  setProjects: (projects: Project[]) => void;
+  setRates: (rates: Rate[]) => void;
   setSelectedUser: (selectedUser: string) => void;
   setSelectedProject: (selectedProject: string) => void;
   setSelectedRate: (selectedRate: string) => void;
@@ -20,9 +27,6 @@ type Store = {
   teamId: string | null;
   setTeamId: (teamId: string | null) => void;
 };
-
-// loggedInUser: User | null;
-// setLoggedInUser: (user: User | null) => void;
 
 const useStore = create<Store>((set) => ({
   users: [],
@@ -41,8 +45,5 @@ const useStore = create<Store>((set) => ({
   teamId: null,
   setTeamId: (teamId) => set({ teamId }),
 }));
-
-// loggedInUser: null,
-//   setLoggedInUser: (user) => set({ loggedInUser: user }),
 
 export default useStore;

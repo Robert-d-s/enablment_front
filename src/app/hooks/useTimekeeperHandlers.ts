@@ -99,8 +99,6 @@ export const useTimeKeeperHandlers = ({
 
       showSuccessMessage();
 
-      // IMPORTANT: Don't reset the timer after submission!
-      // Just pause it if it's running
       if (timerState.isRunning) {
         timerState.pause();
       }
@@ -116,7 +114,7 @@ export const useTimeKeeperHandlers = ({
 
   const handleReset = (): void => {
     timerState.reset();
-    setCurrentEntryId(null); // Clear the current entry ID on reset
+    setCurrentEntryId(null);
     showResetMessage();
   };
 

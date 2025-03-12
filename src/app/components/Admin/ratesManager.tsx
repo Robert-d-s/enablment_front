@@ -61,16 +61,15 @@ const RatesManager = () => {
 
   const [error, setError] = useState<ApolloError | null>(null);
 
-  const {
-    loading: teamsLoading,
-    data: teamsData,
-    error: teamsError,
-  } = useQuery(GET_ALL_SIMPLE_TEAMS, {
-    context: { useLinearApi: false },
-    onError: (error) => {
-      setError(error);
-    },
-  });
+  const { loading: teamsLoading, data: teamsData } = useQuery(
+    GET_ALL_SIMPLE_TEAMS,
+    {
+      context: { useLinearApi: false },
+      onError: (error) => {
+        setError(error);
+      },
+    }
+  );
 
   const {
     loading: ratesLoading,
@@ -101,7 +100,7 @@ const RatesManager = () => {
   };
 
   const handleDeleteRate = (rateId: number) => {
-    console.log("Attempting to delete rate with ID:", rateId); // Debugging log
+    console.log("Attempting to delete rate with ID:", rateId);
     deleteRate({ variables: { rateId } }).catch((error) => {
       setError(error);
     });

@@ -19,7 +19,7 @@ export const ContentWrapper: React.FC<
   const contentVariants = {
     visible: {
       opacity: 1,
-      maxHeight: "1000px", // Adjust as needed
+      maxHeight: "1000px",
       overflow: "hidden",
       transition: { duration: 0.5 },
     },
