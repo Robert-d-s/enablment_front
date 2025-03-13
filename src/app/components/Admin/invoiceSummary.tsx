@@ -42,16 +42,8 @@ const GET_ALL_TEAMS = gql`
 `;
 
 const GET_INVOICE_FOR_PROJECT = gql`
-  query InvoiceForProject(
-    $projectId: String!
-    $startDate: DateTime!
-    $endDate: DateTime!
-  ) {
-    invoiceForProject(
-      projectId: $projectId
-      startDate: $startDate
-      endDate: $endDate
-    ) {
+  query InvoiceForProject($input: InvoiceInput!) {
+    invoiceForProject(input: $input) {
       projectId
       projectName
       totalHours
@@ -83,9 +75,11 @@ const InvoiceSummary: React.FC = () => {
     refetch,
   } = useQuery(GET_INVOICE_FOR_PROJECT, {
     variables: {
-      projectId: selectedProject,
-      startDate: startDate ? new Date(startDate).toISOString() : null,
-      endDate: endDate ? new Date(endDate).toISOString() : null,
+      input: {
+        projectId: selectedProject,
+        startDate: startDate ? new Date(startDate).toISOString() : null,
+        endDate: endDate ? new Date(endDate).toISOString() : null,
+      },
     },
     skip: !selectedProject || !startDate || !endDate,
   });
