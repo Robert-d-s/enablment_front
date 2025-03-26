@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
-import { useQuery, gql } from "@apollo/client";
+import { useQuery, useMutation, gql } from "@apollo/client";
 import { motion } from "framer-motion";
+import { SYNC_DATABASE_MUTATION } from "@/app/graphql/authOperations";
 
 export interface SimpleTeam {
   id: string;
@@ -99,8 +100,34 @@ const DBSyncPage: React.FC = () => {
     refetch: refetchIssues,
   } = useQuery(GET_ISSUES);
 
+  // GraphQL mutation for database sync
+  const [syncDatabase] = useMutation(SYNC_DATABASE_MUTATION, {
+    onCompleted: (data) => {
+      setSyncStatus("Database synchronization completed successfully!");
+      setSyncDetails((prev) => [
+        ...prev,
+        "Synchronization completed!",
+        `Timestamp: ${data.syncDatabase.timestamp || new Date().toISOString()}`,
+      ]);
+      setShowSuccess(true);
+
+      // Refetch data to show updated state
+      Promise.all([refetchTeams(), refetchProjects(), refetchIssues()]);
+      setIsSyncing(false);
+    },
+    onError: (error) => {
+      const errorMessage =
+        error.message || "An error occurred during synchronization";
+
+      setError(errorMessage);
+      setSyncStatus("Database synchronization failed");
+      setSyncDetails((prev) => [...prev, `Error: ${errorMessage}`]);
+      setIsSyncing(false);
+    },
+  });
+
   // Function to trigger database synchronization
-  const handleSync = async () => {
+  const handleSync = () => {
     setIsSyncing(true);
     setSyncStatus("Starting comprehensive database synchronization...");
     setError(null);
@@ -110,89 +137,42 @@ const DBSyncPage: React.FC = () => {
       "Connecting to Linear API...",
     ]);
 
-    try {
-      const token = localStorage.getItem("token");
-
-      // Add progress updates
-      setTimeout(() => {
-        if (isSyncing) {
-          setSyncDetails((prev) => [
-            ...prev,
-            "Synchronizing teams from Linear...",
-          ]);
-        }
-      }, 1000);
-
-      setTimeout(() => {
-        if (isSyncing) {
-          setSyncDetails((prev) => [
-            ...prev,
-            "Synchronizing projects from Linear...",
-          ]);
-        }
-      }, 3000);
-
-      setTimeout(() => {
-        if (isSyncing) {
-          setSyncDetails((prev) => [
-            ...prev,
-            "Synchronizing issues and labels from Linear...",
-          ]);
-        }
-      }, 5000);
-
-      setTimeout(() => {
-        if (isSyncing) {
-          setSyncDetails((prev) => [
-            ...prev,
-            "Cleaning up orphaned records...",
-          ]);
-        }
-      }, 7000);
-
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/database-sync/full`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`Sync failed with status: ${response.status}`);
+    // Add progress updates for better UX - these are simulated since the actual work happens on the backend
+    setTimeout(() => {
+      if (isSyncing) {
+        setSyncDetails((prev) => [
+          ...prev,
+          "Synchronizing teams from Linear...",
+        ]);
       }
+    }, 1000);
 
-      const data = await response.json();
-      setSyncStatus("Database synchronization completed successfully!");
-      setSyncDetails((prev) => [
-        ...prev,
-        "Synchronization completed!",
-        `Timestamp: ${data.timestamp || new Date().toISOString()}`,
-      ]);
-      setShowSuccess(true);
-
-      // Refetch data to show updated state
-      await Promise.all([refetchTeams(), refetchProjects(), refetchIssues()]);
-    } catch (err: unknown) {
-      let errorMessage: string;
-
-      if (err instanceof Error) {
-        errorMessage =
-          err.message || "An error occurred during synchronization";
-      } else {
-        errorMessage = "An unexpected error occurred";
-        console.error("Unexpected error during synchronization:", err);
+    setTimeout(() => {
+      if (isSyncing) {
+        setSyncDetails((prev) => [
+          ...prev,
+          "Synchronizing projects from Linear...",
+        ]);
       }
+    }, 3000);
 
-      setError(errorMessage);
-      setSyncStatus("Database synchronization failed");
-      setSyncDetails((prev) => [...prev, `Error: ${errorMessage}`]);
-    } finally {
-      setIsSyncing(false);
-    }
+    setTimeout(() => {
+      if (isSyncing) {
+        setSyncDetails((prev) => [
+          ...prev,
+          "Synchronizing issues and labels from Linear...",
+        ]);
+      }
+    }, 5000);
+
+    setTimeout(() => {
+      if (isSyncing) {
+        setSyncDetails((prev) => [...prev, "Cleaning up orphaned records..."]);
+      }
+    }, 7000);
+
+    // Call the GraphQL mutation
+    syncDatabase();
   };
 
   // Animation variants

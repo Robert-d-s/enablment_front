@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from "react";
 import { useQuery } from "@apollo/client";
 import gql from "graphql-tag";
-import { currentUserVar } from "@/app/lib/apolloClient";
+import { useAuthStore } from "@/app/lib/authStore";
+import useCurrentUser from "@/app/hooks/useCurrentUser";
 import { formatTimeFromMilliseconds } from "@/app/utils/timeUtils";
 
 interface Project {
@@ -75,7 +76,9 @@ const TotalTimeSpent: React.FC = () => {
   const [startDate, setStartDate] = useState(getCurrentDate());
   const [endDate, setEndDate] = useState(getCurrentDate());
 
-  const loggedInUser = currentUserVar();
+  // Use the auth store instead of reactive variable
+  useCurrentUser();
+  const loggedInUser = useAuthStore((state) => state.user);
   const [userProjects, setUserProjects] = useState<Project[]>([]);
 
   const { data: userProjectsData } = useQuery(GET_USER_PROJECTS, {

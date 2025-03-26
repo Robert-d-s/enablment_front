@@ -2,8 +2,9 @@
 
 import React, { useEffect, useState } from "react";
 import { useTimer } from "@/app/hooks/useTimer";
-import { currentUserVar } from "@/app/lib/apolloClient";
 import useStore from "@/app/lib/store";
+import { useAuthStore } from "@/app/lib/authStore";
+import useCurrentUser from "@/app/hooks/useCurrentUser";
 import { useFeedbackState } from "@/app/hooks/useFeedbackState";
 import { useTimeKeeperQueries } from "@/app/hooks/useTimekeeperQueries";
 import { useTimeKeeperHandlers } from "@/app/hooks/useTimekeeperHandlers";
@@ -23,7 +24,9 @@ const TimeKeeper: React.FC = () => {
 
   const [currentEntryId, setCurrentEntryId] = useState<number | null>(null);
 
-  const loggedInUser = currentUserVar();
+  useCurrentUser();
+  const loggedInUser = useAuthStore((state) => state.user);
+
   const {
     ratesData,
     totalTimeData,

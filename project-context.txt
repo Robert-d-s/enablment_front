@@ -310,7 +310,6 @@ export default function ApolloWrapper({ children }: ApolloWrapperProps) {
 
 // ====== FILE: src\app\layout.tsx ======
 
-// import { ApolloProvider } from "@apollo/client/react";
 import ApolloWrapper from "../app/ApolloWrapper";
 import type { Metadata } from "next";
 import {
@@ -508,7 +507,7 @@ export default Home;
 // ====== FILE: src\app\types.ts ======
 
 export interface TimeEntry {
-  id: number; // <-- Added to match the backend response
+  id: number;
   startTime: string;
   endTime: string;
   projectId: string;
@@ -550,15 +549,6 @@ export interface TimerState {
   pause: () => void;
   reset: () => void;
   setStartTime: (date: Date | null) => void;
-}
-
-// ====== FILE: src\lib\utils.ts ======
-
-import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
-
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
 }
 
 // ====== FILE: src\app\adminPage\page.tsx ======
@@ -737,35 +727,6 @@ const aboutContent: IAboutContent = {
   ],
 };
 
-// Function to insert line breaks in text to ensure each line does not exceed the max length
-const formatText = (text: string, maxLength: number) => {
-  const words = text.split(" ");
-  const formattedLines: React.ReactNode[] = [];
-  let currentLine = "";
-
-  words.forEach((word, index) => {
-    if ((currentLine + word).length > maxLength) {
-      formattedLines.push(
-        <span key={index}>
-          {currentLine.trim()}
-          <br />
-        </span>
-      );
-      currentLine = word + " ";
-    } else {
-      currentLine += word + " ";
-    }
-  });
-
-  // Add the last line
-  if (currentLine) {
-    formattedLines.push(<span key={words.length}>{currentLine.trim()}</span>);
-  }
-
-  return formattedLines;
-};
-
-// Your AboutComponent, modified to render formatted text
 const AboutSection: React.FC = () => {
   return (
     <div className="space-y-8 p-6">
@@ -776,9 +737,7 @@ const AboutSection: React.FC = () => {
           {aboutContent.definitions.map((def, index) => (
             <div key={index} className="mb-3">
               <p style={{ lineHeight: "1.4" }} className="text-lg">
-                <span className="font-bold">{def.term}:</span>{" "}
-                {/* {formatText(def.description, 75)} */}
-                {def.description}
+                <span className="font-bold">{def.term}:</span> {def.description}
               </p>
             </div>
           ))}
@@ -789,7 +748,6 @@ const AboutSection: React.FC = () => {
             <h3 className="text-2xl font-semibold mb-2">Transparency</h3>
             {aboutContent.transparency.map((item, index) => (
               <div key={index} className="mb-3">
-                {/* <p className="text-lg font-roboto">{formatText(item, 75)}</p> */}
                 <p
                   style={{ lineHeight: "1.4" }}
                   className="text-lg font-roboto"
@@ -819,7 +777,6 @@ const AboutSection: React.FC = () => {
             <h3 className="text-2xl font-semibold mb-2">Organization</h3>
             {aboutContent.organization.map((item, index) => (
               <div key={index} className="mb-3">
-                {/* <p className="text-lg font-roboto">{formatText(item, 75)}</p> */}
                 <p
                   style={{ lineHeight: "1.4" }}
                   className="text-lg font-roboto"
@@ -1171,7 +1128,7 @@ export const ContentWrapper: React.FC<
   const contentVariants = {
     visible: {
       opacity: 1,
-      maxHeight: "1000px", // Adjust as needed
+      maxHeight: "1000px",
       overflow: "hidden",
       transition: { duration: 0.5 },
     },
@@ -1479,13 +1436,18 @@ export default NavBar;
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { logout, currentUserVar } from "../lib/apolloClient";
+import { logout } from "../lib/apolloClient";
+import { useAuthStore } from "../lib/authStore";
+import useCurrentUser from "../hooks/useCurrentUser";
 
 const NavigationBar: React.FC = () => {
-  const loggedInUser = currentUserVar();
+  const { isLoading } = useCurrentUser();
+  const user = useAuthStore((state) => state.user);
+
   const handleLogout = () => {
     logout();
   };
+
   return (
     <nav className="flex items-center justify-between p-4 bg-white shadow font-roboto-condensed uppercase">
       <Link href="/">
@@ -1508,16 +1470,19 @@ const NavigationBar: React.FC = () => {
       </div>
       <div>
         <div>
-          {loggedInUser ? (
-            <h2
-              className="bg-gray-800 text-white px-4  m-1 rounded"
-              // style={{ fontSize: "16px" }}
-            >
-              {loggedInUser.email}
-            </h2>
-          ) : (
-            <p className="text-md text-gray-500">Loading user data...</p>
-          )}
+          <div
+            className={
+              user
+                ? "bg-gray-800 text-white px-4 m-1 rounded"
+                : "text-md text-gray-500"
+            }
+          >
+            {user
+              ? user.email
+              : isLoading
+              ? "Loading user data..."
+              : "Not logged in"}
+          </div>
         </div>
         <button
           className="bg-black text-white rounded hover:bg-gray-800 font-bold py-1 px-4 float-right font-roboto-condensed uppercase"
@@ -1606,12 +1571,10 @@ interface PersonCardProps {
   person: Person;
 }
 
-// Define the type for the mapping object
 type RoleIconMappingType = {
   [roleName: string]: string;
 };
 
-// Define the mapping from role names to icon filenames
 const roleIconMapping: RoleIconMappingType = {
   CEO: "ceo.svg",
   "Co-Founder": "founder.svg",
@@ -1621,7 +1584,6 @@ const roleIconMapping: RoleIconMappingType = {
   Design: "design.svg",
 };
 
-// Function to return the icon path based on the role, with a fallback
 const getIconPath = (role: string): string => {
   return `/icons/${roleIconMapping[role] || "default-icon.svg"}`;
 };
@@ -1985,7 +1947,7 @@ export default SectionWrapper;
 
 "use client";
 
-import React, { JSX } from "react";
+import React from "react";
 import Image from "next/image";
 
 interface IFeature {
@@ -2073,32 +2035,7 @@ const servicesData: IService[] = [
     imageUrl: "/images/AI-ML.jpg",
   },
 ];
-const formatText = (text: string, maxLength: number): JSX.Element[] => {
-  const words = text.split(" ");
-  const formattedLines: JSX.Element[] = [];
-  let currentLine = "";
 
-  words.forEach((word, index) => {
-    if ((currentLine + word).length > maxLength) {
-      formattedLines.push(
-        <span key={index}>
-          {currentLine.trim()}
-          <br />
-        </span>
-      );
-      currentLine = word + " ";
-    } else {
-      currentLine += word + " ";
-    }
-  });
-
-  // Add the last line
-  if (currentLine) {
-    formattedLines.push(<span key={words.length}>{currentLine.trim()}</span>);
-  }
-
-  return formattedLines;
-};
 const ServicesSection: React.FC = () => {
   return (
     <div className="space-y-8 p-4 sm:p-6">
@@ -2121,7 +2058,6 @@ const ServicesSection: React.FC = () => {
                   sizes="(min-width: 768px) 50vw, 100vw"
                 />
               </div>
-              {/* Rest of the Content */}
               <div className="text-container lg:w-1/2 sm:mt-4">
                 <div className="flex items-center space-x-2">
                   <Image
@@ -2140,7 +2076,6 @@ const ServicesSection: React.FC = () => {
                     style={{ lineHeight: "1.4" }}
                     className="text-lg mb-3"
                   >
-                    {/* {formatText(paragraph, 75)} */}
                     {paragraph}
                   </p>
                 ))}
@@ -2347,8 +2282,9 @@ export default UserSelector;
 "use client";
 
 import React, { useState } from "react";
-import { useQuery, gql } from "@apollo/client";
+import { useQuery, useMutation, gql } from "@apollo/client";
 import { motion } from "framer-motion";
+import { SYNC_DATABASE_MUTATION } from "@/app/graphql/authOperations";
 
 export interface SimpleTeam {
   id: string;
@@ -2445,8 +2381,34 @@ const DBSyncPage: React.FC = () => {
     refetch: refetchIssues,
   } = useQuery(GET_ISSUES);
 
+  // GraphQL mutation for database sync
+  const [syncDatabase] = useMutation(SYNC_DATABASE_MUTATION, {
+    onCompleted: (data) => {
+      setSyncStatus("Database synchronization completed successfully!");
+      setSyncDetails((prev) => [
+        ...prev,
+        "Synchronization completed!",
+        `Timestamp: ${data.syncDatabase.timestamp || new Date().toISOString()}`,
+      ]);
+      setShowSuccess(true);
+
+      // Refetch data to show updated state
+      Promise.all([refetchTeams(), refetchProjects(), refetchIssues()]);
+      setIsSyncing(false);
+    },
+    onError: (error) => {
+      const errorMessage =
+        error.message || "An error occurred during synchronization";
+
+      setError(errorMessage);
+      setSyncStatus("Database synchronization failed");
+      setSyncDetails((prev) => [...prev, `Error: ${errorMessage}`]);
+      setIsSyncing(false);
+    },
+  });
+
   // Function to trigger database synchronization
-  const handleSync = async () => {
+  const handleSync = () => {
     setIsSyncing(true);
     setSyncStatus("Starting comprehensive database synchronization...");
     setError(null);
@@ -2456,89 +2418,42 @@ const DBSyncPage: React.FC = () => {
       "Connecting to Linear API...",
     ]);
 
-    try {
-      const token = localStorage.getItem("token");
-
-      // Add progress updates
-      setTimeout(() => {
-        if (isSyncing) {
-          setSyncDetails((prev) => [
-            ...prev,
-            "Synchronizing teams from Linear...",
-          ]);
-        }
-      }, 1000);
-
-      setTimeout(() => {
-        if (isSyncing) {
-          setSyncDetails((prev) => [
-            ...prev,
-            "Synchronizing projects from Linear...",
-          ]);
-        }
-      }, 3000);
-
-      setTimeout(() => {
-        if (isSyncing) {
-          setSyncDetails((prev) => [
-            ...prev,
-            "Synchronizing issues and labels from Linear...",
-          ]);
-        }
-      }, 5000);
-
-      setTimeout(() => {
-        if (isSyncing) {
-          setSyncDetails((prev) => [
-            ...prev,
-            "Cleaning up orphaned records...",
-          ]);
-        }
-      }, 7000);
-
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/database-sync/full`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`Sync failed with status: ${response.status}`);
+    // Add progress updates for better UX - these are simulated since the actual work happens on the backend
+    setTimeout(() => {
+      if (isSyncing) {
+        setSyncDetails((prev) => [
+          ...prev,
+          "Synchronizing teams from Linear...",
+        ]);
       }
+    }, 1000);
 
-      const data = await response.json();
-      setSyncStatus("Database synchronization completed successfully!");
-      setSyncDetails((prev) => [
-        ...prev,
-        "Synchronization completed!",
-        `Timestamp: ${data.timestamp || new Date().toISOString()}`,
-      ]);
-      setShowSuccess(true);
-
-      // Refetch data to show updated state
-      await Promise.all([refetchTeams(), refetchProjects(), refetchIssues()]);
-    } catch (err: unknown) {
-      let errorMessage: string;
-
-      if (err instanceof Error) {
-        errorMessage =
-          err.message || "An error occurred during synchronization";
-      } else {
-        errorMessage = "An unexpected error occurred";
-        console.error("Unexpected error during synchronization:", err);
+    setTimeout(() => {
+      if (isSyncing) {
+        setSyncDetails((prev) => [
+          ...prev,
+          "Synchronizing projects from Linear...",
+        ]);
       }
+    }, 3000);
 
-      setError(errorMessage);
-      setSyncStatus("Database synchronization failed");
-      setSyncDetails((prev) => [...prev, `Error: ${errorMessage}`]);
-    } finally {
-      setIsSyncing(false);
-    }
+    setTimeout(() => {
+      if (isSyncing) {
+        setSyncDetails((prev) => [
+          ...prev,
+          "Synchronizing issues and labels from Linear...",
+        ]);
+      }
+    }, 5000);
+
+    setTimeout(() => {
+      if (isSyncing) {
+        setSyncDetails((prev) => [...prev, "Cleaning up orphaned records..."]);
+      }
+    }, 7000);
+
+    // Call the GraphQL mutation
+    syncDatabase();
   };
 
   // Animation variants
@@ -3042,6 +2957,51 @@ export const REMOVE_USER_FROM_TEAM = gql`
   }
 `;
 
+// ====== FILE: src\app\graphql\authOperations.ts ======
+
+import { gql } from "@apollo/client";
+
+export const LOGIN_MUTATION = gql`
+  mutation Login($input: SignInInput!) {
+    login(input: $input) {
+      access_token
+    }
+  }
+`;
+
+export const SIGNUP_MUTATION = gql`
+  mutation Signup($input: SignUpInput!) {
+    signup(input: $input) {
+      success
+      message
+    }
+  }
+`;
+
+export const ME_QUERY = gql`
+  query Me {
+    me {
+      id
+      email
+    }
+  }
+`;
+
+export const SYNC_DATABASE_MUTATION = gql`
+  mutation SyncDatabase {
+    syncDatabase {
+      success
+      message
+      timestamp
+      details {
+        teams
+        projects
+        issues
+      }
+    }
+  }
+`;
+
 // ====== FILE: src\app\graphql\timeKeeperOperations.ts ======
 
 import { gql } from "@apollo/client";
@@ -3108,6 +3068,48 @@ export const UPDATE_TIME_MUTATION = gql`
     }
   }
 `;
+
+// ====== FILE: src\app\hooks\useCurrentUser.ts ======
+
+"use client";
+
+import { useQuery } from "@apollo/client";
+import { ME_QUERY } from "@/app/graphql/authOperations";
+import { useAuthStore } from "@/app/lib/authStore";
+
+export const useCurrentUser = () => {
+  const storeUser = useAuthStore((state) => state.user);
+  const setUser = useAuthStore((state) => state.setUser);
+
+  const { data, loading, error, refetch } = useQuery(ME_QUERY, {
+    fetchPolicy: "cache-and-network",
+    skip: !localStorage.getItem("token"),
+    onCompleted: (data) => {
+      if (data?.me) {
+        setUser(data.me);
+      }
+    },
+    onError: (error) => {
+      console.error("Error fetching current user:", error);
+      // If we get an authentication error, clear the user
+      if (
+        error.message.includes("not authenticated") ||
+        error.message.includes("Invalid token")
+      ) {
+        useAuthStore.getState().logout();
+      }
+    },
+  });
+
+  return {
+    currentUser: storeUser || data?.me || null,
+    isLoading: loading,
+    error,
+    refetch,
+  };
+};
+
+export default useCurrentUser;
 
 // ====== FILE: src\app\hooks\useFeedbackState.ts ======
 
@@ -3355,8 +3357,6 @@ export const useTimeKeeperHandlers = ({
 
       showSuccessMessage();
 
-      // IMPORTANT: Don't reset the timer after submission!
-      // Just pause it if it's running
       if (timerState.isRunning) {
         timerState.pause();
       }
@@ -3372,7 +3372,7 @@ export const useTimeKeeperHandlers = ({
 
   const handleReset = (): void => {
     timerState.reset();
-    setCurrentEntryId(null); // Clear the current entry ID on reset
+    setCurrentEntryId(null);
     showResetMessage();
   };
 
@@ -3688,6 +3688,9 @@ const IssuesComponent: React.FC = () => {
 
   const [selectedAssignee, setSelectedAssignee] = useState<string | null>(null);
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
+  const [socketConnected, setSocketConnected] = useState(false);
+  const [groupedIssues, setGroupedIssues] = useState<GroupedIssues>({});
+  const socket = useRef<Socket | null>(null);
 
   const handleSelectAssignee = (assignee: string) => {
     setSelectedAssignee(assignee);
@@ -3725,39 +3728,53 @@ const IssuesComponent: React.FC = () => {
     );
   }, [data?.issues, selectedTeam, selectedAssignee]);
 
-  // const groupedIssues: GroupedIssues = useMemo(() => {
-  //   const groups: GroupedIssues = {};
-  //   filteredIssues.forEach((issue) => {
-  //     if (!groups[issue.state]) {
-  //       groups[issue.state] = [];
-  //     }
-  //     groups[issue.state].push(issue);
-  //   });
-  //   return groups;
-  // }, [filteredIssues]);
-
-  const [groupedIssues, setGroupedIssues] = useState<GroupedIssues>({}); // CORRECT and SINGLE declaration of groupedIssues state
-
-  const socket = useRef<Socket | null>(null);
-
   useEffect(() => {
     socket.current = io(
-      process.env.NEXT_PUBLIC_BACKEND_WEBSOCKET_URL || "http://localhost:8080"
+      process.env.NEXT_PUBLIC_BACKEND_WEBSOCKET_URL || "http://localhost:8080",
+      {
+        transports: ["websocket"], // Force WebSocket transport instead of polling
+        path: "/socket.io",
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
+        timeout: 20000,
+      }
     );
 
     const currentSocket = socket.current;
+
+    console.log(
+      "Attempting to connect to:",
+      process.env.NEXT_PUBLIC_BACKEND_WEBSOCKET_URL || "http://localhost:8080"
+    );
+    socket.current.on("error", (error: Error) => {
+      console.error("Socket error:", error);
+    });
+
+    currentSocket?.on("connect", () => {
+      console.log("WebSocket connected successfully");
+      setSocketConnected(true);
+    });
+
+    currentSocket?.on("disconnect", (reason: string) => {
+      console.log("WebSocket disconnected:", reason);
+      setSocketConnected(false);
+    });
 
     currentSocket?.on("issueUpdate", (updatedIssue: Issue) => {
       console.log("Received issue update via WebSocket:", updatedIssue);
       refetch();
     });
 
-    currentSocket?.on("connect_error", (err: any) => {
+    currentSocket?.on("connect_error", (err: Error) => {
       console.error("WebSocket connection error:", err);
+    });
+    currentSocket?.on("disconnect", (reason: string) => {
+      console.log("WebSocket disconnected:", reason);
     });
 
     return () => {
       if (currentSocket) {
+        console.log("Cleaning up WebSocket connection");
         currentSocket.disconnect();
       }
     };
@@ -3848,6 +3865,16 @@ const IssuesComponent: React.FC = () => {
               </svg>
             </button>
           </div>
+          <div className="fixed bottom-20 right-20 flex items-center">
+            <div
+              className={`w-3 h-3 rounded-full mr-2 ${
+                socketConnected ? "bg-green-500" : "bg-red-500"
+              }`}
+            ></div>
+            <span className="text-sm">
+              {socketConnected ? "Connected" : "Disconnected"}
+            </span>
+          </div>
         </div>
         {Object.keys(groupedIssues).length > 0 ? (
           Object.entries(groupedIssues)
@@ -3927,27 +3954,24 @@ import {
   InMemoryCache,
   createHttpLink,
   from,
-  makeVar,
 } from "@apollo/client";
 import { setContext } from "@apollo/client/link/context";
 import { onError } from "@apollo/client/link/error";
-
-interface User {
-  id: string;
-  email: string;
-}
+import { useAuthStore } from "./authStore";
 
 // Authentication link for setting headers
-const authLink = setContext((_, { headers }) => {
-  const token: string | null = localStorage.getItem("token");
-  if (token) {
-    fetchUserProfile(token);
-  }
+const authLink = setContext((operation, { headers }) => {
+  // Check if the current operation is login or signup
+  const isAuthOperation =
+    operation.operationName === "Login" || operation.operationName === "Signup";
+
+  // Only add the token for non-auth operations
+  const token = !isAuthOperation ? localStorage.getItem("token") : null;
+
   return {
     headers: {
       ...headers,
       "content-type": "application/json",
-      "x-apollo-operation-name": "GraphQLQueriesAndMutations",
       authorization: token ? `Bearer ${token}` : "",
     },
   };
@@ -3959,10 +3983,9 @@ const errorLink = onError(
     if (graphQLErrors) {
       graphQLErrors.forEach(({ message, extensions }) => {
         if (message.includes("Invalid or expired token")) {
-          localStorage.removeItem("token");
-          window.location.href = "/login";
+          logout();
         } else if (extensions?.code === "FORBIDDEN") {
-          isForbiddenVar(true); // Update the reactive variable on forbidden error
+          useAuthStore.getState().setForbidden(true);
         }
       });
     }
@@ -3973,9 +3996,6 @@ const errorLink = onError(
   }
 );
 
-export const isForbiddenVar = makeVar(false);
-export const currentUserVar = makeVar<User | null>(null);
-
 const client = new ApolloClient({
   link: from([
     errorLink,
@@ -3983,67 +4003,98 @@ const client = new ApolloClient({
     createHttpLink({
       uri: (operation) =>
         operation.getContext().useLinearApi
-          ? `${process.env.NEXT_PUBLIC_LINEAR_API_URL}` // Use Linear API URL
-          : `${process.env.NEXT_PUBLIC_BACKEND_URL}/graphql`, // Use local backend URL
+          ? `${process.env.NEXT_PUBLIC_LINEAR_API_URL}`
+          : `${process.env.NEXT_PUBLIC_BACKEND_URL}/graphql`,
       fetchOptions: {
         method: "POST",
       },
     }),
   ]),
-  cache: new InMemoryCache({
-    typePolicies: {
-      Query: {
-        fields: {
-          isForbidden: {
-            read() {
-              return isForbiddenVar();
-            },
-          },
-        },
-      },
-    },
-  }),
+  cache: new InMemoryCache(),
 });
 
 export default client;
 
-export const fetchUserProfile = async (token: string) => {
-  try {
-    const response = await fetch("/api/profile", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!response.ok) throw new Error("Failed to fetch user data");
-    const userData: User = await response.json();
-    currentUserVar(userData); // Update the reactive variable
-  } catch (error) {
-    console.error("Error fetching user profile:", error);
-    // Handle error appropriately
-  }
-};
-
 export const logout = () => {
   localStorage.removeItem("token");
+  localStorage.removeItem("currentUser");
+  useAuthStore.getState().logout();
   client.resetStore();
   window.location.href = "/login";
 };
+
+// ====== FILE: src\app\lib\authStore.ts ======
+
+"use client";
+
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+
+interface User {
+  id: string;
+  email: string;
+}
+
+interface AuthState {
+  user: User | null;
+  token: string | null;
+  isForbidden: boolean;
+  setUser: (user: User | null) => void;
+  setToken: (token: string | null) => void;
+  setForbidden: (isForbidden: boolean) => void;
+  logout: () => void;
+}
+
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set) => ({
+      user: null,
+      token: null,
+      isForbidden: false,
+      setUser: (user) => set({ user }),
+      setToken: (token) => set({ token }),
+      setForbidden: (isForbidden) => set({ isForbidden }),
+      logout: () => set({ user: null, token: null, isForbidden: false }),
+    }),
+    {
+      name: "auth-storage",
+      partialize: (state) => ({ user: state.user, token: state.token }),
+    }
+  )
+);
+
+// Initialize from localStorage if we're in the browser
+if (typeof window !== "undefined") {
+  const token = localStorage.getItem("token");
+  if (token) {
+    useAuthStore.getState().setToken(token);
+  }
+}
 
 // ====== FILE: src\app\lib\store.ts ======
 
 "use client";
 
 import { create } from "zustand";
+import type { Project } from "@/app/hooks/useTimeKeeperData";
+import type { Rate } from "@/app/types";
 
-type User = { id: string; email: string };
+interface StoreUser {
+  id: string;
+  email: string;
+  teams?: { name: string; projects: Project[] }[];
+}
+
 type Store = {
-  users: any[];
-  projects: any[];
-  rates: any[];
+  users: StoreUser[];
+  projects: Project[];
+  rates: Rate[];
   selectedUser: string;
   selectedProject: string;
   selectedRate: string;
-  setUsers: (users: any[]) => void;
-  setProjects: (projects: any[]) => void;
-  setRates: (rates: any[]) => void;
+  setUsers: (users: StoreUser[]) => void;
+  setProjects: (projects: Project[]) => void;
+  setRates: (rates: Rate[]) => void;
   setSelectedUser: (selectedUser: string) => void;
   setSelectedProject: (selectedProject: string) => void;
   setSelectedRate: (selectedRate: string) => void;
@@ -4051,9 +4102,6 @@ type Store = {
   teamId: string | null;
   setTeamId: (teamId: string | null) => void;
 };
-
-// loggedInUser: User | null;
-// setLoggedInUser: (user: User | null) => void;
 
 const useStore = create<Store>((set) => ({
   users: [],
@@ -4072,9 +4120,6 @@ const useStore = create<Store>((set) => ({
   teamId: null,
   setTeamId: (teamId) => set({ teamId }),
 }));
-
-// loggedInUser: null,
-//   setLoggedInUser: (user) => set({ loggedInUser: user }),
 
 export default useStore;
 
@@ -4095,41 +4140,53 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { fetchUserProfile } from "@/app/lib/apolloClient";
+import { useMutation } from "@apollo/client";
+import { LOGIN_MUTATION } from "@/app/graphql/authOperations";
+import { useAuthStore } from "@/app/lib/authStore";
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const router = useRouter();
-  const handleLogin = async () => {
-    try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/login`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email,
-            password,
-          }),
-        }
-      );
+  const setToken = useAuthStore((state) => state.setToken);
 
-      const data = await response.json();
-      if (data && data.access_token) {
-        localStorage.setItem("token", data.access_token);
-        await fetchUserProfile(data.access_token);
-        router.push("/timeKeeper");
-      } else if (data && data.error) {
-        setErrorMessage(data.error);
-      }
-    } catch (error) {
-      // Handle fetch errors
-      setErrorMessage("An error occurred while logging in. Please try again.");
-    }
+  const [login, { loading }] = useMutation(LOGIN_MUTATION, {
+    onCompleted: (data) => {
+      const token = data.login.access_token;
+
+      // Store in local storage for Apollo Client
+      localStorage.setItem("token", token);
+
+      // Update Zustand store
+      setToken(token);
+
+      // Navigate to the timekeeper page - the user data will be fetched
+      // by the useCurrentUser hook when needed
+      router.push("/timeKeeper");
+    },
+    onError: (error) => {
+      console.error("Login error:", error);
+      setErrorMessage(
+        error.message || "An error occurred while logging in. Please try again."
+      );
+    },
+  });
+
+  const handleLogin = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    login({
+      variables: {
+        input: {
+          email,
+          password,
+        },
+      },
+      context: {
+        // Ensure this operation is identified as a login request
+        clientName: "Login",
+      },
+    });
   };
 
   return (
@@ -4140,12 +4197,7 @@ const Login: React.FC = () => {
           Log In To Your Account
         </h1>
 
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleLogin();
-          }}
-        >
+        <form onSubmit={handleLogin}>
           <input
             className="mb-2 p-2 w-full border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
             value={email}
@@ -4163,9 +4215,10 @@ const Login: React.FC = () => {
 
           <button
             type="submit"
-            className="w-full bg-black text-white p-2 rounded focus:outline-none hover:bg-gray-700 mb-4"
+            disabled={loading}
+            className="w-full bg-black text-white p-2 rounded focus:outline-none hover:bg-gray-700 mb-4 disabled:bg-gray-400"
           >
-            CONTINUE
+            {loading ? "LOGGING IN..." : "CONTINUE"}
           </button>
 
           <div className="text-center">
@@ -4201,16 +4254,49 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { useMutation } from "@apollo/client";
+import { SIGNUP_MUTATION } from "@/app/graphql/authOperations";
 
 const Signup: React.FC = () => {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const router = useRouter();
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>(
-    {}
-  );
+  const [errors, setErrors] = useState<{
+    email?: string;
+    password?: string;
+    general?: string;
+  }>({});
   const passwordRegex =
     /^(?=.*[A-Z])(?=.*[!@#$%^&*()_+{}\[\]:;<>,.?~\\/-]).{8,}$/;
+
+  const [signup, { loading }] = useMutation(SIGNUP_MUTATION, {
+    onCompleted: (data) => {
+      if (data.signup.success) {
+        console.log("Signup successful. Redirecting to login...");
+        router.push("/login");
+      } else {
+        setErrors({
+          general: data.signup.message || "Signup failed. Please try again.",
+        });
+      }
+    },
+    onError: (error) => {
+      console.error("Error during signup:", error);
+
+      // Check for email already exists error
+      if (error.message.includes("Email already exists")) {
+        setErrors({
+          ...errors,
+          email: "Email already exists.",
+        });
+      } else {
+        setErrors({
+          ...errors,
+          general: error.message || "An error occurred during signup.",
+        });
+      }
+    },
+  });
 
   const validateForm = () => {
     let valid = true;
@@ -4241,38 +4327,18 @@ const Signup: React.FC = () => {
       return;
     }
 
-    try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/signup`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email,
-            password,
-          }),
-        }
-      );
-
-      if (response.status === 409) {
-        setErrors({
-          ...errors,
-          email: "Email already exists.",
-        });
-        return;
-      }
-
-      if (response.ok) {
-        console.log("Signup successful. Redirecting to login...");
-        router.push("/login");
-      } else {
-        console.error("Signup failed:", await response.text());
-      }
-    } catch (error) {
-      console.error("Error during signup:", error);
-    }
+    signup({
+      variables: {
+        input: {
+          email,
+          password,
+        },
+      },
+      context: {
+        // Ensure this operation is identified as a signup request
+        clientName: "Signup",
+      },
+    });
   };
 
   return (
@@ -4303,10 +4369,14 @@ const Signup: React.FC = () => {
           )}
           <button
             type="submit"
-            className="w-full bg-black text-white p-2 rounded focus:outline-none hover:bg-gray-700 mb-4"
+            disabled={loading}
+            className="w-full bg-black text-white p-2 rounded focus:outline-none hover:bg-gray-700 mb-4 disabled:bg-gray-400"
           >
-            GET STARTED
+            {loading ? "CREATING ACCOUNT..." : "GET STARTED"}
           </button>
+          {errors.general && (
+            <p className="text-red-500 text-sm mb-4">{errors.general}</p>
+          )}
         </form>
         <div className="flex justify-center">
           <span>
@@ -4485,77 +4555,6 @@ export function formatTimeFromMilliseconds(ms: number): string {
     .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
 }
 
-// ====== FILE: src\app\utils\userProfileUtils.ts ======
-
-interface User {
-  id: string;
-  email: string;
-}
-
-interface FetchError {
-  message: string;
-}
-
-export async function fetchUserProfile(token: string | null): Promise<User> {
-  try {
-    if (!token) {
-      throw new Error("No token found");
-    }
-    const response = await fetch("/api/profile", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to fetch user profile.");
-    }
-
-    const userData: User = await response.json();
-    return userData;
-  } catch (error) {
-    if (error instanceof Error) {
-      console.error("Error fetching user profile:", error.message);
-      throw error as FetchError; // Rethrow the error with typing
-    }
-    throw new Error("Unknown error occurred during fetch");
-  }
-}
-
-// ====== FILE: src\app\api\profile\route.ts ======
-
-import { NextRequest, NextResponse } from "next/server";
-
-export async function GET(request: NextRequest) {
-  const token = request.headers.get("authorization")?.split(" ")[1] || "";
-
-  try {
-    // Call your backend profile endpoint (adjust URL if needed)
-    const backendRes = await fetch(
-      `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/profile`,
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      }
-    );
-
-    if (!backendRes.ok) {
-      return NextResponse.json(
-        { error: "Failed to fetch user profile" },
-        { status: backendRes.status }
-      );
-    }
-
-    const userProfile = await backendRes.json();
-    return NextResponse.json(userProfile, { status: 200 });
-  } catch (error) {
-    console.error("Error while fetching user profile:", error);
-    return NextResponse.json(
-      { error: "An error occurred while fetching user profile" },
-      { status: 500 }
-    );
-  }
-}
-
 // ====== FILE: src\app\components\Admin\invoiceSummary.tsx ======
 
 "use client";
@@ -4602,16 +4601,8 @@ const GET_ALL_TEAMS = gql`
 `;
 
 const GET_INVOICE_FOR_PROJECT = gql`
-  query InvoiceForProject(
-    $projectId: String!
-    $startDate: DateTime!
-    $endDate: DateTime!
-  ) {
-    invoiceForProject(
-      projectId: $projectId
-      startDate: $startDate
-      endDate: $endDate
-    ) {
+  query InvoiceForProject($input: InvoiceInput!) {
+    invoiceForProject(input: $input) {
       projectId
       projectName
       totalHours
@@ -4643,9 +4634,11 @@ const InvoiceSummary: React.FC = () => {
     refetch,
   } = useQuery(GET_INVOICE_FOR_PROJECT, {
     variables: {
-      projectId: selectedProject,
-      startDate: startDate ? new Date(startDate).toISOString() : null,
-      endDate: endDate ? new Date(endDate).toISOString() : null,
+      input: {
+        projectId: selectedProject,
+        startDate: startDate ? new Date(startDate).toISOString() : null,
+        endDate: endDate ? new Date(endDate).toISOString() : null,
+      },
     },
     skip: !selectedProject || !startDate || !endDate,
   });
@@ -4863,16 +4856,15 @@ const RatesManager = () => {
 
   const [error, setError] = useState<ApolloError | null>(null);
 
-  const {
-    loading: teamsLoading,
-    data: teamsData,
-    error: teamsError,
-  } = useQuery(GET_ALL_SIMPLE_TEAMS, {
-    context: { useLinearApi: false },
-    onError: (error) => {
-      setError(error);
-    },
-  });
+  const { loading: teamsLoading, data: teamsData } = useQuery(
+    GET_ALL_SIMPLE_TEAMS,
+    {
+      context: { useLinearApi: false },
+      onError: (error) => {
+        setError(error);
+      },
+    }
+  );
 
   const {
     loading: ratesLoading,
@@ -4903,7 +4895,7 @@ const RatesManager = () => {
   };
 
   const handleDeleteRate = (rateId: number) => {
-    console.log("Attempting to delete rate with ID:", rateId); // Debugging log
+    console.log("Attempting to delete rate with ID:", rateId);
     deleteRate({ variables: { rateId } }).catch((error) => {
       setError(error);
     });
@@ -4989,77 +4981,6 @@ const RatesManager = () => {
 
 export default RatesManager;
 
-// ====== FILE: src\app\components\Admin\teamSynch.tsx ======
-
-"use client";
-
-import React, { useEffect } from "react";
-
-const TeamSync: React.FC = () => {
-  // const [teams, setTeams] = useState<Team[]>([]);
-
-  const syncTeams = async () => {
-    const token = localStorage.getItem("token");
-
-    try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/team-synchronize/teams`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-        }
-      );
-
-      const data = await response.json();
-      console.log("Sync Response:", data);
-    } catch (error) {
-      console.error("Error during sync:", error);
-    }
-  };
-
-  useEffect(() => {
-    const fetchDataAndSync = async () => {
-      await syncTeams();
-      // await fetchTeams();
-    };
-
-    fetchDataAndSync();
-  }, []);
-
-  return (
-    <button
-      onClick={syncTeams}
-      className="p-2 bg-black text-white rounded-full hover:bg-blue-600 flex flex-col items-center justify-center relative"
-      style={{ width: "120px", height: "120px" }}
-    >
-      <div
-        className="absolute w-full flex flex-col items-center justify-center"
-        style={{ top: "46%", transform: "translateY(-50%)" }}
-      >
-        <span className="text-center text-xs">Sync</span>
-        <span className="text-center text-xs mt-1">Teams</span>
-      </div>
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        x="0px"
-        y="0px"
-        width="100"
-        height="100"
-        viewBox="0 0 24 24"
-        fill="currentColor"
-      >
-        <path d="M16 15L24 15 20 20zM8 9L0 9 4 4z"></path>
-        <path d="M21 6c0-1.654-1.346-3-3-3H7.161l1.6 2H18c.551 0 1 .448 1 1v10h2V6zM3 18c0 1.654 1.346 3 3 3h10.839l-1.6-2H6c-.551 0-1-.448-1-1V8H3V18z"></path>
-      </svg>
-    </button>
-  );
-};
-
-export default TeamSync;
-
 // ====== FILE: src\app\components\Admin\totalTimeSpent.tsx ======
 
 "use client";
@@ -5067,7 +4988,26 @@ export default TeamSync;
 import React, { useState, useEffect } from "react";
 import { useQuery } from "@apollo/client";
 import gql from "graphql-tag";
-import { currentUserVar } from "@/app/lib/apolloClient";
+import { useAuthStore } from "@/app/lib/authStore";
+import useCurrentUser from "@/app/hooks/useCurrentUser";
+import { formatTimeFromMilliseconds } from "@/app/utils/timeUtils";
+
+interface Project {
+  id: string;
+  name: string;
+  teamName?: string;
+}
+
+interface Team {
+  name: string;
+  projects: Project[];
+}
+
+interface User {
+  id: string;
+  email: string;
+  teams?: Team[];
+}
 
 const GET_DROPDOWN_OPTIONS = gql`
   query {
@@ -5121,22 +5061,16 @@ const TotalTimeSpent: React.FC = () => {
   const [startDate, setStartDate] = useState(getCurrentDate());
   const [endDate, setEndDate] = useState(getCurrentDate());
 
-  const loggedInUser = currentUserVar();
-  const [userProjects, setUserProjects] = useState<any[]>([]);
+  // Use the auth store instead of reactive variable
+  useCurrentUser();
+  const loggedInUser = useAuthStore((state) => state.user);
+  const [userProjects, setUserProjects] = useState<Project[]>([]);
 
-  const {
-    loading: loadingUserProjects,
-    error: errorUserProjects,
-    data: userProjectsData,
-  } = useQuery(GET_USER_PROJECTS, {
+  const { data: userProjectsData } = useQuery(GET_USER_PROJECTS, {
     skip: !loggedInUser,
   });
 
-  const {
-    loading: loadingOptions,
-    error: errorOptions,
-    data: optionsData,
-  } = useQuery(GET_DROPDOWN_OPTIONS);
+  const { error: errorOptions } = useQuery(GET_DROPDOWN_OPTIONS);
   const {
     loading: loadingTime,
     error: errorTime,
@@ -5155,12 +5089,12 @@ const TotalTimeSpent: React.FC = () => {
   useEffect(() => {
     if (userProjectsData && loggedInUser) {
       const userWithProjects = userProjectsData.users.find(
-        (user: any) => user.id === loggedInUser.id
+        (user: User) => user.id === loggedInUser.id
       );
       if (userWithProjects) {
         const projectsWithTeamName = userWithProjects.teams.flatMap(
-          (team: any) =>
-            team.projects.map((project: any) => ({
+          (team: Team) =>
+            team.projects.map((project: Project) => ({
               ...project,
               teamName: team.name,
             }))
@@ -5181,15 +5115,6 @@ const TotalTimeSpent: React.FC = () => {
       setTotalTime(timeData.getTotalTimeSpent);
     }
   }, [timeData]);
-
-  const formatMilliseconds = (ms: number) => {
-    const seconds = Math.floor((ms / 1000) % 60);
-    const minutes = Math.floor((ms / (1000 * 60)) % 60);
-    const hours = Math.floor(ms / (1000 * 60 * 60));
-    return `${hours.toString().padStart(2, "0")}:${minutes
-      .toString()
-      .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
-  };
 
   if (loadingTime) return <p>Loading...</p>;
   if (errorOptions || errorTime?.message) {
@@ -5238,7 +5163,7 @@ const TotalTimeSpent: React.FC = () => {
           className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
         >
           <option value="">Select a Project</option>
-          {userProjects.map((project: any) => (
+          {userProjects.map((project: Project) => (
             <option key={project.id} value={project.id}>
               {project.name} (Team: {project.teamName})
             </option>
@@ -5266,7 +5191,7 @@ const TotalTimeSpent: React.FC = () => {
 
       {/* Total Time Display */}
       <p className="text-lg font-medium text-white">
-        Total Time: {formatMilliseconds(totalTime)}
+        Total Time: {formatTimeFromMilliseconds(totalTime)}
       </p>
     </div>
   );

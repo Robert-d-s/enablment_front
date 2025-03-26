@@ -4,44 +4,46 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { fetchUserProfile } from "@/app/lib/apolloClient";
+import { useMutation } from "@apollo/client";
+import { LOGIN_MUTATION } from "@/app/graphql/authOperations";
+import { useAuthStore } from "@/app/lib/authStore";
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const router = useRouter();
-  const handleLogin = async () => {
-    try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/login`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email,
-            password,
-          }),
-        }
-      );
+  const setToken = useAuthStore((state) => state.setToken);
 
-      const data = await response.json();
+  const [login, { loading }] = useMutation(LOGIN_MUTATION, {
+    onCompleted: (data) => {
+      const token = data.login.access_token;
 
-      if (data && data.access_token) {
-        localStorage.setItem("token", data.access_token);
-        const user = await fetchUserProfile(data.access_token);
-        if (user) {
-          router.push("/timeKeeper");
-        } else {
-          setErrorMessage("Failed to retrieve user profile");
-        }
-      }
-    } catch (error) {
+      localStorage.setItem("token", token);
+
+      setToken(token);
+
+      router.push("/timeKeeper");
+    },
+    onError: (error) => {
       console.error("Login error:", error);
-      setErrorMessage("An error occurred while logging in. Please try again.");
-    }
+      setErrorMessage(
+        error.message || "An error occurred while logging in. Please try again."
+      );
+    },
+  });
+
+  const handleLogin = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    login({
+      variables: {
+        input: {
+          email,
+          password,
+        },
+      },
+      context: { isPublic: true },
+    });
   };
 
   return (
@@ -52,12 +54,7 @@ const Login: React.FC = () => {
           Log In To Your Account
         </h1>
 
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleLogin();
-          }}
-        >
+        <form onSubmit={handleLogin}>
           <input
             className="mb-2 p-2 w-full border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
             value={email}
@@ -75,9 +72,10 @@ const Login: React.FC = () => {
 
           <button
             type="submit"
-            className="w-full bg-black text-white p-2 rounded focus:outline-none hover:bg-gray-700 mb-4"
+            disabled={loading}
+            className="w-full bg-black text-white p-2 rounded focus:outline-none hover:bg-gray-700 mb-4 disabled:bg-gray-400"
           >
-            CONTINUE
+            {loading ? "LOGGING IN..." : "CONTINUE"}
           </button>
 
           <div className="text-center">

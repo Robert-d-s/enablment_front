@@ -5,7 +5,7 @@ import {
   USER_PROJECTS_QUERY,
 } from "@/app/graphql/timeKeeperOperations";
 import useStore from "@/app/lib/store";
-import { currentUserVar } from "@/app/lib/apolloClient";
+import { useAuthStore } from "@/app/lib/authStore";
 
 // Define interfaces for our expected data shapes:
 export interface Project {
@@ -39,12 +39,14 @@ export interface UserProject {
 }
 
 const useTimeKeeperData = () => {
+  const user = useAuthStore((state) => state.user);
+
   // Use typed queries
   const { data: projectsData } = useQuery<ProjectsData>(PROJECTS_QUERY);
   const { data: userProjectsData } = useQuery<UserProjectsData>(
     USER_PROJECTS_QUERY,
     {
-      skip: !currentUserVar(),
+      skip: !user,
     }
   );
   const { setProjects, setTeamId } = useStore();
@@ -74,12 +76,13 @@ const useTimeKeeperData = () => {
   }, [projectsData, selectedProject, setTeamId]);
 
   useEffect(() => {
-    const currentUser = currentUserVar();
-    if (userProjectsData && currentUser) {
-      const currentUserId = currentUser.id;
-      const user = userProjectsData.users.find((u) => u.id === currentUserId);
-      if (user) {
-        const projectsList: UserProject[] = user.teams.flatMap((team) =>
+    if (userProjectsData && user) {
+      const currentUserId = user.id;
+      const userInfo = userProjectsData.users.find(
+        (u) => u.id === currentUserId
+      );
+      if (userInfo) {
+        const projectsList: UserProject[] = userInfo.teams.flatMap((team) =>
           team.projects.map((project) => ({
             id: project.id,
             name: project.name,
@@ -89,7 +92,7 @@ const useTimeKeeperData = () => {
         setUserProjects(projectsList);
       }
     }
-  }, [userProjectsData]);
+  }, [userProjectsData, user]);
 
   return { userProjects, currentTeamId };
 };

@@ -3,16 +3,49 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { useMutation } from "@apollo/client";
+import { SIGNUP_MUTATION } from "@/app/graphql/authOperations";
 
 const Signup: React.FC = () => {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const router = useRouter();
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>(
-    {}
-  );
+  const [errors, setErrors] = useState<{
+    email?: string;
+    password?: string;
+    general?: string;
+  }>({});
   const passwordRegex =
     /^(?=.*[A-Z])(?=.*[!@#$%^&*()_+{}\[\]:;<>,.?~\\/-]).{8,}$/;
+
+  const [signup, { loading }] = useMutation(SIGNUP_MUTATION, {
+    onCompleted: (data) => {
+      if (data.signup.success) {
+        console.log("Signup successful. Redirecting to login...");
+        router.push("/login");
+      } else {
+        setErrors({
+          general: data.signup.message || "Signup failed. Please try again.",
+        });
+      }
+    },
+    onError: (error) => {
+      console.error("Error during signup:", error);
+
+      // Check for email already exists error
+      if (error.message.includes("Email already exists")) {
+        setErrors({
+          ...errors,
+          email: "Email already exists.",
+        });
+      } else {
+        setErrors({
+          ...errors,
+          general: error.message || "An error occurred during signup.",
+        });
+      }
+    },
+  });
 
   const validateForm = () => {
     let valid = true;
@@ -43,38 +76,18 @@ const Signup: React.FC = () => {
       return;
     }
 
-    try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/signup`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email,
-            password,
-          }),
-        }
-      );
-
-      if (response.status === 409) {
-        setErrors({
-          ...errors,
-          email: "Email already exists.",
-        });
-        return;
-      }
-
-      if (response.ok) {
-        console.log("Signup successful. Redirecting to login...");
-        router.push("/login");
-      } else {
-        console.error("Signup failed:", await response.text());
-      }
-    } catch (error) {
-      console.error("Error during signup:", error);
-    }
+    signup({
+      variables: {
+        input: {
+          email,
+          password,
+        },
+      },
+      context: {
+        // Ensure this operation is identified as a signup request
+        clientName: "Signup",
+      },
+    });
   };
 
   return (
@@ -105,10 +118,14 @@ const Signup: React.FC = () => {
           )}
           <button
             type="submit"
-            className="w-full bg-black text-white p-2 rounded focus:outline-none hover:bg-gray-700 mb-4"
+            disabled={loading}
+            className="w-full bg-black text-white p-2 rounded focus:outline-none hover:bg-gray-700 mb-4 disabled:bg-gray-400"
           >
-            GET STARTED
+            {loading ? "CREATING ACCOUNT..." : "GET STARTED"}
           </button>
+          {errors.general && (
+            <p className="text-red-500 text-sm mb-4">{errors.general}</p>
+          )}
         </form>
         <div className="flex justify-center">
           <span>
