@@ -26,6 +26,14 @@ export const ME_QUERY = gql`
   }
 `;
 
+export const LOGOUT_MUTATION = gql`
+  mutation Logout {
+    logout {
+      success
+    }
+  }
+`;
+
 export const SYNC_DATABASE_MUTATION = gql`
   mutation SyncDatabase {
     syncDatabase {

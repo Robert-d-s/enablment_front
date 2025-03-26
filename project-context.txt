@@ -2970,10 +2970,10 @@ export const LOGIN_MUTATION = gql`
 `;
 
 export const SIGNUP_MUTATION = gql`
-  mutation Signup($input: SignUpInput!) {
-    signup(input: $input) {
-      success
-      message
+  mutation SignUp($input: SignUpInput!) {
+    signUp(input: $input) {
+      id
+      email
     }
   }
 `;
@@ -2990,14 +2990,7 @@ export const ME_QUERY = gql`
 export const SYNC_DATABASE_MUTATION = gql`
   mutation SyncDatabase {
     syncDatabase {
-      success
       message
-      timestamp
-      details {
-        teams
-        projects
-        issues
-      }
     }
   }
 `;
@@ -3076,34 +3069,61 @@ export const UPDATE_TIME_MUTATION = gql`
 import { useQuery } from "@apollo/client";
 import { ME_QUERY } from "@/app/graphql/authOperations";
 import { useAuthStore } from "@/app/lib/authStore";
+import { useEffect } from "react";
 
 export const useCurrentUser = () => {
   const storeUser = useAuthStore((state) => state.user);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const setUser = useAuthStore((state) => state.setUser);
+  const setAuthenticated = useAuthStore((state) => state.setAuthenticated);
 
   const { data, loading, error, refetch } = useQuery(ME_QUERY, {
     fetchPolicy: "cache-and-network",
-    skip: !localStorage.getItem("token"),
+    skip: isAuthenticated === false,
+    context: {
+      credentials: "include",
+    },
     onCompleted: (data) => {
       if (data?.me) {
         setUser(data.me);
+        setAuthenticated(true);
+      } else if (!storeUser) {
+        setAuthenticated(false);
       }
     },
     onError: (error) => {
       console.error("Error fetching current user:", error);
-      // If we get an authentication error, clear the user
+
+      if (storeUser) {
+        console.log(
+          "Error fetching user profile, but continuing with stored user"
+        );
+        return;
+      }
+
       if (
-        error.message.includes("not authenticated") ||
-        error.message.includes("Invalid token")
+        (error.message.includes("not authenticated") ||
+          error.message.includes("Invalid token") ||
+          error.message.includes("Unauthorized") ||
+          error.message.includes("No auth token found in cookies")) &&
+        !storeUser
       ) {
+        setAuthenticated(false);
         useAuthStore.getState().logout();
       }
     },
   });
 
+  useEffect(() => {
+    if (storeUser && !isAuthenticated) {
+      setAuthenticated(true);
+    }
+  }, [storeUser, isAuthenticated, setAuthenticated]);
+
   return {
     currentUser: storeUser || data?.me || null,
     isLoading: loading,
+    isAuthenticated,
     error,
     refetch,
   };
@@ -3163,7 +3183,7 @@ import {
   USER_PROJECTS_QUERY,
 } from "@/app/graphql/timeKeeperOperations";
 import useStore from "@/app/lib/store";
-import { currentUserVar } from "@/app/lib/apolloClient";
+import { useAuthStore } from "@/app/lib/authStore";
 
 // Define interfaces for our expected data shapes:
 export interface Project {
@@ -3197,12 +3217,14 @@ export interface UserProject {
 }
 
 const useTimeKeeperData = () => {
+  const user = useAuthStore((state) => state.user);
+
   // Use typed queries
   const { data: projectsData } = useQuery<ProjectsData>(PROJECTS_QUERY);
   const { data: userProjectsData } = useQuery<UserProjectsData>(
     USER_PROJECTS_QUERY,
     {
-      skip: !currentUserVar(),
+      skip: !user,
     }
   );
   const { setProjects, setTeamId } = useStore();
@@ -3232,12 +3254,13 @@ const useTimeKeeperData = () => {
   }, [projectsData, selectedProject, setTeamId]);
 
   useEffect(() => {
-    const currentUser = currentUserVar();
-    if (userProjectsData && currentUser) {
-      const currentUserId = currentUser.id;
-      const user = userProjectsData.users.find((u) => u.id === currentUserId);
-      if (user) {
-        const projectsList: UserProject[] = user.teams.flatMap((team) =>
+    if (userProjectsData && user) {
+      const currentUserId = user.id;
+      const userInfo = userProjectsData.users.find(
+        (u) => u.id === currentUserId
+      );
+      if (userInfo) {
+        const projectsList: UserProject[] = userInfo.teams.flatMap((team) =>
           team.projects.map((project) => ({
             id: project.id,
             name: project.name,
@@ -3247,7 +3270,7 @@ const useTimeKeeperData = () => {
         setUserProjects(projectsList);
       }
     }
-  }, [userProjectsData]);
+  }, [userProjectsData, user]);
 
   return { userProjects, currentTeamId };
 };
@@ -3959,37 +3982,53 @@ import { setContext } from "@apollo/client/link/context";
 import { onError } from "@apollo/client/link/error";
 import { useAuthStore } from "./authStore";
 
-// Authentication link for setting headers
-const authLink = setContext((operation, { headers }) => {
-  // Check if the current operation is login or signup
-  const isAuthOperation =
-    operation.operationName === "Login" || operation.operationName === "Signup";
-
-  // Only add the token for non-auth operations
-  const token = !isAuthOperation ? localStorage.getItem("token") : null;
-
+// Authentication link for setting headers - with cookies, we don't need to manually add the token
+const authLink = setContext((_operation, { headers }) => {
   return {
     headers: {
       ...headers,
       "content-type": "application/json",
-      authorization: token ? `Bearer ${token}` : "",
     },
+    // Include credentials for all requests
+    credentials: "include",
   };
 });
 
 // Error handling link
 const errorLink = onError(
   ({ graphQLErrors, networkError, forward, operation }) => {
-    if (graphQLErrors) {
+    // Check if this operation should skip error handling
+    const context = operation.getContext();
+    const skipErrorHandling = context.skipErrorHandling;
+
+    if (graphQLErrors && !skipErrorHandling) {
       graphQLErrors.forEach(({ message, extensions }) => {
-        if (message.includes("Invalid or expired token")) {
-          logout();
+        // Check for authentication errors
+        const isAuthError =
+          message.includes("Invalid or expired token") ||
+          message.includes("Unauthorized") ||
+          message.includes("No auth token found");
+
+        // Get the operation name safely
+        const operationName = operation.operationName || "";
+
+        if (isAuthError) {
+          // Ignore auth errors for login/signup operations
+          if (!["Login", "Signup"].includes(operationName)) {
+            console.log("Auth error detected, logging out:", message);
+            useAuthStore.getState().setAuthenticated(false);
+
+            // Only redirect to login if it's not already a login operation
+            if (window.location.pathname !== "/login") {
+              logout();
+            }
+          }
         } else if (extensions?.code === "FORBIDDEN") {
           useAuthStore.getState().setForbidden(true);
         }
       });
     }
-    if (networkError) {
+    if (networkError && !skipErrorHandling) {
       console.log(`[Network error]: ${networkError}`);
     }
     return forward(operation);
@@ -4007,20 +4046,43 @@ const client = new ApolloClient({
           : `${process.env.NEXT_PUBLIC_BACKEND_URL}/graphql`,
       fetchOptions: {
         method: "POST",
+        credentials: "include", // Important: include credentials in all requests
       },
     }),
   ]),
   cache: new InMemoryCache(),
+  defaultOptions: {
+    query: {
+      fetchPolicy: "network-only", // Ensures we're using fresh data with new auth cookies
+      errorPolicy: "all", // Return partial results on error if possible
+    },
+    mutate: {
+      errorPolicy: "all", // Return partial results on error if possible
+    },
+  },
 });
 
 export default client;
 
-export const logout = () => {
-  localStorage.removeItem("token");
-  localStorage.removeItem("currentUser");
+export const logout = async () => {
+  try {
+    // Call logout endpoint to clear the cookie on the server
+    await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/logout`, {
+      method: "POST",
+      credentials: "include",
+    });
+  } catch (error) {
+    console.error("Error during logout:", error);
+  }
+
+  // Clear local state
   useAuthStore.getState().logout();
   client.resetStore();
-  window.location.href = "/login";
+
+  // Only redirect if not already at login page
+  if (window.location.pathname !== "/login") {
+    window.location.href = "/login";
+  }
 };
 
 // ====== FILE: src\app\lib\authStore.ts ======
@@ -4037,10 +4099,10 @@ interface User {
 
 interface AuthState {
   user: User | null;
-  token: string | null;
   isForbidden: boolean;
+  isAuthenticated: boolean;
   setUser: (user: User | null) => void;
-  setToken: (token: string | null) => void;
+  setAuthenticated: (isAuthenticated: boolean) => void;
   setForbidden: (isForbidden: boolean) => void;
   logout: () => void;
 }
@@ -4049,27 +4111,31 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       user: null,
-      token: null,
       isForbidden: false,
-      setUser: (user) => set({ user }),
-      setToken: (token) => set({ token }),
+      isAuthenticated: false,
+      setUser: (user) =>
+        set({
+          user,
+          isAuthenticated: !!user,
+        }),
+      setAuthenticated: (isAuthenticated) => set({ isAuthenticated }),
       setForbidden: (isForbidden) => set({ isForbidden }),
-      logout: () => set({ user: null, token: null, isForbidden: false }),
+      logout: () =>
+        set({
+          user: null,
+          isAuthenticated: false,
+          isForbidden: false,
+        }),
     }),
     {
       name: "auth-storage",
-      partialize: (state) => ({ user: state.user, token: state.token }),
+      partialize: (state) => ({
+        user: state.user,
+        isAuthenticated: state.isAuthenticated,
+      }),
     }
   )
 );
-
-// Initialize from localStorage if we're in the browser
-if (typeof window !== "undefined") {
-  const token = localStorage.getItem("token");
-  if (token) {
-    useAuthStore.getState().setToken(token);
-  }
-}
 
 // ====== FILE: src\app\lib\store.ts ======
 
@@ -4141,29 +4207,55 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useMutation } from "@apollo/client";
-import { LOGIN_MUTATION } from "@/app/graphql/authOperations";
+import { LOGIN_MUTATION, ME_QUERY } from "@/app/graphql/authOperations";
 import { useAuthStore } from "@/app/lib/authStore";
+import client from "@/app/lib/apolloClient";
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const router = useRouter();
-  const setToken = useAuthStore((state) => state.setToken);
+  const setUser = useAuthStore((state) => state.setUser);
+  const setAuthenticated = useAuthStore((state) => state.setAuthenticated);
 
   const [login, { loading }] = useMutation(LOGIN_MUTATION, {
-    onCompleted: (data) => {
-      const token = data.login.access_token;
+    onCompleted: async (data) => {
+      if (data.login && data.login.access_token) {
+        // Create a minimal user object based on login email
+        // This ensures we have a user object even if ME_QUERY fails
+        const tempUser = { id: "temp-user-id", email };
+        setUser(tempUser);
 
-      // Store in local storage for Apollo Client
-      localStorage.setItem("token", token);
+        // Mark user as authenticated
+        setAuthenticated(true);
 
-      // Update Zustand store
-      setToken(token);
+        // Navigate to the timekeeper page right away
+        router.push("/timeKeeper");
 
-      // Navigate to the timekeeper page - the user data will be fetched
-      // by the useCurrentUser hook when needed
-      router.push("/timeKeeper");
+        // Then attempt to fetch the full user profile in the background
+        // We do this after navigation to prevent any delays in user experience
+        try {
+          const result = await client.query({
+            query: ME_QUERY,
+            fetchPolicy: "network-only",
+            context: {
+              credentials: "include",
+              skipErrorHandling: true, // Skip the global error handler for this query
+            },
+          });
+
+          if (result.data?.me) {
+            // Update with real user data once available
+            setUser(result.data.me);
+          }
+        } catch (error) {
+          console.log("Error fetching user profile after login:", error);
+          // Continue with the temp user, don't logout
+        }
+      } else {
+        setErrorMessage("Login successful but incomplete data received.");
+      }
     },
     onError: (error) => {
       console.error("Login error:", error);
@@ -4183,8 +4275,7 @@ const Login: React.FC = () => {
         },
       },
       context: {
-        // Ensure this operation is identified as a login request
-        clientName: "Login",
+        credentials: "include",
       },
     });
   };
@@ -4335,8 +4426,7 @@ const Signup: React.FC = () => {
         },
       },
       context: {
-        // Ensure this operation is identified as a signup request
-        clientName: "Signup",
+        credentials: "include", // Include cookies with the request
       },
     });
   };
@@ -4407,8 +4497,9 @@ export default Signup;
 
 import React, { useEffect, useState } from "react";
 import { useTimer } from "@/app/hooks/useTimer";
-import { currentUserVar } from "@/app/lib/apolloClient";
 import useStore from "@/app/lib/store";
+import { useAuthStore } from "@/app/lib/authStore";
+import useCurrentUser from "@/app/hooks/useCurrentUser";
 import { useFeedbackState } from "@/app/hooks/useFeedbackState";
 import { useTimeKeeperQueries } from "@/app/hooks/useTimekeeperQueries";
 import { useTimeKeeperHandlers } from "@/app/hooks/useTimekeeperHandlers";
@@ -4428,7 +4519,9 @@ const TimeKeeper: React.FC = () => {
 
   const [currentEntryId, setCurrentEntryId] = useState<number | null>(null);
 
-  const loggedInUser = currentUserVar();
+  useCurrentUser();
+  const loggedInUser = useAuthStore((state) => state.user);
+
   const {
     ratesData,
     totalTimeData,

@@ -9,6 +9,7 @@ import {
 import { setContext } from "@apollo/client/link/context";
 import { onError } from "@apollo/client/link/error";
 import { useAuthStore } from "./authStore";
+import { LOGOUT_MUTATION } from "../graphql/authOperations";
 
 // Authentication link for setting headers - with cookies, we don't need to manually add the token
 const authLink = setContext((_operation, { headers }) => {
@@ -42,7 +43,7 @@ const errorLink = onError(
 
         if (isAuthError) {
           // Ignore auth errors for login/signup operations
-          if (!["Login", "Signup"].includes(operationName)) {
+          if (!["Login", "Signup", "Logout"].includes(operationName)) {
             console.log("Auth error detected, logging out:", message);
             useAuthStore.getState().setAuthenticated(false);
 
@@ -94,13 +95,17 @@ export default client;
 
 export const logout = async () => {
   try {
-    // Call logout endpoint to clear the cookie on the server
-    await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/logout`, {
-      method: "POST",
-      credentials: "include",
+    // Call GraphQL logout mutation instead of REST endpoint
+    await client.mutate({
+      mutation: LOGOUT_MUTATION,
+      context: {
+        credentials: "include",
+      },
     });
+    console.log("GraphQL logout successful");
   } catch (error) {
-    console.error("Error during logout:", error);
+    console.error("Error during GraphQL logout:", error);
+    // Continue with client-side logout even if server call fails
   }
 
   // Clear local state
