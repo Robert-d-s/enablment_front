@@ -5,25 +5,55 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useMutation } from "@apollo/client";
-import { LOGIN_MUTATION } from "@/app/graphql/authOperations";
+import { LOGIN_MUTATION, ME_QUERY } from "@/app/graphql/authOperations";
 import { useAuthStore } from "@/app/lib/authStore";
+import client from "@/app/lib/apolloClient";
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const router = useRouter();
-  const setToken = useAuthStore((state) => state.setToken);
+  const setUser = useAuthStore((state) => state.setUser);
+  const setAuthenticated = useAuthStore((state) => state.setAuthenticated);
 
   const [login, { loading }] = useMutation(LOGIN_MUTATION, {
-    onCompleted: (data) => {
-      const token = data.login.access_token;
+    onCompleted: async (data) => {
+      if (data.login && data.login.access_token) {
+        // Create a minimal user object based on login email
+        // This ensures we have a user object even if ME_QUERY fails
+        const tempUser = { id: "temp-user-id", email };
+        setUser(tempUser);
 
-      localStorage.setItem("token", token);
+        // Mark user as authenticated
+        setAuthenticated(true);
 
-      setToken(token);
+        // Navigate to the timekeeper page right away
+        router.push("/timeKeeper");
 
-      router.push("/timeKeeper");
+        // Then attempt to fetch the full user profile in the background
+        // We do this after navigation to prevent any delays in user experience
+        try {
+          const result = await client.query({
+            query: ME_QUERY,
+            fetchPolicy: "network-only",
+            context: {
+              credentials: "include",
+              skipErrorHandling: true, // Skip the global error handler for this query
+            },
+          });
+
+          if (result.data?.me) {
+            // Update with real user data once available
+            setUser(result.data.me);
+          }
+        } catch (error) {
+          console.log("Error fetching user profile after login:", error);
+          // Continue with the temp user, don't logout
+        }
+      } else {
+        setErrorMessage("Login successful but incomplete data received.");
+      }
     },
     onError: (error) => {
       console.error("Login error:", error);
@@ -42,7 +72,9 @@ const Login: React.FC = () => {
           password,
         },
       },
-      context: { isPublic: true },
+      context: {
+        credentials: "include",
+      },
     });
   };
 

@@ -84,8 +84,7 @@ const Signup: React.FC = () => {
         },
       },
       context: {
-        // Ensure this operation is identified as a signup request
-        clientName: "Signup",
+        credentials: "include", // Include cookies with the request
       },
     });
   };
