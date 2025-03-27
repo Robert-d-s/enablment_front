@@ -107,7 +107,9 @@ const DBSyncPage: React.FC = () => {
       setSyncDetails((prev) => [
         ...prev,
         "Synchronization completed!",
-        `Timestamp: ${data.syncDatabase.timestamp || new Date().toISOString()}`,
+        `Timestamp: ${
+          data.synchronizeDatabase.timestamp || new Date().toISOString()
+        }`,
       ]);
       setShowSuccess(true);
 

@@ -36,8 +36,10 @@ export const LOGOUT_MUTATION = gql`
 
 export const SYNC_DATABASE_MUTATION = gql`
   mutation SyncDatabase {
-    syncDatabase {
+    synchronizeDatabase {
+      status
       message
+      timestamp
     }
   }
 `;

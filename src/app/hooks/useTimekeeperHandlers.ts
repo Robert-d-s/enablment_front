@@ -12,8 +12,12 @@ interface HandlersConfig {
   selectedProject: string;
   selectedRate: string;
   userId: string;
-  createTimeEntry: (options: {
-    timeInputCreate: Partial<TimeEntry>;
+  createTimeEntry: (data: {
+    startTime: string;
+    projectId: string;
+    userId: number;
+    rateId: number;
+    totalElapsedTime: number;
   }) => Promise<{ data: { createTime: TimeEntry } }>;
   updateTime: (options: {
     timeInputUpdate: { id: number; endTime: string; totalElapsedTime: number };
@@ -63,6 +67,7 @@ export const useTimeKeeperHandlers = ({
 
     try {
       const submissionTime = new Date();
+      console.log("Submission time:", submissionTime.toISOString());
 
       // Use the calculation function from timerState
       const totalElapsedTimeMs = timerState.calculateTotalActiveTime();
@@ -70,9 +75,14 @@ export const useTimeKeeperHandlers = ({
         "Total elapsed time calculated for submission (ms):",
         totalElapsedTimeMs
       );
+      console.log(
+        "Total elapsed time in seconds:",
+        Math.floor(totalElapsedTimeMs / 1000)
+      );
 
       if (currentEntryId) {
         // Update existing time entry
+        console.log("Updating existing time entry with ID:", currentEntryId);
         await updateTime({
           timeInputUpdate: {
             id: currentEntryId,
@@ -82,19 +92,36 @@ export const useTimeKeeperHandlers = ({
         });
         console.log("Updated existing time entry ID:", currentEntryId);
       } else {
-        // Create new time entry and store its ID
-        const result = await createTimeEntry({
-          timeInputCreate: {
+        // Create new time entry
+        console.log("Creating new time entry with data:", {
+          startTime: formatISO(timerState.initialStartTime),
+          projectId: selectedProject,
+          userId: parseFloat(userId),
+          rateId: parseFloat(selectedRate),
+          totalElapsedTime: totalElapsedTimeMs,
+        });
+
+        try {
+          const result = await createTimeEntry({
             startTime: formatISO(timerState.initialStartTime),
-            endTime: formatISO(submissionTime),
             projectId: selectedProject,
-            userId,
+            userId: parseFloat(userId),
             rateId: parseFloat(selectedRate),
             totalElapsedTime: totalElapsedTimeMs,
-          },
-        });
-        setCurrentEntryId(result.data.createTime.id);
-        console.log("Created new time entry ID:", result.data.createTime.id);
+          });
+          console.log(
+            "Success creating time entry with minimal required fields:",
+            JSON.stringify(result, null, 2)
+          );
+
+          if (result?.data?.createTime?.id) {
+            setCurrentEntryId(result.data.createTime.id);
+            console.log("Set current entry ID to:", result.data.createTime.id);
+          }
+        } catch (err) {
+          console.error("Failed to create time entry:", err);
+          throw err;
+        }
       }
 
       showSuccessMessage();

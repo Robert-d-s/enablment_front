@@ -21,11 +21,15 @@ export const useTimer = (): TimerState & {
   // Function to calculate total active time
   const calculateTotalActiveTime = (): number => {
     const now = new Date();
+    console.log("Calculating total active time at:", now.toISOString());
 
     // If timer has never started, return 0
     if (!initialStartTime) {
+      console.log("No initial start time, returning 0");
       return 0;
     }
+
+    console.log("Initial start time:", initialStartTime.toISOString());
 
     // Calculate total elapsed time since initial start
     let totalActiveTime = 0;
@@ -35,7 +39,10 @@ export const useTimer = (): TimerState & {
       pauseTimes.length > 0 ? pauseTimes[0] : isRunning ? now : null;
 
     if (firstPauseTime && initialStartTime) {
-      totalActiveTime += firstPauseTime.getTime() - initialStartTime.getTime();
+      const firstSegmentTime =
+        firstPauseTime.getTime() - initialStartTime.getTime();
+      console.log("First segment time (ms):", firstSegmentTime);
+      totalActiveTime += firstSegmentTime;
     }
 
     // Add time from all resume-pause segments
@@ -50,11 +57,13 @@ export const useTimer = (): TimerState & {
           : null;
 
       if (endTime) {
-        totalActiveTime += endTime.getTime() - resumeTime.getTime();
+        const segmentTime = endTime.getTime() - resumeTime.getTime();
+        console.log(`Segment ${i + 1} time (ms):`, segmentTime);
+        totalActiveTime += segmentTime;
       }
     }
 
-    console.log("Total active time calculated:", totalActiveTime);
+    console.log("Total active time calculated (ms):", totalActiveTime);
     return Math.max(totalActiveTime, 0);
   };
 

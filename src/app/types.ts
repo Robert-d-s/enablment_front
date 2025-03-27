@@ -2,14 +2,18 @@ export interface TimeEntry {
   id: number;
   startTime: string;
   endTime: string;
-  projectId: string;
-  userId: string;
-  rateId: number;
   totalElapsedTime: number;
 }
 
 export interface CreateTimeEntryVariables {
-  timeInputCreate: Partial<TimeEntry>;
+  timeInputCreate: {
+    startTime: string;
+    endTime?: string;
+    projectId: string;
+    userId: number;
+    rateId: number;
+    totalElapsedTime: number;
+  };
 }
 
 export interface UpdateTimeEntryVariables {
