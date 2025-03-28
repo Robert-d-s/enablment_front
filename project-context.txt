@@ -1440,7 +1440,7 @@ export default NavBar;
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { logout } from "../lib/apolloClient";
+import { clientLogout } from "@/app/lib/apolloClient";
 import { useAuthStore } from "../lib/authStore";
 import useCurrentUser from "../hooks/useCurrentUser";
 
@@ -1449,7 +1449,7 @@ const NavigationBar: React.FC = () => {
   const user = useAuthStore((state) => state.user);
 
   const handleLogout = () => {
-    logout();
+    clientLogout();
   };
 
   return (
@@ -3364,6 +3364,7 @@ export const useTimeKeeperHandlers = ({
 
     try {
       const submissionTime = new Date();
+      console.log("Submission time:", submissionTime.toISOString());
 
       // Use the calculation function from timerState
       const totalElapsedTimeMs = timerState.calculateTotalActiveTime();
@@ -3371,9 +3372,14 @@ export const useTimeKeeperHandlers = ({
         "Total elapsed time calculated for submission (ms):",
         totalElapsedTimeMs
       );
+      console.log(
+        "Total elapsed time in seconds:",
+        Math.floor(totalElapsedTimeMs / 1000)
+      );
 
       if (currentEntryId) {
         // Update existing time entry
+        console.log("Updating existing time entry with ID:", currentEntryId);
         await updateTime({
           timeInputUpdate: {
             id: currentEntryId,
@@ -3383,8 +3389,14 @@ export const useTimeKeeperHandlers = ({
         });
         console.log("Updated existing time entry ID:", currentEntryId);
       } else {
-        // Try completely empty object since backend rejects all properties
-        console.log("Attempting to create time entry with empty input");
+        // Create new time entry
+        console.log("Creating new time entry with data:", {
+          startTime: formatISO(timerState.initialStartTime),
+          projectId: selectedProject,
+          userId: parseFloat(userId),
+          rateId: parseFloat(selectedRate),
+          totalElapsedTime: totalElapsedTimeMs,
+        });
 
         try {
           const result = await createTimeEntry({
@@ -3401,6 +3413,7 @@ export const useTimeKeeperHandlers = ({
 
           if (result?.data?.createTime?.id) {
             setCurrentEntryId(result.data.createTime.id);
+            console.log("Set current entry ID to:", result.data.createTime.id);
           }
         } catch (err) {
           console.error("Failed to create time entry:", err);
@@ -3569,168 +3582,209 @@ export const useTimeKeeperQueries = (
 
 // ====== FILE: src\app\hooks\useTimer.ts ======
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { format } from "date-fns";
 import type { TimerState } from "../types";
+import { useTimerStore } from "@/app/lib/timerStore";
 
 export const useTimer = (): TimerState & {
   initialStartTime: Date | null;
-  elapsedBeforePause: number;
   pauseTimes: Date[];
   resumeTimes: Date[];
-  calculateTotalActiveTime: () => number; // Expose this function
+  calculateTotalActiveTime: () => number;
 } => {
-  const [isRunning, setIsRunning] = useState<boolean>(false);
-  const [initialStartTime, setInitialStartTime] = useState<Date | null>(null);
-  const [currentStartTime, setCurrentStartTime] = useState<Date | null>(null);
-  const [elapsedBeforePause, setElapsedBeforePause] = useState<number>(0);
+  // --- Get state and actions from the Zustand store ---
+  const { isRunning, initialStartTimeISO, pauseTimesISO, resumeTimesISO } =
+    useTimerStore();
+
+  const {
+    setTimerRunning,
+    setInitialStartTime: setInitialStartTimeInStore,
+    addPauseTime: addPauseTimeToStore,
+    addResumeTime: addResumeTimeToStore,
+    resetTimerState: resetTimerStateInStore,
+  } = useTimerStore();
+
+  // --- Local state for display only ---
   const [displayTime, setDisplayTime] = useState<string>("00:00:00");
-  const [pauseTimes, setPauseTimes] = useState<Date[]>([]);
-  const [resumeTimes, setResumeTimes] = useState<Date[]>([]);
   const timerRef = useRef<number | null>(null);
 
-  // Function to calculate total active time
-  const calculateTotalActiveTime = (): number => {
-    const now = new Date();
+  // --- Derive Date objects from ISO strings using useMemo ---
+  const initialStartTime = useMemo(
+    () => (initialStartTimeISO ? new Date(initialStartTimeISO) : null),
+    [initialStartTimeISO]
+  );
 
-    // If timer has never started, return 0
+  const pauseTimes = useMemo(
+    () => pauseTimesISO.map((iso) => new Date(iso)),
+    [pauseTimesISO]
+  );
+
+  const resumeTimes = useMemo(
+    () => resumeTimesISO.map((iso) => new Date(iso)),
+    [resumeTimesISO]
+  );
+
+  // --- Calculation Logic (Timestamp-based) ---
+  const calculateTotalActiveTime = useCallback((): number => {
+    const now = new Date();
     if (!initialStartTime) {
       return 0;
     }
 
-    // Calculate total elapsed time since initial start
-    let totalActiveTime = 0;
+    let totalMs = 0;
+    let segmentStart = initialStartTime;
 
-    // Add time from first segment (initial start to first pause, or now if no pauses)
-    const firstPauseTime =
-      pauseTimes.length > 0 ? pauseTimes[0] : isRunning ? now : null;
+    for (let i = 0; i < pauseTimes.length; i++) {
+      const pauseTime = pauseTimes[i];
+      if (pauseTime.getTime() < segmentStart.getTime()) continue;
+      totalMs += pauseTime.getTime() - segmentStart.getTime();
 
-    if (firstPauseTime && initialStartTime) {
-      totalActiveTime += firstPauseTime.getTime() - initialStartTime.getTime();
-    }
-
-    // Add time from all resume-pause segments
-    for (let i = 0; i < resumeTimes.length; i++) {
-      const resumeTime = resumeTimes[i];
-      // The end of this segment is either the next pause or now (if currently running)
-      const endTime =
-        i < pauseTimes.length - 1
-          ? pauseTimes[i + 1]
-          : isRunning && i === pauseTimes.length - 1
-          ? now
-          : null;
-
-      if (endTime) {
-        totalActiveTime += endTime.getTime() - resumeTime.getTime();
+      if (i < resumeTimes.length) {
+        if (resumeTimes[i].getTime() < pauseTime.getTime()) continue;
+        segmentStart = resumeTimes[i];
+      } else {
+        // Currently paused
+        return Math.max(totalMs, 0);
       }
     }
 
-    console.log("Total active time calculated:", totalActiveTime);
-    return Math.max(totalActiveTime, 0);
-  };
+    if (isRunning) {
+      // Use isRunning from store
+      if (now.getTime() >= segmentStart.getTime()) {
+        totalMs += now.getTime() - segmentStart.getTime();
+      }
+    }
+    return Math.max(totalMs, 0);
+  }, [initialStartTime, pauseTimes, resumeTimes, isRunning]);
 
-  const updateDisplay = () => {
+  // --- Update Display Logic ---
+  const updateDisplay = useCallback(() => {
     const elapsedMs = calculateTotalActiveTime();
-    // Convert milliseconds to seconds for formatting
     const elapsedSeconds = Math.floor(elapsedMs / 1000);
-
-    // Format time as HH:MM:SS
     const formattedTime = format(
       new Date(0, 0, 0, 0, 0, elapsedSeconds),
       "HH:mm:ss"
     );
-
-    console.log(
-      "Updating display. Elapsed ms:",
-      elapsedMs,
-      "Formatted time:",
-      formattedTime
-    );
-
     setDisplayTime(formattedTime);
-  };
+  }, [calculateTotalActiveTime]);
 
+  // --- Effect for Initial Display pn Mount/Rehydration ---
+  useEffect(() => {
+    console.log("useTimer Mount Effect: Setting initial display time.");
+    // Caslculate the time based on the state as it was loaded
+    const initialElapsedMs = calculateTotalActiveTime();
+    const initialElapsedSeconds = Math.floor(initialElapsedMs / 1000);
+    const initialFormatedTime = format(
+      new Date(0, 0, 0, 0, 0, initialElapsedSeconds),
+      "HH:mm:ss"
+    );
+    setDisplayTime(initialFormatedTime);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // --- Effect for Interval (Reads `isRunning` from store) ---
   useEffect(() => {
     if (isRunning) {
-      console.log("Timer started, setting interval");
-      updateDisplay(); // Immediate update
-      timerRef.current = window.setInterval(updateDisplay, 1000);
-    } else if (!isRunning && timerRef.current) {
-      console.log("Timer paused or stopped, clearing interval");
+      console.log(
+        "useTimer Effect: isRunning is true, starting/checking interval."
+      );
+      updateDisplay(); // Update display immediately on load if running
+      // Ensure interval isn't already running before setting a new one
+      if (timerRef.current === null) {
+        timerRef.current = window.setInterval(updateDisplay, 1000);
+        console.log(
+          "useTimer Effect: Interval started with ID:",
+          timerRef.current
+        );
+      }
+    } else if (!isRunning && timerRef.current !== null) {
+      console.log(
+        "useTimer Effect: isRunning is false, clearing interval ID:",
+        timerRef.current
+      );
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
 
+    // Cleanup interval on unmount or if isRunning becomes false
     return () => {
-      if (timerRef.current) {
+      if (timerRef.current !== null) {
+        console.log(
+          "useTimer Effect: Cleanup clearing interval ID:",
+          timerRef.current
+        );
         clearInterval(timerRef.current);
-        console.log("Cleaning up interval");
+        timerRef.current = null; // Ensure ref is cleared on cleanup
       }
     };
-  }, [isRunning, currentStartTime, pauseTimes, resumeTimes]);
+  }, [isRunning, updateDisplay]); // Depend on isRunning from store and the memoized updateDisplay
 
+  // --- Control Functions (Dispatch actions to the store) ---
   const start = () => {
     const now = new Date();
-
-    if (!initialStartTime) {
-      // First start
-      console.log("Timer starting at:", now);
-      setInitialStartTime(now);
-      setCurrentStartTime(now);
+    // Use getState() for checking non-reactive state within an action if needed,
+    // but here we can rely on the values from the hook selector.
+    if (!initialStartTimeISO) {
+      console.log("useTimer start: Setting initial time in store.");
+      setInitialStartTimeInStore(now);
     } else if (!isRunning) {
-      // Resume after pause
-      console.log("Resuming timer at:", now);
-      setCurrentStartTime(now);
-      // Record resume time
-      setResumeTimes((prev) => [...prev, now]);
+      console.log("useTimer start: Adding resume time to store.");
+      addResumeTimeToStore(now);
     }
-
-    setIsRunning(true);
+    console.log("useTimer start: Setting isRunning=true in store.");
+    setTimerRunning(true);
   };
 
   const pause = () => {
     if (isRunning) {
-      const now = new Date();
-      console.log("Pausing timer at:", now);
-
-      // Record pause time
-      setPauseTimes((prev) => [...prev, now]);
-
-      setIsRunning(false);
+      // Check store value via hook selector
+      console.log(
+        "useTimer pause: Adding pause time and setting isRunning=false in store."
+      );
+      addPauseTimeToStore(new Date());
+      setTimerRunning(false);
+    } else {
+      console.log("useTimer pause: Called when not running, doing nothing.");
     }
   };
 
   const reset = () => {
-    console.log("Resetting timer");
-    setIsRunning(false);
-    setInitialStartTime(null);
-    setCurrentStartTime(null);
-    setElapsedBeforePause(0);
-    setDisplayTime("00:00:00");
-    setPauseTimes([]);
-    setResumeTimes([]);
+    console.log("useTimer reset: Calling resetTimerStateInStore.");
+    resetTimerStateInStore(); // Resets store state: isRunning, times, ids, etc.
+    setDisplayTime("00:00:00"); // Reset local display
   };
 
+  // Handle manual setting via DatePicker
+  const handleManualSetStartTime = (date: Date | null) => {
+    console.log("useTimer handleManualSetStartTime:", date?.toISOString());
+    if (isRunning) {
+      // Check store value via hook selector
+      pause(); // Dispatch pause action to store
+    }
+    // Reset store history and set new start time via store actions
+    resetTimerStateInStore(); // Clear previous times/state in store
+    setInitialStartTimeInStore(date); // Set new start time in store
+    if (!isRunning) {
+      // Check store value again after potential pause
+      setDisplayTime("00:00:00");
+    }
+  };
+
+  // --- Return the hook's public API ---
   return {
-    isRunning,
-    startTime: currentStartTime,
-    displayTime,
-    start,
-    pause,
-    reset,
-    setStartTime: (date: Date | null) => {
-      if (date) {
-        setCurrentStartTime(date);
-        if (!initialStartTime) {
-          setInitialStartTime(date);
-        }
-      }
-    },
-    initialStartTime,
-    elapsedBeforePause,
-    pauseTimes,
-    resumeTimes,
-    calculateTotalActiveTime, // Expose the calculation function
+    isRunning, // From store
+    startTime: initialStartTime, // Derived Date object
+    displayTime, // Local display state
+    start, // Dispatcher function
+    pause, // Dispatcher function
+    reset, // Dispatcher function
+    setStartTime: handleManualSetStartTime, // Dispatcher function
+    // Provide derived Date objects
+    initialStartTime: initialStartTime,
+    pauseTimes: pauseTimes,
+    resumeTimes: resumeTimes,
+    calculateTotalActiveTime, // The calculation function
   };
 };
 
@@ -4065,177 +4119,301 @@ export default IssuesComponent;
 
 // ====== FILE: src\app\lib\apolloClient.ts ======
 
-"use client";
+// src/app/lib/apolloClient.ts
 
 import {
   ApolloClient,
   InMemoryCache,
   createHttpLink,
   from,
+  Observable,
 } from "@apollo/client";
 import { setContext } from "@apollo/client/link/context";
 import { onError } from "@apollo/client/link/error";
-import { useAuthStore } from "./authStore";
-import { LOGOUT_MUTATION } from "../graphql/authOperations";
+import { useAuthStore, getAccessToken } from "./authStore"; // Import store and getter
+import gql from "graphql-tag";
 
-// Authentication link for setting headers - with cookies, we don't need to manually add the token
-const authLink = setContext((_operation, { headers }) => {
+// Define the refresh token mutation structure (matching backend resolver)
+const REFRESH_TOKEN_MUTATION = gql`
+  mutation RefreshToken {
+    refreshToken {
+      access_token
+    }
+  }
+`;
+
+// --- Auth Link: Adds Access Token Header ---
+const authLink = setContext((operation, { headers }) => {
+  // Exclude Authorization header for refreshToken mutation itself
+  if (operation.operationName === "RefreshToken") {
+    return { headers };
+  }
+  const token = getAccessToken();
+  const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
   return {
     headers: {
       ...headers,
+      ...authHeaders,
       "content-type": "application/json",
     },
-    // Include credentials for all requests
-    credentials: "include",
   };
 });
 
-// Error handling link
+// --- Error Link: Handles Token Expiry and Refresh ---
+let isRefreshing = false;
+let pendingRequests: ((newAccessToken: string) => void)[] = [];
+
+const resolvePendingRequests = (newAccessToken: string) => {
+  pendingRequests.map((callback) => callback(newAccessToken));
+  pendingRequests = [];
+};
+
 const errorLink = onError(
-  ({ graphQLErrors, networkError, forward, operation }) => {
-    // Check if this operation should skip error handling
-    const context = operation.getContext();
-    const skipErrorHandling = context.skipErrorHandling;
+  ({ graphQLErrors, networkError, operation, forward }) => {
+    if (graphQLErrors) {
+      for (const err of graphQLErrors) {
+        console.log("GraphQL Error received:", JSON.stringify(err, null, 2));
+        const extensions = err.extensions || {};
+        interface OriginalError {
+          statusCode?: number;
+          message?: string;
+        }
+        const originalError = extensions.originalError as OriginalError; // Cast with specific type
 
-    if (graphQLErrors && !skipErrorHandling) {
-      graphQLErrors.forEach(({ message, extensions }) => {
-        // Check for authentication errors
+        // Check for specific unauthenticated error scenarios
         const isAuthError =
-          message.includes("Invalid or expired token") ||
-          message.includes("Unauthorized") ||
-          message.includes("No auth token found");
+          extensions?.code === "UNAUTHORIZED" || // Custom code from backend guard
+          originalError?.statusCode === 401 ||
+          err.message.toLowerCase().includes("unauthorized") ||
+          err.message.toLowerCase().includes("access denied") ||
+          err.message.toLowerCase().includes("invalid token") ||
+          err.message.toLowerCase().includes("expired token");
 
-        // Get the operation name safely
-        const operationName = operation.operationName || "";
+        // Don't refresh if the failed operation was RefreshToken itself!
+        if (isAuthError && operation.operationName !== "RefreshToken") {
+          console.log(
+            `Auth error on operation '${operation.operationName}'. Initiating refresh.`
+          );
 
-        if (isAuthError) {
-          // Ignore auth errors for login/signup operations
-          if (!["Login", "Signup", "Logout"].includes(operationName)) {
-            console.log("Auth error detected, logging out:", message);
-            useAuthStore.getState().setAuthenticated(false);
+          if (!isRefreshing) {
+            isRefreshing = true;
+            console.log("Starting token refresh via mutation...");
 
-            // Only redirect to login if it's not already a login operation
-            if (window.location.pathname !== "/login") {
-              logout();
-            }
+            // Use the client instance directly to mutate
+            client
+              .mutate<{ refreshToken: { access_token: string } }>({
+                mutation: REFRESH_TOKEN_MUTATION,
+                // No variables needed as refresh token is in cookie
+                context: {
+                  credentials: "include", // Crucial: ensures cookie is sent
+                },
+              })
+              .then(({ data }) => {
+                const newAccessToken = data?.refreshToken.access_token;
+                if (!newAccessToken) {
+                  console.error(
+                    "Token refresh succeeded but no new access token received."
+                  );
+                  throw new Error("New access token not received."); // Trigger catch block
+                }
+                console.log(
+                  "Token refresh successful. New access token obtained."
+                );
+                useAuthStore.getState().setAccessToken(newAccessToken); // Update store
+                resolvePendingRequests(newAccessToken); // Retry queued requests
+              })
+              .catch((refreshError) => {
+                console.error("Token refresh mutation failed:", refreshError);
+                // Clear frontend state and redirect to login
+                useAuthStore.getState().logout(); // Clear store
+                pendingRequests = []; // Clear queue
+                // No need to call backend logout here, refresh already failed
+                if (window.location.pathname !== "/login") {
+                  window.location.href = "/login"; // Force redirect
+                }
+              })
+              .finally(() => {
+                isRefreshing = false;
+                console.log("Token refresh process finished.");
+              });
           }
-        } else if (extensions?.code === "FORBIDDEN") {
+
+          // Return Observable to queue the original request
+          return new Observable((observer) => {
+            pendingRequests.push((newAccessToken) => {
+              console.log(
+                `Retrying operation '${operation.operationName}' with new token.`
+              );
+              operation.setContext(({ headers = {} }) => ({
+                headers: {
+                  ...headers,
+                  Authorization: `Bearer ${newAccessToken}`,
+                },
+              }));
+              forward(operation).subscribe(observer); // Resubscribe with updated context
+            });
+          });
+        }
+        // Handle other errors like Forbidden
+        if (
+          extensions?.code === "FORBIDDEN" ||
+          originalError?.statusCode === 403
+        ) {
           useAuthStore.getState().setForbidden(true);
         }
-      });
+      }
     }
-    if (networkError && !skipErrorHandling) {
-      console.log(`[Network error]: ${networkError}`);
+
+    // Handle network errors (optional, but good practice)
+    if (networkError) {
+      console.error(`[Network error]: ${networkError.message}`, networkError);
+      // You could add specific handling for 401 network errors too if they occur
     }
-    return forward(operation);
   }
 );
 
+// --- HTTP Link ---
+const httpLink = createHttpLink({
+  uri: `${process.env.NEXT_PUBLIC_BACKEND_URL}/graphql`, // Your GraphQL endpoint
+  fetchOptions: {
+    method: "POST",
+  },
+  credentials: "include", // IMPORTANT: Send cookies (like refresh_token) with ALL requests
+});
+
+// --- Apollo Client Instance ---
 const client = new ApolloClient({
   link: from([
-    errorLink,
-    authLink,
-    createHttpLink({
-      uri: (operation) =>
-        operation.getContext().useLinearApi
-          ? `${process.env.NEXT_PUBLIC_LINEAR_API_URL}`
-          : `${process.env.NEXT_PUBLIC_BACKEND_URL}/graphql`,
-      fetchOptions: {
-        method: "POST",
-        credentials: "include", // Important: include credentials in all requests
-      },
-    }),
+    errorLink, // Handles errors and refresh logic
+    authLink, // Adds access token header
+    httpLink, // Sends the request
   ]),
   cache: new InMemoryCache(),
   defaultOptions: {
-    query: {
-      fetchPolicy: "network-only", // Ensures we're using fresh data with new auth cookies
-      errorPolicy: "all", // Return partial results on error if possible
-    },
-    mutate: {
-      errorPolicy: "all", // Return partial results on error if possible
-    },
+    watchQuery: { fetchPolicy: "cache-and-network" }, // Good default
+    query: { fetchPolicy: "network-only", errorPolicy: "all" }, // Ensure fresh data, handle errors
+    mutate: { errorPolicy: "all" },
   },
 });
 
+// --- Export client and potentially the backend logout function ---
 export default client;
 
-export const logout = async () => {
+// Updated logout function (if needed separately, often called from UI)
+export const clientLogout = async () => {
   try {
-    // Call GraphQL logout mutation instead of REST endpoint
+    // Call backend logout mutation (sends access token via authLink)
     await client.mutate({
-      mutation: LOGOUT_MUTATION,
-      context: {
-        credentials: "include",
-      },
+      mutation: gql`
+        mutation Logout {
+          logout {
+            success
+          }
+        }
+      `,
+      context: { credentials: "include" }, // Ensure cookies cleared even if access token expired
     });
-    console.log("GraphQL logout successful");
+    console.log("Backend logout mutation successful.");
   } catch (error) {
-    console.error("Error during GraphQL logout:", error);
-    // Continue with client-side logout even if server call fails
-  }
+    console.error("Error calling backend logout mutation:", error);
+    // Proceed with frontend logout regardless
+  } finally {
+    // ALWAYS clear frontend state
+    useAuthStore.getState().logout();
+    await client.resetStore(); // Clear Apollo cache
+    console.log("Frontend state cleared.");
 
-  // Clear local state
-  useAuthStore.getState().logout();
-  client.resetStore();
-
-  // Only redirect if not already at login page
-  if (window.location.pathname !== "/login") {
-    window.location.href = "/login";
+    // Redirect
+    if (window.location.pathname !== "/login") {
+      window.location.href = "/login";
+    }
   }
 };
 
 // ====== FILE: src\app\lib\authStore.ts ======
 
-"use client";
-
+// src/app/lib/authStore.ts
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+// Define User type based on what UserProfileDto provides
 interface User {
-  id: string;
+  id: number; // Changed to number based on UserProfileDto
   email: string;
+  role: string; // Or use the actual UserRole enum if imported
 }
 
 interface AuthState {
   user: User | null;
-  isForbidden: boolean;
-  isAuthenticated: boolean;
-  setUser: (user: User | null) => void;
-  setAuthenticated: (isAuthenticated: boolean) => void;
+  accessToken: string | null; // Access token in memory
+  isForbidden: boolean; // To track forbidden errors
+  isAuthenticated: boolean; // Represents potential session validity (has token or can refresh)
+  setAuth: (token: string | null, user: User | null) => void; // Combined action
+  setUser: (user: User | null) => void; // Can keep separate if needed
+  setAccessToken: (token: string | null) => void; // Can keep separate if needed
   setForbidden: (isForbidden: boolean) => void;
-  logout: () => void;
+  logout: () => void; // Action to clear state
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
+      // Initial state
       user: null,
+      accessToken: null,
       isForbidden: false,
-      isAuthenticated: false,
-      setUser: (user) =>
+      isAuthenticated: false, // Start as false, set true after login/refresh
+
+      // Actions
+      setAuth: (token, user) =>
         set({
-          user,
-          isAuthenticated: !!user,
+          accessToken: token,
+          user: user,
+          isAuthenticated: !!token, // Considered authenticated if we have an access token
+          isForbidden: false, // Reset forbidden on new auth
         }),
-      setAuthenticated: (isAuthenticated) => set({ isAuthenticated }),
+      setUser: (user) => set({ user }), // Keep if used elsewhere separately
+      setAccessToken: (token) =>
+        set({
+          // Keep if used elsewhere separately
+          accessToken: token,
+          isAuthenticated: !!token,
+        }),
       setForbidden: (isForbidden) => set({ isForbidden }),
-      logout: () =>
+      logout: () => {
+        console.log("AuthStore: Logging out - clearing state.");
         set({
           user: null,
+          accessToken: null,
           isAuthenticated: false,
           isForbidden: false,
-        }),
+        });
+      },
     }),
     {
-      name: "auth-storage",
+      name: "auth-storage", // Local storage key
+      // IMPORTANT: Only persist user info, NOT the access token
       partialize: (state) => ({
         user: state.user,
-        isAuthenticated: state.isAuthenticated,
+        // Do NOT persist accessToken or isAuthenticated - derive on load/refresh
       }),
+      // Optional: Perform checks on rehydration
+      onRehydrateStorage: () => {
+        console.log("AuthStore: Rehydrating user from storage.");
+        // No need to set isAuthenticated here, it depends on token refresh/ME query
+        return (state, error) => {
+          if (error) console.error("AuthStore: Error rehydrating:", error);
+          // Initialize isAuthenticated based on whether user info was loaded
+          // This doesn't guarantee a valid session yet, refresh/ME query will confirm
+          // useAuthStore.setState({ isAuthenticated: !!state?.user });
+        };
+      },
     }
   )
 );
+
+// Helper function to get token without subscribing (for Apollo Link)
+export const getAccessToken = () => useAuthStore.getState().accessToken;
 
 // ====== FILE: src\app\lib\store.ts ======
 
@@ -4289,6 +4467,84 @@ const useStore = create<Store>((set) => ({
 
 export default useStore;
 
+// ====== FILE: src\app\lib\timerStore.ts ======
+
+// src/app/lib/timerStore.ts
+import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
+
+interface TimerPersistedState {
+  isRunning: boolean;
+  initialStartTimeISO: string | null;
+  pauseTimesISO: string[];
+  resumeTimesISO: string[];
+  currentEntryId: number | null;
+  projectIdForTimer: string | null;
+  rateIdForTimer: string | null;
+}
+
+interface TimerActions {
+  setTimerRunning: (running: boolean) => void;
+  setInitialStartTime: (date: Date | null) => void;
+  addPauseTime: (date: Date) => void;
+  addResumeTime: (date: Date) => void;
+  setCurrentEntryId: (id: number | null) => void;
+  setProjectAndRate: (projectId: string | null, rateId: string | null) => void;
+  resetTimerState: () => void;
+}
+
+const initialState: TimerPersistedState = {
+  isRunning: false,
+  initialStartTimeISO: null,
+  pauseTimesISO: [],
+  resumeTimesISO: [],
+  currentEntryId: null,
+  projectIdForTimer: null,
+  rateIdForTimer: null,
+};
+
+export const useTimerStore = create<TimerPersistedState & TimerActions>()(
+  persist(
+    (set) => ({
+      ...initialState,
+      setTimerRunning: (running) => set({ isRunning: running }),
+      setInitialStartTime: (date) =>
+        set({ initialStartTimeISO: date ? date.toISOString() : null }),
+      addPauseTime: (date) =>
+        set((state) => ({
+          pauseTimesISO: [...state.pauseTimesISO, date.toISOString()],
+        })),
+      addResumeTime: (date) =>
+        set((state) => ({
+          resumeTimesISO: [...state.resumeTimesISO, date.toISOString()],
+        })),
+      setCurrentEntryId: (id) => set({ currentEntryId: id }),
+      setProjectAndRate: (projectId, rateId) =>
+        set({
+          projectIdForTimer: projectId,
+          rateIdForTimer: rateId,
+        }),
+      resetTimerState: () => {
+        console.log("Resetting timer state in Zustand store"); // Add log
+        set({ ...initialState });
+      },
+    }),
+    {
+      name: "timer-storage", // Key for localStorage
+      storage: createJSONStorage(() => localStorage),
+      onRehydrateStorage: () => {
+        // Log when state is rehydrated
+        console.log("Zustand timer state rehydrated from localStorage");
+        return (state, error) => {
+          if (error) {
+            console.error("Error rehydrating timer state:", error);
+          }
+        };
+      },
+    }
+  )
+);
+
 // ====== FILE: src\app\lib\utils.ts ======
 
 import { type ClassValue, clsx } from "clsx";
@@ -4307,75 +4563,68 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useMutation } from "@apollo/client";
-import { LOGIN_MUTATION, ME_QUERY } from "@/app/graphql/authOperations";
+import { LOGIN_MUTATION } from "@/app/graphql/authOperations";
 import { useAuthStore } from "@/app/lib/authStore";
 import client from "@/app/lib/apolloClient";
+
+interface LoginData {
+  login: {
+    access_token: string;
+    user: {
+      id: number;
+      email: string;
+      role: string;
+    };
+  };
+}
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const router = useRouter();
-  const setUser = useAuthStore((state) => state.setUser);
-  const setAuthenticated = useAuthStore((state) => state.setAuthenticated);
+  // Get the combined setAuth action from the store
+  const setAuth = useAuthStore((state) => state.setAuth);
 
-  const [login, { loading }] = useMutation(LOGIN_MUTATION, {
-    onCompleted: async (data) => {
-      if (data.login && data.login.access_token) {
-        // Create a minimal user object based on login email
-        // This ensures we have a user object even if ME_QUERY fails
-        const tempUser = { id: "temp-user-id", email };
-        setUser(tempUser);
-
-        // Mark user as authenticated
-        setAuthenticated(true);
-
-        // Navigate to the timekeeper page right away
+  const [login, { loading }] = useMutation<LoginData>(LOGIN_MUTATION, {
+    client: client, // Use the configured Apollo client
+    onCompleted: (data) => {
+      // Check if login data, token, AND user are present
+      if (data?.login?.access_token && data?.login?.user) {
+        const { access_token, user } = data.login;
+        console.log("Login successful. Storing token and user data.");
+        setAuth(access_token, user);
+        // Redirect after successful state update
         router.push("/timeKeeper");
-
-        // Then attempt to fetch the full user profile in the background
-        // We do this after navigation to prevent any delays in user experience
-        try {
-          const result = await client.query({
-            query: ME_QUERY,
-            fetchPolicy: "network-only",
-            context: {
-              credentials: "include",
-              skipErrorHandling: true, // Skip the global error handler for this query
-            },
-          });
-
-          if (result.data?.me) {
-            // Update with real user data once available
-            setUser(result.data.me);
-          }
-        } catch (error) {
-          console.log("Error fetching user profile after login:", error);
-          // Continue with the temp user, don't logout
-        }
       } else {
-        setErrorMessage("Login successful but incomplete data received.");
+        // Handle cases where backend response is missing expected data
+        const errorMsg = "Login failed: Incomplete data received from server.";
+        setErrorMessage(errorMsg);
+        console.error(errorMsg, data);
       }
     },
     onError: (error) => {
-      console.error("Login error:", error);
-      setErrorMessage(
-        error.message || "An error occurred while logging in. Please try again."
-      );
+      console.error("Login mutation error:", error);
+
+      if (
+        error.message.includes("Invalid email or password") ||
+        error.message.includes("Unauthorized")
+      ) {
+        setErrorMessage("Invalid email or password.");
+      } else {
+        setErrorMessage(
+          error.message || "An unexpected error occurred during login."
+        );
+      }
     },
   });
 
   const handleLogin = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setErrorMessage(null);
     login({
       variables: {
-        input: {
-          email,
-          password,
-        },
-      },
-      context: {
-        credentials: "include",
+        input: { email, password },
       },
     });
   };

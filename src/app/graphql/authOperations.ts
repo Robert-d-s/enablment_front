@@ -4,6 +4,11 @@ export const LOGIN_MUTATION = gql`
   mutation Login($input: SignInInput!) {
     login(input: $input) {
       access_token
+      user {
+        id
+        email
+        role
+      }
     }
   }
 `;

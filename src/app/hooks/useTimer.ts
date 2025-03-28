@@ -1,173 +1,205 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { format } from "date-fns";
 import type { TimerState } from "../types";
+import { useTimerStore } from "@/app/lib/timerStore";
 
 export const useTimer = (): TimerState & {
   initialStartTime: Date | null;
-  elapsedBeforePause: number;
   pauseTimes: Date[];
   resumeTimes: Date[];
-  calculateTotalActiveTime: () => number; // Expose this function
+  calculateTotalActiveTime: () => number;
 } => {
-  const [isRunning, setIsRunning] = useState<boolean>(false);
-  const [initialStartTime, setInitialStartTime] = useState<Date | null>(null);
-  const [currentStartTime, setCurrentStartTime] = useState<Date | null>(null);
-  const [elapsedBeforePause, setElapsedBeforePause] = useState<number>(0);
+  // --- Get state and actions from the Zustand store ---
+  const { isRunning, initialStartTimeISO, pauseTimesISO, resumeTimesISO } =
+    useTimerStore();
+
+  const {
+    setTimerRunning,
+    setInitialStartTime: setInitialStartTimeInStore,
+    addPauseTime: addPauseTimeToStore,
+    addResumeTime: addResumeTimeToStore,
+    resetTimerState: resetTimerStateInStore,
+  } = useTimerStore();
+
+  // --- Local state for display only ---
   const [displayTime, setDisplayTime] = useState<string>("00:00:00");
-  const [pauseTimes, setPauseTimes] = useState<Date[]>([]);
-  const [resumeTimes, setResumeTimes] = useState<Date[]>([]);
   const timerRef = useRef<number | null>(null);
 
-  // Function to calculate total active time
-  const calculateTotalActiveTime = (): number => {
-    const now = new Date();
-    console.log("Calculating total active time at:", now.toISOString());
+  // --- Derive Date objects from ISO strings using useMemo ---
+  const initialStartTime = useMemo(
+    () => (initialStartTimeISO ? new Date(initialStartTimeISO) : null),
+    [initialStartTimeISO]
+  );
 
-    // If timer has never started, return 0
+  const pauseTimes = useMemo(
+    () => pauseTimesISO.map((iso) => new Date(iso)),
+    [pauseTimesISO]
+  );
+
+  const resumeTimes = useMemo(
+    () => resumeTimesISO.map((iso) => new Date(iso)),
+    [resumeTimesISO]
+  );
+
+  // --- Calculation Logic (Timestamp-based) ---
+  const calculateTotalActiveTime = useCallback((): number => {
+    const now = new Date();
     if (!initialStartTime) {
-      console.log("No initial start time, returning 0");
       return 0;
     }
 
-    console.log("Initial start time:", initialStartTime.toISOString());
+    let totalMs = 0;
+    let segmentStart = initialStartTime;
 
-    // Calculate total elapsed time since initial start
-    let totalActiveTime = 0;
+    for (let i = 0; i < pauseTimes.length; i++) {
+      const pauseTime = pauseTimes[i];
+      if (pauseTime.getTime() < segmentStart.getTime()) continue;
+      totalMs += pauseTime.getTime() - segmentStart.getTime();
 
-    // Add time from first segment (initial start to first pause, or now if no pauses)
-    const firstPauseTime =
-      pauseTimes.length > 0 ? pauseTimes[0] : isRunning ? now : null;
-
-    if (firstPauseTime && initialStartTime) {
-      const firstSegmentTime =
-        firstPauseTime.getTime() - initialStartTime.getTime();
-      console.log("First segment time (ms):", firstSegmentTime);
-      totalActiveTime += firstSegmentTime;
-    }
-
-    // Add time from all resume-pause segments
-    for (let i = 0; i < resumeTimes.length; i++) {
-      const resumeTime = resumeTimes[i];
-      // The end of this segment is either the next pause or now (if currently running)
-      const endTime =
-        i < pauseTimes.length - 1
-          ? pauseTimes[i + 1]
-          : isRunning && i === pauseTimes.length - 1
-          ? now
-          : null;
-
-      if (endTime) {
-        const segmentTime = endTime.getTime() - resumeTime.getTime();
-        console.log(`Segment ${i + 1} time (ms):`, segmentTime);
-        totalActiveTime += segmentTime;
+      if (i < resumeTimes.length) {
+        if (resumeTimes[i].getTime() < pauseTime.getTime()) continue;
+        segmentStart = resumeTimes[i];
+      } else {
+        // Currently paused
+        return Math.max(totalMs, 0);
       }
     }
 
-    console.log("Total active time calculated (ms):", totalActiveTime);
-    return Math.max(totalActiveTime, 0);
-  };
+    if (isRunning) {
+      // Use isRunning from store
+      if (now.getTime() >= segmentStart.getTime()) {
+        totalMs += now.getTime() - segmentStart.getTime();
+      }
+    }
+    return Math.max(totalMs, 0);
+  }, [initialStartTime, pauseTimes, resumeTimes, isRunning]);
 
-  const updateDisplay = () => {
+  // --- Update Display Logic ---
+  const updateDisplay = useCallback(() => {
     const elapsedMs = calculateTotalActiveTime();
-    // Convert milliseconds to seconds for formatting
     const elapsedSeconds = Math.floor(elapsedMs / 1000);
-
-    // Format time as HH:MM:SS
     const formattedTime = format(
       new Date(0, 0, 0, 0, 0, elapsedSeconds),
       "HH:mm:ss"
     );
-
-    console.log(
-      "Updating display. Elapsed ms:",
-      elapsedMs,
-      "Formatted time:",
-      formattedTime
-    );
-
     setDisplayTime(formattedTime);
-  };
+  }, [calculateTotalActiveTime]);
 
+  // --- Effect for Initial Display pn Mount/Rehydration ---
+  useEffect(() => {
+    console.log("useTimer Mount Effect: Setting initial display time.");
+    // Caslculate the time based on the state as it was loaded
+    const initialElapsedMs = calculateTotalActiveTime();
+    const initialElapsedSeconds = Math.floor(initialElapsedMs / 1000);
+    const initialFormatedTime = format(
+      new Date(0, 0, 0, 0, 0, initialElapsedSeconds),
+      "HH:mm:ss"
+    );
+    setDisplayTime(initialFormatedTime);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // --- Effect for Interval (Reads `isRunning` from store) ---
   useEffect(() => {
     if (isRunning) {
-      console.log("Timer started, setting interval");
-      updateDisplay(); // Immediate update
-      timerRef.current = window.setInterval(updateDisplay, 1000);
-    } else if (!isRunning && timerRef.current) {
-      console.log("Timer paused or stopped, clearing interval");
+      console.log(
+        "useTimer Effect: isRunning is true, starting/checking interval."
+      );
+      updateDisplay(); // Update display immediately on load if running
+      // Ensure interval isn't already running before setting a new one
+      if (timerRef.current === null) {
+        timerRef.current = window.setInterval(updateDisplay, 1000);
+        console.log(
+          "useTimer Effect: Interval started with ID:",
+          timerRef.current
+        );
+      }
+    } else if (!isRunning && timerRef.current !== null) {
+      console.log(
+        "useTimer Effect: isRunning is false, clearing interval ID:",
+        timerRef.current
+      );
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
 
+    // Cleanup interval on unmount or if isRunning becomes false
     return () => {
-      if (timerRef.current) {
+      if (timerRef.current !== null) {
+        console.log(
+          "useTimer Effect: Cleanup clearing interval ID:",
+          timerRef.current
+        );
         clearInterval(timerRef.current);
-        console.log("Cleaning up interval");
+        timerRef.current = null; // Ensure ref is cleared on cleanup
       }
     };
-  }, [isRunning, currentStartTime, pauseTimes, resumeTimes]);
+  }, [isRunning, updateDisplay]); // Depend on isRunning from store and the memoized updateDisplay
 
+  // --- Control Functions (Dispatch actions to the store) ---
   const start = () => {
     const now = new Date();
-
-    if (!initialStartTime) {
-      // First start
-      console.log("Timer starting at:", now);
-      setInitialStartTime(now);
-      setCurrentStartTime(now);
+    // Use getState() for checking non-reactive state within an action if needed,
+    // but here we can rely on the values from the hook selector.
+    if (!initialStartTimeISO) {
+      console.log("useTimer start: Setting initial time in store.");
+      setInitialStartTimeInStore(now);
     } else if (!isRunning) {
-      // Resume after pause
-      console.log("Resuming timer at:", now);
-      setCurrentStartTime(now);
-      // Record resume time
-      setResumeTimes((prev) => [...prev, now]);
+      console.log("useTimer start: Adding resume time to store.");
+      addResumeTimeToStore(now);
     }
-
-    setIsRunning(true);
+    console.log("useTimer start: Setting isRunning=true in store.");
+    setTimerRunning(true);
   };
 
   const pause = () => {
     if (isRunning) {
-      const now = new Date();
-      console.log("Pausing timer at:", now);
-
-      // Record pause time
-      setPauseTimes((prev) => [...prev, now]);
-
-      setIsRunning(false);
+      // Check store value via hook selector
+      console.log(
+        "useTimer pause: Adding pause time and setting isRunning=false in store."
+      );
+      addPauseTimeToStore(new Date());
+      setTimerRunning(false);
+    } else {
+      console.log("useTimer pause: Called when not running, doing nothing.");
     }
   };
 
   const reset = () => {
-    console.log("Resetting timer");
-    setIsRunning(false);
-    setInitialStartTime(null);
-    setCurrentStartTime(null);
-    setElapsedBeforePause(0);
-    setDisplayTime("00:00:00");
-    setPauseTimes([]);
-    setResumeTimes([]);
+    console.log("useTimer reset: Calling resetTimerStateInStore.");
+    resetTimerStateInStore(); // Resets store state: isRunning, times, ids, etc.
+    setDisplayTime("00:00:00"); // Reset local display
   };
 
+  // Handle manual setting via DatePicker
+  const handleManualSetStartTime = (date: Date | null) => {
+    console.log("useTimer handleManualSetStartTime:", date?.toISOString());
+    if (isRunning) {
+      // Check store value via hook selector
+      pause(); // Dispatch pause action to store
+    }
+    // Reset store history and set new start time via store actions
+    resetTimerStateInStore(); // Clear previous times/state in store
+    setInitialStartTimeInStore(date); // Set new start time in store
+    if (!isRunning) {
+      // Check store value again after potential pause
+      setDisplayTime("00:00:00");
+    }
+  };
+
+  // --- Return the hook's public API ---
   return {
-    isRunning,
-    startTime: currentStartTime,
-    displayTime,
-    start,
-    pause,
-    reset,
-    setStartTime: (date: Date | null) => {
-      if (date) {
-        setCurrentStartTime(date);
-        if (!initialStartTime) {
-          setInitialStartTime(date);
-        }
-      }
-    },
-    initialStartTime,
-    elapsedBeforePause,
-    pauseTimes,
-    resumeTimes,
-    calculateTotalActiveTime, // Expose the calculation function
+    isRunning, // From store
+    startTime: initialStartTime, // Derived Date object
+    displayTime, // Local display state
+    start, // Dispatcher function
+    pause, // Dispatcher function
+    reset, // Dispatcher function
+    setStartTime: handleManualSetStartTime, // Dispatcher function
+    // Provide derived Date objects
+    initialStartTime: initialStartTime,
+    pauseTimes: pauseTimes,
+    resumeTimes: resumeTimes,
+    calculateTotalActiveTime, // The calculation function
   };
 };

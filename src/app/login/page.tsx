@@ -5,75 +5,68 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useMutation } from "@apollo/client";
-import { LOGIN_MUTATION, ME_QUERY } from "@/app/graphql/authOperations";
+import { LOGIN_MUTATION } from "@/app/graphql/authOperations";
 import { useAuthStore } from "@/app/lib/authStore";
 import client from "@/app/lib/apolloClient";
+
+interface LoginData {
+  login: {
+    access_token: string;
+    user: {
+      id: number;
+      email: string;
+      role: string;
+    };
+  };
+}
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const router = useRouter();
-  const setUser = useAuthStore((state) => state.setUser);
-  const setAuthenticated = useAuthStore((state) => state.setAuthenticated);
+  // Get the combined setAuth action from the store
+  const setAuth = useAuthStore((state) => state.setAuth);
 
-  const [login, { loading }] = useMutation(LOGIN_MUTATION, {
-    onCompleted: async (data) => {
-      if (data.login && data.login.access_token) {
-        // Create a minimal user object based on login email
-        // This ensures we have a user object even if ME_QUERY fails
-        const tempUser = { id: "temp-user-id", email };
-        setUser(tempUser);
-
-        // Mark user as authenticated
-        setAuthenticated(true);
-
-        // Navigate to the timekeeper page right away
+  const [login, { loading }] = useMutation<LoginData>(LOGIN_MUTATION, {
+    client: client, // Use the configured Apollo client
+    onCompleted: (data) => {
+      // Check if login data, token, AND user are present
+      if (data?.login?.access_token && data?.login?.user) {
+        const { access_token, user } = data.login;
+        console.log("Login successful. Storing token and user data.");
+        setAuth(access_token, user);
+        // Redirect after successful state update
         router.push("/timeKeeper");
-
-        // Then attempt to fetch the full user profile in the background
-        // We do this after navigation to prevent any delays in user experience
-        try {
-          const result = await client.query({
-            query: ME_QUERY,
-            fetchPolicy: "network-only",
-            context: {
-              credentials: "include",
-              skipErrorHandling: true, // Skip the global error handler for this query
-            },
-          });
-
-          if (result.data?.me) {
-            // Update with real user data once available
-            setUser(result.data.me);
-          }
-        } catch (error) {
-          console.log("Error fetching user profile after login:", error);
-          // Continue with the temp user, don't logout
-        }
       } else {
-        setErrorMessage("Login successful but incomplete data received.");
+        // Handle cases where backend response is missing expected data
+        const errorMsg = "Login failed: Incomplete data received from server.";
+        setErrorMessage(errorMsg);
+        console.error(errorMsg, data);
       }
     },
     onError: (error) => {
-      console.error("Login error:", error);
-      setErrorMessage(
-        error.message || "An error occurred while logging in. Please try again."
-      );
+      console.error("Login mutation error:", error);
+
+      if (
+        error.message.includes("Invalid email or password") ||
+        error.message.includes("Unauthorized")
+      ) {
+        setErrorMessage("Invalid email or password.");
+      } else {
+        setErrorMessage(
+          error.message || "An unexpected error occurred during login."
+        );
+      }
     },
   });
 
   const handleLogin = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setErrorMessage(null);
     login({
       variables: {
-        input: {
-          email,
-          password,
-        },
-      },
-      context: {
-        credentials: "include",
+        input: { email, password },
       },
     });
   };

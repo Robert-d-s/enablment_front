@@ -3,7 +3,7 @@
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { logout } from "../lib/apolloClient";
+import { clientLogout } from "@/app/lib/apolloClient";
 import { useAuthStore } from "../lib/authStore";
 import useCurrentUser from "../hooks/useCurrentUser";
 
@@ -12,7 +12,7 @@ const NavigationBar: React.FC = () => {
   const user = useAuthStore((state) => state.user);
 
   const handleLogout = () => {
-    logout();
+    clientLogout();
   };
 
   return (

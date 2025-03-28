@@ -3,36 +3,55 @@
 import { useQuery } from "@apollo/client";
 import { ME_QUERY } from "@/app/graphql/authOperations";
 import { useAuthStore } from "@/app/lib/authStore";
-import { useEffect } from "react";
+
+interface MeQueryResult {
+  me: {
+    id: number;
+    email: string;
+    role: string;
+  } | null;
+}
 
 export const useCurrentUser = () => {
-  const storeUser = useAuthStore((state) => state.user);
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const setUser = useAuthStore((state) => state.setUser);
-  const setAuthenticated = useAuthStore((state) => state.setAuthenticated);
+  const {
+    user: storeUser,
+    accessToken,
+    isAuthenticated,
+    setUser,
+    logout,
+  } = useAuthStore();
 
-  const { data, loading, error, refetch } = useQuery(ME_QUERY, {
-    fetchPolicy: "cache-and-network",
-    skip: isAuthenticated === false,
+  const { data, loading, error, refetch } = useQuery<MeQueryResult>(ME_QUERY, {
+    fetchPolicy: "network-only",
+    skip: !accessToken,
     context: {
       credentials: "include",
     },
     onCompleted: (data) => {
       if (data?.me) {
+        console.log("ME_QUERY successful, user data:", data.me);
         setUser(data.me);
-        setAuthenticated(true);
-      } else if (!storeUser) {
-        setAuthenticated(false);
+        if (!isAuthenticated) useAuthStore.setState({ isAuthenticated: true });
+      } else {
+        console.log("ME_QUERY returned null user, logging out.");
+        if (accessToken) {
+          logout();
+        }
       }
     },
     onError: (error) => {
       console.error("Error fetching current user:", error);
 
-      if (storeUser) {
-        console.log(
-          "Error fetching user profile, but continuing with stored user"
-        );
-        return;
+      const isAuthError =
+        error.graphQLErrors.some(
+          (gqlError) =>
+            gqlError.extensions?.code === "UNAUTHORIZED" ||
+            gqlError.message.includes("Unauthorized")
+        ) || error.networkError?.message.includes("401");
+
+      if (isAuthError && accessToken) {
+        console.log("ME_QUERY failed with auth error, logging out.");
+        logout();
       }
 
       if (
@@ -42,22 +61,15 @@ export const useCurrentUser = () => {
           error.message.includes("No auth token found in cookies")) &&
         !storeUser
       ) {
-        setAuthenticated(false);
         useAuthStore.getState().logout();
       }
     },
   });
-
-  useEffect(() => {
-    if (storeUser && !isAuthenticated) {
-      setAuthenticated(true);
-    }
-  }, [storeUser, isAuthenticated, setAuthenticated]);
-
+  const derivedIsAuthenticated = !!accessToken;
   return {
     currentUser: storeUser || data?.me || null,
     isLoading: loading,
-    isAuthenticated,
+    isAuthenticated: derivedIsAuthenticated,
     error,
     refetch,
   };
