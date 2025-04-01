@@ -5,6 +5,27 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useMutation } from "@apollo/client";
 import { SIGNUP_MUTATION } from "@/app/graphql/authOperations";
+import { useAuthStore } from "@/app/lib/authStore";
+
+interface SignUpData {
+  signup: {
+    access_token: string;
+    user: {
+      id: number;
+      email: string;
+      role: string;
+    };
+  };
+}
+
+interface ValidationErrorOriginalError {
+  message?: string | string[];
+}
+
+interface GraphQLErrorExtensions {
+  code?: string;
+  originalError?: ValidationErrorOriginalError;
+}
 
 const Signup: React.FC = () => {
   const [email, setEmail] = useState<string>("");
@@ -18,14 +39,19 @@ const Signup: React.FC = () => {
   const passwordRegex =
     /^(?=.*[A-Z])(?=.*[!@#$%^&*()_+{}\[\]:;<>,.?~\\/-]).{8,}$/;
 
-  const [signup, { loading }] = useMutation(SIGNUP_MUTATION, {
+  const setAuth = useAuthStore((state) => state.setAuth);
+
+  const [signup, { loading }] = useMutation<SignUpData>(SIGNUP_MUTATION, {
     onCompleted: (data) => {
-      if (data.signup.success) {
+      if (data?.signup?.access_token && data?.signup?.user) {
         console.log("Signup successful. Redirecting to login...");
-        router.push("/login");
+        setAuth(data.signup.access_token, data.signup.user);
+        router.push("/timeKeeper");
       } else {
+        console.error("Signup completed but response data is missing.", data);
         setErrors({
-          general: data.signup.message || "Signup failed. Please try again.",
+          general:
+            "Signup process incomplete. Please try logging in or contact support.",
         });
       }
     },
@@ -38,12 +64,42 @@ const Signup: React.FC = () => {
           ...errors,
           email: "Email already exists.",
         });
+      } else if (
+        error.graphQLErrors?.some(
+          (e) => e.extensions?.code === "BAD_USER_INPUT"
+        )
+      ) {
+        // Handle potential validation errors from backend ValidationPipe
+        const validationError = error.graphQLErrors.find(
+          (e) => e.extensions?.code === "BAD_USER_INPUT"
+        );
+        // const message = (validationError?.extensions?.originalError as any)
+        //   ?.message;
+        // setErrors({ general: `Signup failed: ${message || "Invalid input."}` });
+        const extensions = validationError?.extensions as
+          | GraphQLErrorExtensions
+          | undefined;
+        let extractedMessage: string | undefined = undefined;
+        const originalMsg = extensions?.originalError?.message;
+
+        if (Array.isArray(originalMsg)) {
+          extractedMessage = originalMsg.join(", ");
+        } else if (typeof originalMsg === "string") {
+          extractedMessage = originalMsg;
+        }
+
+        setErrors({
+          general: `Signup failed: ${extractedMessage || "Invalid input."}`,
+        });
       } else {
         setErrors({
           ...errors,
           general: error.message || "An error occurred during signup.",
         });
       }
+    },
+    context: {
+      credentials: "include",
     },
   });
 
@@ -71,6 +127,7 @@ const Signup: React.FC = () => {
 
   const handleSignup = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setErrors({});
 
     if (!validateForm()) {
       return;
@@ -84,7 +141,7 @@ const Signup: React.FC = () => {
         },
       },
       context: {
-        credentials: "include", // Include cookies with the request
+        credentials: "include",
       },
     });
   };

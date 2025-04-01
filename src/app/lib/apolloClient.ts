@@ -50,6 +50,7 @@ const resolvePendingRequests = (newAccessToken: string) => {
 const errorLink = onError(
   ({ graphQLErrors, networkError, operation, forward }) => {
     if (graphQLErrors) {
+      console.log("ErrorLink: Detected graphQLErrors:", graphQLErrors);
       for (const err of graphQLErrors) {
         console.log("GraphQL Error received:", JSON.stringify(err, null, 2));
         const extensions = err.extensions || {};

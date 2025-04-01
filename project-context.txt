@@ -2971,6 +2971,11 @@ export const LOGIN_MUTATION = gql`
   mutation Login($input: SignInInput!) {
     login(input: $input) {
       access_token
+      user {
+        id
+        email
+        role
+      }
     }
   }
 `;
@@ -3085,36 +3090,55 @@ export const UPDATE_TIME_MUTATION = gql`
 import { useQuery } from "@apollo/client";
 import { ME_QUERY } from "@/app/graphql/authOperations";
 import { useAuthStore } from "@/app/lib/authStore";
-import { useEffect } from "react";
+
+interface MeQueryResult {
+  me: {
+    id: number;
+    email: string;
+    role: string;
+  } | null;
+}
 
 export const useCurrentUser = () => {
-  const storeUser = useAuthStore((state) => state.user);
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const setUser = useAuthStore((state) => state.setUser);
-  const setAuthenticated = useAuthStore((state) => state.setAuthenticated);
+  const {
+    user: storeUser,
+    accessToken,
+    isAuthenticated,
+    setUser,
+    logout,
+  } = useAuthStore();
 
-  const { data, loading, error, refetch } = useQuery(ME_QUERY, {
-    fetchPolicy: "cache-and-network",
-    skip: isAuthenticated === false,
+  const { data, loading, error, refetch } = useQuery<MeQueryResult>(ME_QUERY, {
+    fetchPolicy: "network-only",
+    skip: !accessToken,
     context: {
       credentials: "include",
     },
     onCompleted: (data) => {
       if (data?.me) {
+        console.log("ME_QUERY successful, user data:", data.me);
         setUser(data.me);
-        setAuthenticated(true);
-      } else if (!storeUser) {
-        setAuthenticated(false);
+        if (!isAuthenticated) useAuthStore.setState({ isAuthenticated: true });
+      } else {
+        console.log("ME_QUERY returned null user, logging out.");
+        if (accessToken) {
+          logout();
+        }
       }
     },
     onError: (error) => {
       console.error("Error fetching current user:", error);
 
-      if (storeUser) {
-        console.log(
-          "Error fetching user profile, but continuing with stored user"
-        );
-        return;
+      const isAuthError =
+        error.graphQLErrors.some(
+          (gqlError) =>
+            gqlError.extensions?.code === "UNAUTHORIZED" ||
+            gqlError.message.includes("Unauthorized")
+        ) || error.networkError?.message.includes("401");
+
+      if (isAuthError && accessToken) {
+        console.log("ME_QUERY failed with auth error, logging out.");
+        logout();
       }
 
       if (
@@ -3124,22 +3148,15 @@ export const useCurrentUser = () => {
           error.message.includes("No auth token found in cookies")) &&
         !storeUser
       ) {
-        setAuthenticated(false);
         useAuthStore.getState().logout();
       }
     },
   });
-
-  useEffect(() => {
-    if (storeUser && !isAuthenticated) {
-      setAuthenticated(true);
-    }
-  }, [storeUser, isAuthenticated, setAuthenticated]);
-
+  const derivedIsAuthenticated = !!accessToken;
   return {
     currentUser: storeUser || data?.me || null,
     isLoading: loading,
-    isAuthenticated,
+    isAuthenticated: derivedIsAuthenticated,
     error,
     refetch,
   };
@@ -3628,7 +3645,21 @@ export const useTimer = (): TimerState & {
   // --- Calculation Logic (Timestamp-based) ---
   const calculateTotalActiveTime = useCallback((): number => {
     const now = new Date();
+    // --- Logging Start ---
+    console.log(
+      `\n--- Calculating Time (${isRunning ? "Running" : "Paused"}) ---`
+    );
+    console.log(`Now: ${now.toISOString()}`);
+    console.log(`Initial Start: ${initialStartTime?.toISOString() ?? "null"}`);
+    console.log(
+      `Pause Times: [${pauseTimes.map((d) => d.toISOString()).join(", ")}]`
+    );
+    console.log(
+      `Resume Times: [${resumeTimes.map((d) => d.toISOString()).join(", ")}]`
+    );
+    // --- Logging End ---
     if (!initialStartTime) {
+      console.log(`Calc Result: No initial start time, returning 0ms`);
       return 0;
     }
 
@@ -3637,24 +3668,87 @@ export const useTimer = (): TimerState & {
 
     for (let i = 0; i < pauseTimes.length; i++) {
       const pauseTime = pauseTimes[i];
-      if (pauseTime.getTime() < segmentStart.getTime()) continue;
-      totalMs += pauseTime.getTime() - segmentStart.getTime();
+      if (pauseTime.getTime() < segmentStart.getTime()) {
+        console.warn(
+          `Calc Warning: Pause time ${i} (${pauseTime.toISOString()}) is before segment start (${segmentStart.toISOString()}). Skipping segment calculation.`
+        );
+        if (i < resumeTimes.length) {
+          const resumeTime = resumeTimes[i];
+          if (resumeTime.getTime() >= pauseTime.getTime()) {
+            segmentStart = resumeTime;
+            console.log(
+              `Calc Recovery: Advanced segmentStart to resume time ${i}: ${segmentStart.toISOString()}`
+            );
+          } else {
+            console.error(
+              `Calc Error: Resume time ${i} (${resumeTime.toISOString()}) is before pause time ${i} (${pauseTime.toISOString()}). State invalid.`
+            );
+            return Math.max(totalMs, 0);
+          }
+        } else {
+          console.error(
+            `Calc Error: Pause time ${i} (${pauseTime.toISOString()}) before segment start (${segmentStart.toISOString()}) with no corresponding resume. State invalid.`
+          );
+          return Math.max(totalMs, 0);
+        }
+        continue;
+      }
 
+      // Calculate duration for this valid segment
+      const segmentDuration = pauseTime.getTime() - segmentStart.getTime();
+      totalMs += segmentDuration;
+      console.log(
+        `Calc Segment ${i}: Start=${segmentStart.toISOString()}, Pause=${pauseTime.toISOString()}, Duration=${segmentDuration}ms, AccTotal=${totalMs}ms`
+      );
+
+      // Check if there's a corresponding resume time to start the next segment
       if (i < resumeTimes.length) {
-        if (resumeTimes[i].getTime() < pauseTime.getTime()) continue;
-        segmentStart = resumeTimes[i];
+        const resumeTime = resumeTimes[i];
+        // Basic sanity check: Resume should happen after Pause
+        if (resumeTime.getTime() < pauseTime.getTime()) {
+          console.warn(
+            `Calc Warning: Resume time ${i} (${resumeTime.toISOString()}) is before pause time ${i} (${pauseTime.toISOString()}). Calculation stops here as if still paused.`
+          );
+          // Treat as if still paused
+          console.log(
+            `Calc Result: Returning ${totalMs}ms (invalid resume time ${i})`
+          );
+          return Math.max(totalMs, 0);
+        }
+        // Set the start for the next potential segment
+        segmentStart = resumeTime;
+        console.log(
+          `Calc: Next segment starts at resume time ${i}: ${segmentStart.toISOString()}`
+        );
       } else {
-        // Currently paused
+        // This was the last pause, and we haven't resumed. Timer is currently paused.
+        console.log(
+          `Calc Result: Returning ${totalMs}ms (currently paused after pause ${i})`
+        );
         return Math.max(totalMs, 0);
       }
     }
 
     if (isRunning) {
-      // Use isRunning from store
       if (now.getTime() >= segmentStart.getTime()) {
-        totalMs += now.getTime() - segmentStart.getTime();
+        const finalSegmentDuration = now.getTime() - segmentStart.getTime();
+        totalMs += finalSegmentDuration;
+        console.log(
+          `Calc: Added final running segment duration: ${finalSegmentDuration}ms (from ${segmentStart.toISOString()} to ${now.toISOString()})`
+        );
+      } else {
+        console.warn(
+          `Calc Warning: 'Now' (${now.toISOString()}) is before last segment start (${segmentStart.toISOString()}). Final segment duration is 0. Check system clock or state logic.`
+        );
       }
+    } else {
+      console.log(
+        `Calc: Loop finished, timer is not running. Total calculated in loop: ${totalMs}ms`
+      );
     }
+
+    console.log(`Calc Final Result: ${totalMs}ms`);
+    console.log(`-------------------------------------`);
     return Math.max(totalMs, 0);
   }, [initialStartTime, pauseTimes, resumeTimes, isRunning]);
 
@@ -3689,7 +3783,7 @@ export const useTimer = (): TimerState & {
       console.log(
         "useTimer Effect: isRunning is true, starting/checking interval."
       );
-      updateDisplay(); // Update display immediately on load if running
+      updateDisplay();
       // Ensure interval isn't already running before setting a new one
       if (timerRef.current === null) {
         timerRef.current = window.setInterval(updateDisplay, 1000);
@@ -3723,17 +3817,36 @@ export const useTimer = (): TimerState & {
   // --- Control Functions (Dispatch actions to the store) ---
   const start = () => {
     const now = new Date();
-    // Use getState() for checking non-reactive state within an action if needed,
-    // but here we can rely on the values from the hook selector.
-    if (!initialStartTimeISO) {
+    // Check Zustand state directly for most up-to-date values before dispatching
+    const {
+      isRunning: currentlyRunning,
+      initialStartTimeISO: currentInitialISO,
+      pauseTimesISO: currentPausesISO,
+      resumeTimesISO: currentResumesISO,
+    } = useTimerStore.getState();
+
+    if (!currentInitialISO) {
       console.log("useTimer start: Setting initial time in store.");
-      setInitialStartTimeInStore(now);
-    } else if (!isRunning) {
-      console.log("useTimer start: Adding resume time to store.");
-      addResumeTimeToStore(now);
+      setInitialStartTimeInStore(now); // Update Store
+    } else if (!currentlyRunning) {
+      // ***MODIFIED CONDITION***: Only add resume time if we were actually paused
+      // (i.e., if the number of pauses is greater than the number of resumes)
+      if (currentPausesISO.length > currentResumesISO.length) {
+        console.log("useTimer start: Adding RESUME time to store.");
+        addResumeTimeToStore(now); // Update Store
+      } else {
+        console.log(
+          "useTimer start: Starting timer (not resuming from a pause)."
+        );
+      }
+    } else {
+      console.log(
+        "useTimer start: Called while already running. Doing nothing."
+      );
+      return;
     }
     console.log("useTimer start: Setting isRunning=true in store.");
-    setTimerRunning(true);
+    setTimerRunning(true); // Update Store
   };
 
   const pause = () => {
@@ -3751,27 +3864,27 @@ export const useTimer = (): TimerState & {
 
   const reset = () => {
     console.log("useTimer reset: Calling resetTimerStateInStore.");
-    resetTimerStateInStore(); // Resets store state: isRunning, times, ids, etc.
-    setDisplayTime("00:00:00"); // Reset local display
+    resetTimerStateInStore();
+    setDisplayTime("00:00:00");
   };
 
-  // Handle manual setting via DatePicker
   const handleManualSetStartTime = (date: Date | null) => {
     console.log("useTimer handleManualSetStartTime:", date?.toISOString());
-    if (isRunning) {
-      // Check store value via hook selector
-      pause(); // Dispatch pause action to store
+    const currentlyRunning = useTimerStore.getState().isRunning;
+    if (currentlyRunning) {
+      // Need to pause first *before* resetting state
+      console.log("Pausing before manual time set...");
+      addPauseTimeToStore(new Date());
+      setTimerRunning(false);
     }
-    // Reset store history and set new start time via store actions
-    resetTimerStateInStore(); // Clear previous times/state in store
-    setInitialStartTimeInStore(date); // Set new start time in store
-    if (!isRunning) {
-      // Check store value again after potential pause
-      setDisplayTime("00:00:00");
-    }
+    // Now reset the rest of the state and set the new start time
+    console.log("Resetting state and setting new start time in store...");
+    resetTimerStateInStore();
+    setInitialStartTimeInStore(date);
+
+    setDisplayTime("00:00:00");
   };
 
-  // --- Return the hook's public API ---
   return {
     isRunning, // From store
     startTime: initialStartTime, // Derived Date object
@@ -4171,6 +4284,7 @@ const resolvePendingRequests = (newAccessToken: string) => {
 const errorLink = onError(
   ({ graphQLErrors, networkError, operation, forward }) => {
     if (graphQLErrors) {
+      console.log("ErrorLink: Detected graphQLErrors:", graphQLErrors);
       for (const err of graphQLErrors) {
         console.log("GraphQL Error received:", JSON.stringify(err, null, 2));
         const extensions = err.extensions || {};
@@ -4332,27 +4446,25 @@ export const clientLogout = async () => {
 
 // ====== FILE: src\app\lib\authStore.ts ======
 
-// src/app/lib/authStore.ts
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-// Define User type based on what UserProfileDto provides
 interface User {
-  id: number; // Changed to number based on UserProfileDto
+  id: number;
   email: string;
-  role: string; // Or use the actual UserRole enum if imported
+  role: string;
 }
 
 interface AuthState {
   user: User | null;
-  accessToken: string | null; // Access token in memory
-  isForbidden: boolean; // To track forbidden errors
-  isAuthenticated: boolean; // Represents potential session validity (has token or can refresh)
-  setAuth: (token: string | null, user: User | null) => void; // Combined action
-  setUser: (user: User | null) => void; // Can keep separate if needed
-  setAccessToken: (token: string | null) => void; // Can keep separate if needed
+  accessToken: string | null;
+  isForbidden: boolean;
+  isAuthenticated: boolean;
+  setAuth: (token: string | null, user: User | null) => void;
+  setUser: (user: User | null) => void;
+  setAccessToken: (token: string | null) => void;
   setForbidden: (isForbidden: boolean) => void;
-  logout: () => void; // Action to clear state
+  logout: () => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -4362,20 +4474,19 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       accessToken: null,
       isForbidden: false,
-      isAuthenticated: false, // Start as false, set true after login/refresh
+      isAuthenticated: false,
 
       // Actions
       setAuth: (token, user) =>
         set({
           accessToken: token,
           user: user,
-          isAuthenticated: !!token, // Considered authenticated if we have an access token
-          isForbidden: false, // Reset forbidden on new auth
+          isAuthenticated: !!token,
+          isForbidden: false,
         }),
-      setUser: (user) => set({ user }), // Keep if used elsewhere separately
+      setUser: (user) => set({ user }),
       setAccessToken: (token) =>
         set({
-          // Keep if used elsewhere separately
           accessToken: token,
           isAuthenticated: !!token,
         }),
@@ -4391,21 +4502,18 @@ export const useAuthStore = create<AuthState>()(
       },
     }),
     {
-      name: "auth-storage", // Local storage key
+      name: "auth-storage",
       // IMPORTANT: Only persist user info, NOT the access token
       partialize: (state) => ({
         user: state.user,
         // Do NOT persist accessToken or isAuthenticated - derive on load/refresh
       }),
-      // Optional: Perform checks on rehydration
+
       onRehydrateStorage: () => {
         console.log("AuthStore: Rehydrating user from storage.");
-        // No need to set isAuthenticated here, it depends on token refresh/ME query
+
         return (state, error) => {
           if (error) console.error("AuthStore: Error rehydrating:", error);
-          // Initialize isAuthenticated based on whether user info was loaded
-          // This doesn't guarantee a valid session yet, refresh/ME query will confirm
-          // useAuthStore.setState({ isAuthenticated: !!state?.user });
         };
       },
     }
@@ -5001,30 +5109,56 @@ export function formatTimeFromMilliseconds(ms: number): string {
 
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@apollo/client";
 import gql from "graphql-tag";
 import ProjectSelector from "../ProjectSelector";
 
-interface Rate {
-  rateId: string;
+// --- Interfaces ---
+
+// Interface for the data coming from the GraphQL query
+interface QueryRateDetail {
+  rateId: number;
   rateName: string;
   hours: number;
   cost: number;
   ratePerHour: number;
+  __typename?: string; // Allow __typename from Apollo
 }
 
+// Interface for the invoice data state and query result
 interface InvoiceData {
   projectId: string;
   projectName: string;
   totalHours: number;
   totalCost: number;
-  rates: Rate[];
+  rates: QueryRateDetail[]; // Use QueryRateDetail for incoming data
+  __typename?: string; // Allow __typename
 }
 
-// GraphQL queries
+interface Team {
+  id: string;
+  name: string;
+}
+
+// Use a more precise type for projects used in the selector
+interface ProjectForSelector {
+  id: string;
+  name: string;
+  teamId: string;
+  teamName: string; // This should be guaranteed by projectsWithTeamNames
+}
+
+// Type for raw project data from query
+interface RawProject {
+  id: string;
+  name: string;
+  teamId: string;
+}
+
+// --- GraphQL Queries ---
 const GET_PROJECTS = gql`
-  query {
+  query GetRawProjects {
     projects {
       id
       name
@@ -5034,7 +5168,7 @@ const GET_PROJECTS = gql`
 `;
 
 const GET_ALL_TEAMS = gql`
-  query {
+  query GetAllSimpleTeams {
     getAllSimpleTeams {
       id
       name
@@ -5060,173 +5194,239 @@ const GET_INVOICE_FOR_PROJECT = gql`
   }
 `;
 
+// --- Type for Query Results ---
+interface GetRawProjectsData {
+  projects: RawProject[];
+}
+
+interface GetAllTeamsData {
+  getAllSimpleTeams: Team[];
+}
+
+interface GetInvoiceData {
+  invoiceForProject: InvoiceData | null; // Allow null if no data found
+}
+
+// --- Component ---
 const InvoiceSummary: React.FC = () => {
+  // --- State ---
   const [selectedProject, setSelectedProject] = useState<string>("");
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
   const [invoiceData, setInvoiceData] = useState<InvoiceData | null>(null);
 
-  const { data: projectsData } = useQuery(GET_PROJECTS);
-  const { data: teamsData } = useQuery(GET_ALL_TEAMS);
+  // --- Data Fetching ---
+  const { data: projectsData } = useQuery<GetRawProjectsData>(GET_PROJECTS);
+  const { data: teamsData } = useQuery<GetAllTeamsData>(GET_ALL_TEAMS);
 
-  const {
-    loading: loadingInvoice,
-    error: errorInvoice,
-    data: invoiceDataResponse,
-    refetch,
-  } = useQuery(GET_INVOICE_FOR_PROJECT, {
-    variables: {
-      input: {
-        projectId: selectedProject,
-        startDate: startDate ? new Date(startDate).toISOString() : null,
-        endDate: endDate ? new Date(endDate).toISOString() : null,
+  const { loading: loadingInvoice, error: errorInvoice } =
+    useQuery<GetInvoiceData>(GET_INVOICE_FOR_PROJECT, {
+      variables: {
+        input: {
+          projectId: selectedProject,
+          // Ensure dates are valid before converting, pass null if empty/invalid
+          startDate: startDate ? new Date(startDate).toISOString() : null,
+          endDate: endDate ? new Date(endDate).toISOString() : null,
+        },
       },
-    },
-    skip: !selectedProject || !startDate || !endDate,
-  });
+      // Only run query when all inputs are valid and selected
+      skip: !selectedProject || !startDate || !endDate,
+      fetchPolicy: "network-only", // Re-fetch when variables change
+      notifyOnNetworkStatusChange: true,
+      onCompleted: (data) => {
+        // Update state when data successfully arrives
+        setInvoiceData(data?.invoiceForProject ?? null);
+        console.log("Invoice data received:", data?.invoiceForProject);
+      },
+      onError: (error) => {
+        console.error("Error fetching invoice:", error);
+        setInvoiceData(null); // Clear data on error
+      },
+    });
 
-  useEffect(() => {
-    if (invoiceDataResponse) {
-      setInvoiceData(invoiceDataResponse.invoiceForProject);
-    }
-  }, [invoiceDataResponse]);
+  // --- Memoized Derived Data ---
+  const teamIdToNameMap = useMemo(() => {
+    if (!teamsData?.getAllSimpleTeams) return {};
+    return teamsData.getAllSimpleTeams.reduce(
+      (acc: Record<string, string>, team) => {
+        acc[team.id] = team.name;
+        return acc;
+      },
+      {}
+    );
+  }, [teamsData]);
 
-  useEffect(() => {
-    if (selectedProject && startDate && endDate) {
-      refetch();
-    }
-  }, [selectedProject, startDate, endDate, refetch]);
-
-  interface Team {
-    id: string;
-    name: string;
-  }
-
-  interface Project {
-    id: string;
-    name: string;
-    teamId: string;
-  }
-
-  const teamIdToNameMap = teamsData?.getAllSimpleTeams.reduce(
-    (acc: Record<string, string>, team: Team) => {
-      acc[team.id] = team.name;
-      return acc;
-    },
-    {}
-  );
-
-  const projectTeamName = projectsData?.projects.find(
-    (project: Project) => project.id === invoiceData?.projectId
-  )?.teamId;
-
-  const projectsWithTeamNames = projectsData?.projects.map(
-    (project: Project) => ({
+  const projectsWithTeamNames = useMemo<ProjectForSelector[]>(() => {
+    // Use specific type
+    if (!projectsData?.projects || Object.keys(teamIdToNameMap).length === 0)
+      return [];
+    return projectsData.projects.map((project) => ({
       ...project,
-      teamName: teamIdToNameMap
-        ? teamIdToNameMap[project.teamId]
-        : "Unknown Team",
-    })
-  );
+      // Ensure teamName is always a string for the selector
+      teamName: teamIdToNameMap[project.teamId] || "Unknown Team",
+    }));
+  }, [projectsData, teamIdToNameMap]);
 
+  // Memoize finding the teamId for the selected invoice project
+  const projectTeamId = useMemo<string | undefined>(() => {
+    if (!invoiceData || !projectsData?.projects) return undefined;
+    return projectsData.projects.find(
+      (project) => project.id === invoiceData.projectId
+    )?.teamId;
+  }, [projectsData, invoiceData]);
+
+  // --- Logging Effect (Optional, for debugging) ---
   useEffect(() => {
-    console.log("teamIdToNameMap", teamIdToNameMap);
-    console.log("invoiceData", invoiceData);
-    console.log("Invoice Data Rates:", invoiceData?.rates);
-
-    if (selectedProject && startDate && endDate) {
-      refetch();
-    }
+    console.log("Invoice State Update:", {
+      selectedProject,
+      startDate,
+      endDate,
+      invoiceData,
+      loadingInvoice,
+      errorInvoice,
+    });
   }, [
     selectedProject,
     startDate,
     endDate,
-    refetch,
-    teamIdToNameMap,
     invoiceData,
+    loadingInvoice,
+    errorInvoice,
   ]);
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "DKK",
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-      currencyDisplay: "code",
-      notation: "compact",
-    })
-      .format(value)
-      .replace("DKK", "")
-      .trim();
+  // --- Helper Functions ---
+  const formatCurrency = (value: number | null | undefined): string => {
+    if (value === null || value === undefined) return "-"; // Handle null/undefined
+    // Added safety check for non-numbers
+    if (isNaN(value)) return "Invalid";
+
+    try {
+      return new Intl.NumberFormat("da-DK", {
+        // Use Danish locale for DKK
+        style: "currency",
+        currency: "DKK",
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(value);
+    } catch (e) {
+      console.error("Error formatting currency:", e);
+      return String(value); // Fallback
+    }
   };
 
-  return (
-    <div className="p-6 bg-black shadow-md ">
-      <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0 md:space-x-4">
-        <h3 className="text-lg font-bold text-white">Invoice Summary</h3>
+  // --- Render Logic ---
+  const renderInvoiceDetails = () => {
+    if (loadingInvoice) {
+      return <p className="text-gray-400 mt-4">Loading Invoice...</p>;
+    }
+    if (errorInvoice) {
+      return (
+        <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mt-4 rounded">
+          <p className="font-bold">Error Loading Invoice</p>
+          <p>{errorInvoice.message}</p>
+        </div>
+      );
+    }
+    if (invoiceData) {
+      // Check if invoiceData exists (not null)
+      return (
+        <div className="mt-4 p-6 bg-white shadow-md rounded-lg">
+          <h4 className="text-md font-bold bg-slate-200 p-2 rounded-t-lg">
+            {" "}
+            {/* Added padding/rounding */}
+            Project: {invoiceData.projectName} - Team:{" "}
+            {teamIdToNameMap && projectTeamId
+              ? teamIdToNameMap[projectTeamId] || "N/A" // Display N/A if not found
+              : "..."}
+          </h4>
+          <div className="p-2 space-y-1">
+            {" "}
+            {/* Added padding */}
+            <p className="border-b border-gray-200 pb-1">
+              Total Hours: {invoiceData.totalHours?.toFixed(2) ?? "N/A"}{" "}
+              {/* Added nullish coalescing */}
+            </p>
+            <p className="border-b border-gray-200 pb-1">
+              Total Cost: {formatCurrency(invoiceData.totalCost)}
+            </p>
+            <div className="mt-4">
+              <h5 className="font-semibold bg-slate-200 p-1">Rates Applied:</h5>
+              {invoiceData.rates && invoiceData.rates.length > 0 ? (
+                <ul className="list-disc list-inside pl-4 pt-1">
+                  {" "}
+                  {/* Added list styling */}
+                  {invoiceData.rates.map(
+                    (
+                      rate: QueryRateDetail // Use QueryRateDetail type
+                    ) => (
+                      <li
+                        className="border-b border-gray-100 py-1 text-sm" // Adjusted styling
+                        key={rate.rateId} // Use number rateId
+                      >
+                        {rate.rateName}: {rate.hours?.toFixed(2) ?? "N/A"} hours
+                        at {formatCurrency(rate.cost)} (
+                        {formatCurrency(rate.ratePerHour)} / h)
+                      </li>
+                    )
+                  )}
+                </ul>
+              ) : (
+                <p className="text-gray-500 text-sm pt-1">
+                  No specific rates applied for this period.
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
+    // If inputs are selected but no data/error/loading state exists
+    if (selectedProject && startDate && endDate) {
+      return (
+        <p className="text-gray-400 mt-4">
+          No invoice data found for the selected criteria.
+        </p>
+      );
+    }
 
+    // If inputs are not yet selected
+    return (
+      <p className="text-gray-500 mt-4">
+        Please select a project and date range.
+      </p>
+    );
+  };
+
+  // --- Component Return ---
+  return (
+    <div className="p-6 bg-black shadow-md rounded-lg">
+      <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0 md:space-x-4 mb-4">
+        <h3 className="text-lg font-bold text-white">Invoice Summary</h3>
         <div className="flex-grow">
           <ProjectSelector
-            projects={projectsWithTeamNames || []}
+            projects={projectsWithTeamNames} // Pass memoized list
             selectedProject={selectedProject}
             onProjectChange={setSelectedProject}
           />
         </div>
-
-        <div className="flex-grow md:flex md:space-x-4">
+        <div className="flex-grow flex flex-col md:flex-row gap-2 md:gap-4">
           <input
             type="date"
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
             className="w-full p-2 bg-white text-black border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+            aria-label="Start Date"
           />
           <input
             type="date"
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
             className="w-full p-2 bg-white text-black border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+            aria-label="End Date"
           />
         </div>
       </div>
-
-      {/* Handling loading, error, and invoice data display */}
-      {loadingInvoice && <p>Loading...</p>}
-      {errorInvoice && (
-        <div className="bg-red-50 border-l-8 border-red-400 p-4 mb-4">
-          <p className="text-sm text-red-600">{errorInvoice.message}</p>
-        </div>
-      )}
-      {invoiceData && (
-        <div className="mt-4 p-6 bg-white shadow-md rounded-lg">
-          <h4 className="text-md font-bold bg-slate-200">
-            Project: {invoiceData.projectName} - Team:{" "}
-            {teamIdToNameMap && projectTeamName
-              ? teamIdToNameMap[projectTeamName] || "Team Not Found"
-              : "Loading Teams..."}
-          </h4>
-          <p className="border-b border-gray-200 shadow-sm">
-            Total Hours: {invoiceData.totalHours.toFixed(2)}
-          </p>
-          <p className="border-b border-gray-200 shadow-sm">
-            Total Cost: {formatCurrency(invoiceData.totalCost)}
-          </p>
-          <div className="mt-4">
-            <h5 className="font-semibold bg-slate-200">Rates Applied:</h5>
-            <ul>
-              {invoiceData.rates.map((rate: Rate) => (
-                <li
-                  className="border-b border-gray-200 shadow-sm"
-                  key={rate.rateId}
-                >
-                  {rate.rateName}: {rate.hours.toFixed(2)} hours at{" "}
-                  {formatCurrency(rate.cost)} (
-                  {formatCurrency(rate.ratePerHour)} DKK / h)
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      )}
+      {renderInvoiceDetails()}
     </div>
   );
 };

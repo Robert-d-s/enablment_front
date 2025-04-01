@@ -44,7 +44,21 @@ export const useTimer = (): TimerState & {
   // --- Calculation Logic (Timestamp-based) ---
   const calculateTotalActiveTime = useCallback((): number => {
     const now = new Date();
+    // --- Logging Start ---
+    console.log(
+      `\n--- Calculating Time (${isRunning ? "Running" : "Paused"}) ---`
+    );
+    console.log(`Now: ${now.toISOString()}`);
+    console.log(`Initial Start: ${initialStartTime?.toISOString() ?? "null"}`);
+    console.log(
+      `Pause Times: [${pauseTimes.map((d) => d.toISOString()).join(", ")}]`
+    );
+    console.log(
+      `Resume Times: [${resumeTimes.map((d) => d.toISOString()).join(", ")}]`
+    );
+    // --- Logging End ---
     if (!initialStartTime) {
+      console.log(`Calc Result: No initial start time, returning 0ms`);
       return 0;
     }
 
@@ -53,24 +67,87 @@ export const useTimer = (): TimerState & {
 
     for (let i = 0; i < pauseTimes.length; i++) {
       const pauseTime = pauseTimes[i];
-      if (pauseTime.getTime() < segmentStart.getTime()) continue;
-      totalMs += pauseTime.getTime() - segmentStart.getTime();
+      if (pauseTime.getTime() < segmentStart.getTime()) {
+        console.warn(
+          `Calc Warning: Pause time ${i} (${pauseTime.toISOString()}) is before segment start (${segmentStart.toISOString()}). Skipping segment calculation.`
+        );
+        if (i < resumeTimes.length) {
+          const resumeTime = resumeTimes[i];
+          if (resumeTime.getTime() >= pauseTime.getTime()) {
+            segmentStart = resumeTime;
+            console.log(
+              `Calc Recovery: Advanced segmentStart to resume time ${i}: ${segmentStart.toISOString()}`
+            );
+          } else {
+            console.error(
+              `Calc Error: Resume time ${i} (${resumeTime.toISOString()}) is before pause time ${i} (${pauseTime.toISOString()}). State invalid.`
+            );
+            return Math.max(totalMs, 0);
+          }
+        } else {
+          console.error(
+            `Calc Error: Pause time ${i} (${pauseTime.toISOString()}) before segment start (${segmentStart.toISOString()}) with no corresponding resume. State invalid.`
+          );
+          return Math.max(totalMs, 0);
+        }
+        continue;
+      }
 
+      // Calculate duration for this valid segment
+      const segmentDuration = pauseTime.getTime() - segmentStart.getTime();
+      totalMs += segmentDuration;
+      console.log(
+        `Calc Segment ${i}: Start=${segmentStart.toISOString()}, Pause=${pauseTime.toISOString()}, Duration=${segmentDuration}ms, AccTotal=${totalMs}ms`
+      );
+
+      // Check if there's a corresponding resume time to start the next segment
       if (i < resumeTimes.length) {
-        if (resumeTimes[i].getTime() < pauseTime.getTime()) continue;
-        segmentStart = resumeTimes[i];
+        const resumeTime = resumeTimes[i];
+        // Basic sanity check: Resume should happen after Pause
+        if (resumeTime.getTime() < pauseTime.getTime()) {
+          console.warn(
+            `Calc Warning: Resume time ${i} (${resumeTime.toISOString()}) is before pause time ${i} (${pauseTime.toISOString()}). Calculation stops here as if still paused.`
+          );
+          // Treat as if still paused
+          console.log(
+            `Calc Result: Returning ${totalMs}ms (invalid resume time ${i})`
+          );
+          return Math.max(totalMs, 0);
+        }
+        // Set the start for the next potential segment
+        segmentStart = resumeTime;
+        console.log(
+          `Calc: Next segment starts at resume time ${i}: ${segmentStart.toISOString()}`
+        );
       } else {
-        // Currently paused
+        // This was the last pause, and we haven't resumed. Timer is currently paused.
+        console.log(
+          `Calc Result: Returning ${totalMs}ms (currently paused after pause ${i})`
+        );
         return Math.max(totalMs, 0);
       }
     }
 
     if (isRunning) {
-      // Use isRunning from store
       if (now.getTime() >= segmentStart.getTime()) {
-        totalMs += now.getTime() - segmentStart.getTime();
+        const finalSegmentDuration = now.getTime() - segmentStart.getTime();
+        totalMs += finalSegmentDuration;
+        console.log(
+          `Calc: Added final running segment duration: ${finalSegmentDuration}ms (from ${segmentStart.toISOString()} to ${now.toISOString()})`
+        );
+      } else {
+        console.warn(
+          `Calc Warning: 'Now' (${now.toISOString()}) is before last segment start (${segmentStart.toISOString()}). Final segment duration is 0. Check system clock or state logic.`
+        );
       }
+    } else {
+      console.log(
+        `Calc: Loop finished, timer is not running. Total calculated in loop: ${totalMs}ms`
+      );
     }
+
+    console.log(`Calc Final Result: ${totalMs}ms`);
+    console.log(`-------------------------------------`);
     return Math.max(totalMs, 0);
   }, [initialStartTime, pauseTimes, resumeTimes, isRunning]);
 
@@ -105,7 +182,7 @@ export const useTimer = (): TimerState & {
       console.log(
         "useTimer Effect: isRunning is true, starting/checking interval."
       );
-      updateDisplay(); // Update display immediately on load if running
+      updateDisplay();
       // Ensure interval isn't already running before setting a new one
       if (timerRef.current === null) {
         timerRef.current = window.setInterval(updateDisplay, 1000);
@@ -139,17 +216,36 @@ export const useTimer = (): TimerState & {
   // --- Control Functions (Dispatch actions to the store) ---
   const start = () => {
     const now = new Date();
-    // Use getState() for checking non-reactive state within an action if needed,
-    // but here we can rely on the values from the hook selector.
-    if (!initialStartTimeISO) {
+    // Check Zustand state directly for most up-to-date values before dispatching
+    const {
+      isRunning: currentlyRunning,
+      initialStartTimeISO: currentInitialISO,
+      pauseTimesISO: currentPausesISO,
+      resumeTimesISO: currentResumesISO,
+    } = useTimerStore.getState();
+
+    if (!currentInitialISO) {
       console.log("useTimer start: Setting initial time in store.");
-      setInitialStartTimeInStore(now);
-    } else if (!isRunning) {
-      console.log("useTimer start: Adding resume time to store.");
-      addResumeTimeToStore(now);
+      setInitialStartTimeInStore(now); // Update Store
+    } else if (!currentlyRunning) {
+      // ***MODIFIED CONDITION***: Only add resume time if we were actually paused
+      // (i.e., if the number of pauses is greater than the number of resumes)
+      if (currentPausesISO.length > currentResumesISO.length) {
+        console.log("useTimer start: Adding RESUME time to store.");
+        addResumeTimeToStore(now); // Update Store
+      } else {
+        console.log(
+          "useTimer start: Starting timer (not resuming from a pause)."
+        );
+      }
+    } else {
+      console.log(
+        "useTimer start: Called while already running. Doing nothing."
+      );
+      return;
     }
     console.log("useTimer start: Setting isRunning=true in store.");
-    setTimerRunning(true);
+    setTimerRunning(true); // Update Store
   };
 
   const pause = () => {
@@ -167,27 +263,27 @@ export const useTimer = (): TimerState & {
 
   const reset = () => {
     console.log("useTimer reset: Calling resetTimerStateInStore.");
-    resetTimerStateInStore(); // Resets store state: isRunning, times, ids, etc.
-    setDisplayTime("00:00:00"); // Reset local display
+    resetTimerStateInStore();
+    setDisplayTime("00:00:00");
   };
 
-  // Handle manual setting via DatePicker
   const handleManualSetStartTime = (date: Date | null) => {
     console.log("useTimer handleManualSetStartTime:", date?.toISOString());
-    if (isRunning) {
-      // Check store value via hook selector
-      pause(); // Dispatch pause action to store
+    const currentlyRunning = useTimerStore.getState().isRunning;
+    if (currentlyRunning) {
+      // Need to pause first *before* resetting state
+      console.log("Pausing before manual time set...");
+      addPauseTimeToStore(new Date());
+      setTimerRunning(false);
     }
-    // Reset store history and set new start time via store actions
-    resetTimerStateInStore(); // Clear previous times/state in store
-    setInitialStartTimeInStore(date); // Set new start time in store
-    if (!isRunning) {
-      // Check store value again after potential pause
-      setDisplayTime("00:00:00");
-    }
+    // Now reset the rest of the state and set the new start time
+    console.log("Resetting state and setting new start time in store...");
+    resetTimerStateInStore();
+    setInitialStartTimeInStore(date);
+
+    setDisplayTime("00:00:00");
   };
 
-  // --- Return the hook's public API ---
   return {
     isRunning, // From store
     startTime: initialStartTime, // Derived Date object
