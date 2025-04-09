@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { GET_MY_PROJECTS } from "@/app/components/Admin/totalTimeSpent";
 import useStore from "@/app/lib/store";
 import { useAuthStore } from "@/app/lib/authStore";
+import { useReactiveVar } from "@apollo/client";
+import { loggedInUserTeamsVersion } from "@/app/lib/apolloClient";
 
 export interface MyProject {
   id: string;
@@ -19,11 +21,13 @@ interface GetMyProjectsQueryData {
 const useTimeKeeperData = () => {
   const user = useAuthStore((state) => state.user);
   const loggedInUserId = user?.id;
+  const teamsVersion = useReactiveVar(loggedInUserTeamsVersion);
 
   const {
     data: myProjectsData,
     loading: loadingMyProjects,
     error: errorMyProjects,
+    refetch: refetchMyProjects,
   } = useQuery<GetMyProjectsQueryData>(GET_MY_PROJECTS, {
     skip: !loggedInUserId,
     fetchPolicy: "cache-first",
@@ -42,6 +46,17 @@ const useTimeKeeperData = () => {
       setUserProjects([]);
     }
   }, [myProjectsData]);
+
+  useEffect(() => {
+    if (teamsVersion > 0 && loggedInUserId) {
+      console.log(
+        `[useTimeKeeperData] Detected team version change (${teamsVersion}), refetching my projects...`
+      );
+      refetchMyProjects().catch((err) => {
+        console.error("Failed to refetch my projects on version change:", err);
+      });
+    }
+  }, [teamsVersion, loggedInUserId, refetchMyProjects]);
 
   useEffect(() => {
     if (myProjectsData?.myProjects && selectedProject) {

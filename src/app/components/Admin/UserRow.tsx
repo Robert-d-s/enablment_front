@@ -7,7 +7,6 @@ import {
   ADD_USER_TO_TEAM,
   REMOVE_USER_FROM_TEAM,
   UPDATE_USER_ROLE,
-  GET_SIMPLE_TEAMS,
 } from "@/app/graphql/adminOperations";
 import { loggedInUserTeamsVersion } from "@/app/lib/apolloClient";
 import UserRoleSelect, { UserRole } from "./UserRoleSelect";
@@ -25,36 +24,6 @@ export interface User {
   teams: Team[];
   __typename?: "User";
 }
-
-type UserFragmentData = {
-  id: number;
-  email: string;
-  role: string;
-  teams: Array<{ id: string; name: string; __typename: "Team" }>;
-  __typename: "User";
-};
-
-interface GetSimpleTeamsQueryData {
-  getAllSimpleTeams: Array<{
-    id: string;
-    name: string;
-    __typename: "SimpleTeamDTO";
-  }>;
-}
-
-const USER_CORE_FIELDS_FRAGMENT = gql`
-  fragment UserCoreFieldsRow on User {
-    id
-    email
-    role
-    teams {
-      id
-      name
-      __typename
-    }
-    __typename
-  }
-`;
 
 interface UserRowProps {
   user: User;
@@ -95,8 +64,8 @@ const UserRow: React.FC<UserRowProps> = ({
       const errorMsg = error.message || "Failed to remove user from team.";
       setRowError(errorMsg);
       toast.error(`Error: ${errorMsg}`);
-      setIsProcessingRemove(null); // Use isProcessingRemove here
-      setConfirmingRemoveTeamId(null); // Also clear confirmation state on error
+      setIsProcessingRemove(null);
+      setConfirmingRemoveTeamId(null);
     },
   });
   const [updateUserRoleMutation] = useMutation(UPDATE_USER_ROLE, {
@@ -125,60 +94,19 @@ const UserRow: React.FC<UserRowProps> = ({
         variables: { userId: user.id, teamId: selectedTeamIdForRow },
       });
 
-      const allTeamsData = client.readQuery<GetSimpleTeamsQueryData>({
-        query: GET_SIMPLE_TEAMS,
-      });
-      const teamToAdd = allTeamsData?.getAllSimpleTeams.find(
-        (t) => t.id === selectedTeamIdForRow
+      console.log(
+        `[UserRow Add] Checking if user ${user.id} matches loggedInUser ${loggedInUserId}`
       );
-      if (!teamToAdd) {
-        throw new Error("Team details not found in cache");
-      }
-
-      const userCacheId = client.cache.identify({
-        __typename: "User",
-        id: user.id,
-      });
-      if (!userCacheId) {
-        throw new Error("Could not identify user in cache");
-      }
-
-      const existingUserFragment = client.readFragment<UserFragmentData>({
-        id: userCacheId,
-        fragment: USER_CORE_FIELDS_FRAGMENT,
-      });
-      if (
-        !existingUserFragment ||
-        existingUserFragment.teams.some((t) => t.id === selectedTeamIdForRow)
-      ) {
-        console.log("User fragment not found or team already added.");
-        setIsAdding(false);
-        return;
-      }
-
-      const updatedTeams = [
-        ...existingUserFragment.teams,
-        {
-          id: selectedTeamIdForRow,
-          name: teamToAdd.name,
-          __typename: "Team" as const,
-        },
-      ];
-      client.writeFragment({
-        id: userCacheId,
-        fragment: USER_CORE_FIELDS_FRAGMENT,
-        data: { ...existingUserFragment, teams: updatedTeams },
-      });
-
       if (loggedInUserId && user.id === loggedInUserId) {
-        loggedInUserTeamsVersion(loggedInUserTeamsVersion() + 1);
+        const currentVersion = loggedInUserTeamsVersion();
+        loggedInUserTeamsVersion(currentVersion + 1);
+        console.log(
+          `[UserRow Add] Incremented teamsVersion to: ${loggedInUserTeamsVersion()}`
+        );
       }
-      console.log(`Successfully updated cache for user ${user.id} (Add).`);
-      toast.success(`Added ${user.email} to team ${teamToAdd.name}!`);
     } catch (error) {
       console.error("Catch block for handleAddToTeam:", error);
       if (!rowError) {
-        // Check if error wasn't already set by onError
         const errorMsg =
           error instanceof Error ? error.message : "Failed to add to team.";
         setRowError(errorMsg);
@@ -191,7 +119,6 @@ const UserRow: React.FC<UserRowProps> = ({
     user.id,
     selectedTeamIdForRow,
     addUserToTeamMutation,
-    client,
     loggedInUserId,
     rowError,
   ]);
@@ -217,43 +144,16 @@ const UserRow: React.FC<UserRowProps> = ({
           variables: { userId: user.id, teamId: teamIdToRemove },
         });
 
-        const userCacheId = client.cache.identify({
-          __typename: "User",
-          id: user.id,
-        });
-        if (!userCacheId) {
-          throw new Error("Could not identify user in cache");
-        }
-        const existingUserFragment = client.readFragment<UserFragmentData>({
-          id: userCacheId,
-          fragment: USER_CORE_FIELDS_FRAGMENT,
-        });
-        if (!existingUserFragment) {
-          throw new Error("User fragment not found in cache");
-        }
-
-        const updatedTeams = existingUserFragment.teams.filter(
-          (team) => team.id !== teamIdToRemove
+        console.log(
+          `[UserRow Remove] Checking if user ${user.id} matches loggedInUser ${loggedInUserId}`
         );
-        if (updatedTeams.length === existingUserFragment.teams.length) {
-          console.warn(
-            `Team ${teamIdToRemove} not found in fragment for user ${user.id}.`
-          );
-          setIsProcessingRemove(null); // Still need to clear processing state
-          return;
-        }
-
-        client.writeFragment({
-          id: userCacheId,
-          fragment: USER_CORE_FIELDS_FRAGMENT,
-          data: { ...existingUserFragment, teams: updatedTeams },
-        });
-
         if (loggedInUserId && user.id === loggedInUserId) {
-          loggedInUserTeamsVersion(loggedInUserTeamsVersion() + 1);
+          const currentVersion = loggedInUserTeamsVersion();
+          loggedInUserTeamsVersion(currentVersion + 1);
+          console.log(
+            `[UserRow Remove] Incremented teamsVersion to: ${loggedInUserTeamsVersion()}`
+          );
         }
-        console.log(`Successfully updated cache for user ${user.id} (Remove).`);
-        toast.success(`Removed ${user.email} from team!`);
       } catch (error) {
         console.error("Catch block for executeRemoveTeam:", error);
         if (!rowError) {
@@ -268,7 +168,7 @@ const UserRow: React.FC<UserRowProps> = ({
         setIsProcessingRemove(null);
       }
     },
-    [user.id, removeUserFromTeamMutation, client, loggedInUserId, rowError]
+    [user.id, removeUserFromTeamMutation, loggedInUserId, rowError]
   );
 
   const handleRoleChange = useCallback(
@@ -321,7 +221,7 @@ const UserRow: React.FC<UserRowProps> = ({
         setIsChangingRole(false);
       }
     },
-    [user.id, user.role, updateUserRoleMutation, client, rowError]
+    [user.id, user.role, updateUserRoleMutation, client, rowError, user.email]
   );
 
   return (
