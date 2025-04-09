@@ -1,11 +1,10 @@
-// src/app/lib/apolloClient.ts
-
 import {
   ApolloClient,
   InMemoryCache,
   createHttpLink,
   from,
   Observable,
+  makeVar,
 } from "@apollo/client";
 import { setContext } from "@apollo/client/link/context";
 import { onError } from "@apollo/client/link/error";
@@ -20,6 +19,8 @@ const REFRESH_TOKEN_MUTATION = gql`
     }
   }
 `;
+
+export const loggedInUserTeamsVersion = makeVar(0);
 
 // --- Auth Link: Adds Access Token Header ---
 const authLink = setContext((operation, { headers }) => {

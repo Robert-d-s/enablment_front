@@ -1,41 +1,27 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useQuery } from "@apollo/client";
-import gql from "graphql-tag";
+import { useQuery, gql } from "@apollo/client";
 import { useAuthStore } from "@/app/lib/authStore";
-import useCurrentUser from "@/app/hooks/useCurrentUser";
 import { formatTimeFromMilliseconds } from "@/app/utils/timeUtils";
+import { useReactiveVar } from "@apollo/client";
+import { loggedInUserTeamsVersion } from "@/app/lib/apolloClient";
 
-interface Project {
+interface MyProject {
   id: string;
   name: string;
   teamName?: string;
+  teamId: string;
+  __typename?: "Project";
 }
 
-interface Team {
-  name: string;
-  projects: Project[];
+interface GetMyProjectsQueryData {
+  myProjects: MyProject[];
 }
 
-interface User {
-  id: string;
-  email: string;
-  teams?: Team[];
+interface GetTotalTimeSpentQueryData {
+  getTotalTimeSpent: number | null;
 }
-
-const GET_DROPDOWN_OPTIONS = gql`
-  query {
-    users {
-      id
-      email
-    }
-    projects {
-      id
-      name
-    }
-  }
-`;
 
 const GET_TOTAL_TIME_SPENT = gql`
   query GetTotalTimeSpent(
@@ -53,17 +39,14 @@ const GET_TOTAL_TIME_SPENT = gql`
   }
 `;
 
-const GET_USER_PROJECTS = gql`
-  query GetUserProjects {
-    users {
+const GET_MY_PROJECTS = gql`
+  query GetMyProjects {
+    myProjects {
       id
-      teams {
-        name
-        projects {
-          id
-          name
-        }
-      }
+      name
+      teamId
+      teamName
+      __typename
     }
   }
 `;
@@ -71,143 +54,177 @@ const GET_USER_PROJECTS = gql`
 const getCurrentDate = () => new Date().toISOString().split("T")[0];
 
 const TotalTimeSpent: React.FC = () => {
-  const [totalTime, setTotalTime] = useState(0);
-  const [selectedProject, setSelectedProject] = useState<string | null>(null);
+  const [totalTime, setTotalTime] = useState<number | null>(null);
+  const [selectedProject, setSelectedProject] = useState<string>("");
   const [startDate, setStartDate] = useState(getCurrentDate());
   const [endDate, setEndDate] = useState(getCurrentDate());
 
-  // Use the auth store instead of reactive variable
-  useCurrentUser();
-  const loggedInUser = useAuthStore((state) => state.user);
-  const [userProjects, setUserProjects] = useState<Project[]>([]);
+  const [userProjects, setUserProjects] = useState<MyProject[]>([]);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const { data: userProjectsData } = useQuery(GET_USER_PROJECTS, {
-    skip: !loggedInUser,
+  const loggedInUser = useAuthStore((state) => state.user);
+  const loggedInUserId = loggedInUser?.id;
+  const teamsVersion = useReactiveVar(loggedInUserTeamsVersion);
+
+  const {
+    loading: loadingUserProjects,
+    error: errorUserProjects,
+    data: myProjectsData,
+    refetch: refetchMyProjects,
+  } = useQuery<GetMyProjectsQueryData>(GET_MY_PROJECTS, {
+    skip: !loggedInUserId,
+    fetchPolicy: "cache-and-network",
+    onCompleted: (data) => {
+      if (data?.myProjects) {
+        const currentProjects = data.myProjects;
+        setUserProjects(currentProjects);
+        const selectedExists = currentProjects.some(
+          (p) => p.id === selectedProject
+        );
+        if (!selectedExists && currentProjects.length > 0) {
+          setSelectedProject(currentProjects[0].id);
+        } else if (!selectedExists && currentProjects.length === 0) {
+          setSelectedProject("");
+        }
+      } else {
+        setUserProjects([]);
+        setSelectedProject("");
+      }
+    },
+    onError: (error) => {
+      console.error("Error fetching my projects:", error);
+      setErrorMessage("Could not load your projects.");
+    },
   });
 
-  const { error: errorOptions } = useQuery(GET_DROPDOWN_OPTIONS);
   const {
     loading: loadingTime,
     error: errorTime,
     data: timeData,
-    refetch,
-  } = useQuery(GET_TOTAL_TIME_SPENT, {
+    refetch: refetchTotalTime,
+  } = useQuery<GetTotalTimeSpentQueryData>(GET_TOTAL_TIME_SPENT, {
     variables: {
-      userId: loggedInUser ? parseFloat(loggedInUser.id) : null,
+      userId: loggedInUserId,
       projectId: selectedProject,
-      startDate,
-      endDate,
+      startDate: startDate,
+      endDate: endDate,
     },
-    skip: !loggedInUser || !selectedProject,
+    skip: !loggedInUserId || !selectedProject || !startDate || !endDate,
+    fetchPolicy: "cache-first",
+    notifyOnNetworkStatusChange: true,
+    onError: (error) => {
+      console.error("Error fetching total time:", error);
+      setErrorMessage("Could not calculate total time for the selection.");
+      setTotalTime(null);
+    },
   });
 
   useEffect(() => {
-    if (userProjectsData && loggedInUser) {
-      const userWithProjects = userProjectsData.users.find(
-        (user: User) => user.id === loggedInUser.id
+    if (loggedInUserId) {
+      console.log(
+        `Teams version changed to ${teamsVersion}, refetching my projects.`
       );
-      if (userWithProjects) {
-        const projectsWithTeamName = userWithProjects.teams.flatMap(
-          (team: Team) =>
-            team.projects.map((project: Project) => ({
-              ...project,
-              teamName: team.name,
-            }))
-        );
-        setUserProjects(projectsWithTeamName);
-      }
+      refetchMyProjects().catch((err) => {
+        console.error("Failed to refetch my projects on version change:", err);
+        setErrorMessage("Failed to update project list.");
+      });
     }
-  }, [userProjectsData, loggedInUser]);
+  }, [teamsVersion, loggedInUserId, refetchMyProjects]);
 
   useEffect(() => {
-    if (selectedProject) {
-      refetch();
+    if (loggedInUserId && selectedProject && startDate && endDate) {
+      console.log("Inputs changed, refetching total time...");
+      refetchTotalTime({
+        userId: loggedInUserId,
+        projectId: selectedProject,
+        startDate: startDate,
+        endDate: endDate,
+      }).catch((err) => {
+        console.error("Manual refetch failed:", err);
+        setErrorMessage("Failed to refresh total time.");
+      });
+    } else if (!selectedProject) {
+      setTotalTime(null);
     }
-  }, [selectedProject, startDate, endDate, refetch]);
+  }, [loggedInUserId, selectedProject, startDate, endDate, refetchTotalTime]);
 
   useEffect(() => {
     if (timeData) {
-      setTotalTime(timeData.getTotalTimeSpent);
+      setTotalTime(timeData.getTotalTimeSpent ?? 0);
+      if (!errorTime) setErrorMessage(null);
     }
-  }, [timeData]);
+    if (timeData && timeData.getTotalTimeSpent === null) {
+      setTotalTime(0);
+    }
+  }, [timeData, errorTime]);
 
-  if (loadingTime) return <p>Loading...</p>;
-  if (errorOptions || errorTime?.message) {
-    const errorMessage = errorOptions
-      ? errorOptions.message
-      : errorTime?.message;
-    return (
-      <div className="bg-red-50 border-l-8 border-red-400 p-4 mb-4">
-        <div className="flex">
-          <div className="flex-shrink-0">
-            <svg
-              className="h-5 w-5 text-red-400"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-              aria-hidden="true"
-            >
-              <path
-                fillRule="evenodd"
-                d="M8.257 3.099c.366-.47.977-.751 1.743-.751s1.377.281 1.743.75l6.857 8.8c.38.487.4 1.128.06 1.625a1.162 1.162 0 01-.86.426H2.25c-.334 0-.65-.14-.86-.426a1.163 1.163 0 01-.06-1.625l6.857-8.8z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </div>
-          <div className="ml-3">
-            <h3 className="text-sm font-medium text-red-800">Error</h3>
-            <div className="text-sm text-red-600">
-              <p>{errorMessage}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const isLoading = loadingUserProjects || loadingTime;
+  const displayError =
+    errorMessage || errorUserProjects?.message || errorTime?.message;
 
   return (
-    <div className="p-6 bg-black shadow-md flex flex-row justify-between items-center">
-      <h3 className="text-lg font-bold text-white">
-        Get Time Spent on Project
+    <div className="p-6 bg-black shadow-md flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0 md:space-x-6">
+      <h3 className="text-lg font-bold text-white whitespace-nowrap">
+        Time Spent Analysis (My Projects)
       </h3>
-      <div>
+
+      {/* Project Selector */}
+      <div className="flex-grow w-full md:w-auto">
         <select
-          id="projectSelector"
-          value={selectedProject || ""}
+          id="myProjectSelectorForTime"
+          value={selectedProject}
           onChange={(e) => setSelectedProject(e.target.value)}
-          className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+          className="w-full p-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          disabled={loadingUserProjects || userProjects.length === 0}
         >
-          <option value="">Select a Project</option>
-          {userProjects.map((project: Project) => (
+          <option value="">
+            {loadingUserProjects
+              ? "Loading My Projects..."
+              : userProjects.length === 0
+              ? "No Projects Found"
+              : "Select My Project"}
+          </option>
+          {userProjects.map((project) => (
             <option key={project.id} value={project.id}>
-              {project.name} (Team: {project.teamName})
+              {project.name} {project.teamName ? `(${project.teamName})` : ""}
             </option>
           ))}
         </select>
       </div>
 
       {/* Date Pickers */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="flex-grow w-full md:w-auto flex flex-col sm:flex-row gap-2">
         <input
           type="date"
           id="startDatePicker"
           value={startDate}
           onChange={(e) => setStartDate(e.target.value)}
-          className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+          className="w-full p-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          aria-label="Start Date"
         />
         <input
           type="date"
           id="endDatePicker"
           value={endDate}
           onChange={(e) => setEndDate(e.target.value)}
-          className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+          className="w-full p-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          aria-label="End Date"
         />
       </div>
 
       {/* Total Time Display */}
-      <p className="text-lg font-medium text-white">
-        Total Time: {formatTimeFromMilliseconds(totalTime)}
-      </p>
+      <div className="text-center md:text-right whitespace-nowrap">
+        {isLoading && !displayError && (
+          <p className="text-gray-400">Loading Time...</p>
+        )}
+        {displayError && <p className="text-red-400 text-sm">{displayError}</p>}
+        {!isLoading && !displayError && (
+          <p className="text-lg font-medium text-white">
+            Total:{" "}
+            {totalTime !== null ? formatTimeFromMilliseconds(totalTime) : "N/A"}
+          </p>
+        )}
+      </div>
     </div>
   );
 };

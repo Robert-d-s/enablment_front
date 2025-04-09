@@ -9,7 +9,9 @@ export const GET_USERS = gql`
       teams {
         id
         name
+        __typename
       }
+      __typename
     }
   }
 `;
@@ -19,6 +21,7 @@ export const GET_SIMPLE_TEAMS = gql`
     getAllSimpleTeams {
       id
       name
+      __typename
     }
   }
 `;
@@ -28,6 +31,7 @@ export const UPDATE_USER_ROLE = gql`
     updateUserRole(userId: $userId, newRole: $newRole) {
       id
       role
+      __typename
     }
   }
 `;
@@ -37,6 +41,12 @@ export const ADD_USER_TO_TEAM = gql`
     addUserToTeam(userId: $userId, teamId: $teamId) {
       id
       email
+      teams {
+        id
+        name
+        __typename
+      }
+      __typename
     }
   }
 `;
@@ -46,6 +56,12 @@ export const REMOVE_USER_FROM_TEAM = gql`
     removeUserFromTeam(userId: $userId, teamId: $teamId) {
       id
       email
+      teams {
+        id
+        name
+        __typename
+      }
+      __typename
     }
   }
 `;
