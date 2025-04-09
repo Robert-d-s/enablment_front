@@ -38,7 +38,7 @@ const TimeKeeper: React.FC = () => {
   } = useTimeKeeperQueries(
     currentTeamId!,
     selectedProject,
-    loggedInUser?.id || ""
+    loggedInUser?.id?.toString() ?? ""
   );
 
   const { handleDateChange, handleSubmit, handleReset } = useTimeKeeperHandlers(
@@ -46,7 +46,7 @@ const TimeKeeper: React.FC = () => {
       timerState,
       selectedProject,
       selectedRate,
-      userId: loggedInUser?.id || "",
+      userId: loggedInUser?.id?.toString() ?? "",
       createTimeEntry,
       updateTime,
       currentEntryId,
@@ -86,7 +86,10 @@ const TimeKeeper: React.FC = () => {
           disabledSubmit={timerState.isRunning || !timerState.initialStartTime}
         />
         <ProjectRateSelectors
-          userProjects={userProjects}
+          userProjects={userProjects.map((p) => ({
+            ...p,
+            teamName: p.teamName ?? "Unknown Team",
+          }))}
           selectedProject={selectedProject}
           setSelectedProject={setSelectedProject}
           rates={ratesData?.rates ?? []}

@@ -4,10 +4,10 @@ import type { TimerState, TimeEntry } from "../types";
 interface HandlersConfig {
   timerState: TimerState & {
     initialStartTime: Date | null;
-    elapsedBeforePause: number;
+    // elapsedBeforePause: number;
     pauseTimes: Date[];
     resumeTimes: Date[];
-    calculateTotalActiveTime: () => number; // Use the function from useTimer
+    calculateTotalActiveTime: () => number;
   };
   selectedProject: string;
   selectedRate: string;
@@ -69,7 +69,6 @@ export const useTimeKeeperHandlers = ({
       const submissionTime = new Date();
       console.log("Submission time:", submissionTime.toISOString());
 
-      // Use the calculation function from timerState
       const totalElapsedTimeMs = timerState.calculateTotalActiveTime();
       console.log(
         "Total elapsed time calculated for submission (ms):",
@@ -81,7 +80,6 @@ export const useTimeKeeperHandlers = ({
       );
 
       if (currentEntryId) {
-        // Update existing time entry
         console.log("Updating existing time entry with ID:", currentEntryId);
         await updateTime({
           timeInputUpdate: {
@@ -92,7 +90,6 @@ export const useTimeKeeperHandlers = ({
         });
         console.log("Updated existing time entry ID:", currentEntryId);
       } else {
-        // Create new time entry
         console.log("Creating new time entry with data:", {
           startTime: formatISO(timerState.initialStartTime),
           projectId: selectedProject,

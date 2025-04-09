@@ -3,7 +3,7 @@
 import React from "react";
 
 type ProjectSelectorProps = {
-  projects: { id: string; name: string; teamName: string }[];
+  projects: { id: string; name: string; teamName?: string }[];
   selectedProject: string;
   onProjectChange: (projectId: string) => void;
   className?: string;

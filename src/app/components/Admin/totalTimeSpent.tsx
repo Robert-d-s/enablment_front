@@ -69,7 +69,6 @@ const TotalTimeSpent: React.FC = () => {
   const {
     loading: loadingUserProjects,
     error: errorUserProjects,
-    data: myProjectsData,
     refetch: refetchMyProjects,
   } = useQuery<GetMyProjectsQueryData>(GET_MY_PROJECTS, {
     skip: !loggedInUserId,

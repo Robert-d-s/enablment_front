@@ -9,7 +9,7 @@ import { formatTimeFromMilliseconds } from "../utils/timeUtils";
 interface Project {
   id: string;
   name: string;
-  teamName: string;
+  teamName?: string;
 }
 
 interface Rate {
