@@ -1,50 +1,51 @@
+// src/app/components/Admin/UserManagementSection.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
-import {
-  useQuery,
-  useMutation,
-  ApolloError,
-  useApolloClient,
-  gql,
-} from "@apollo/client";
+import { useQuery, gql, NetworkStatus, ApolloError } from "@apollo/client";
+import { useDebounce } from "use-debounce";
 import UserTable from "@/app/components/Admin/UserTable";
 import { User as UserTableRowType } from "@/app/components/Admin/UserRow";
 import { UserRole } from "@/app/components/Admin/UserRoleSelect";
-import {
-  GET_USERS,
-  GET_SIMPLE_TEAMS,
-  UPDATE_USER_ROLE,
-  ADD_USER_TO_TEAM,
-  REMOVE_USER_FROM_TEAM,
-} from "@/app/graphql/adminOperations";
-import { loggedInUserTeamsVersion } from "@/app/lib/apolloClient";
+import { GET_SIMPLE_TEAMS } from "@/app/graphql/adminOperations"; // Keep this for team dropdowns
 import { useAuthStore } from "@/app/lib/authStore";
 
-const USER_CORE_FIELDS_FRAGMENT = gql`
-  fragment UserCoreFields on User {
-    id
-    email
-    role
-    teams {
+const GET_MANAGEMENT_USERS = gql`
+  query GetManagementUsers(
+    $page: Int
+    $pageSize: Int
+    $search: String
+    $role: UserRole
+  ) {
+    users(
+      args: { page: $page, pageSize: $pageSize, search: $search, role: $role }
+    ) {
       id
-      name
+      email
+      role
+      teams {
+        id
+        name
+        __typename
+      }
       __typename
     }
-    __typename
   }
 `;
 
+const GET_USERS_COUNT = gql`
+  query GetUsersManagementCount($search: String, $role: UserRole) {
+    usersCount(search: $search, role: $role)
+  }
+`;
+
+// --- Interfaces ---
 interface GetUsersQueryData {
   users: Array<{
     id: number;
     email: string;
     role: string;
-    teams: Array<{
-      id: string;
-      name: string;
-      __typename: "Team";
-    }>;
+    teams: Array<{ id: string; name: string; __typename: "Team" }>;
     __typename: "User";
   }>;
 }
@@ -57,257 +58,230 @@ interface GetSimpleTeamsQueryData {
   }>;
 }
 
-type UserFragmentData = {
-  id: number;
-  email: string;
-  role: string;
-  teams: Array<{ id: string; name: string; __typename: "Team" }>;
-  __typename: "User";
-};
+interface GetUsersCountQueryData {
+  usersCount: number;
+}
 
+// --- Component ---
 const UserManagementSection: React.FC = () => {
-  const [users, setUsers] = useState<GetUsersQueryData["users"]>([]);
-  const [selectedTeam, setSelectedTeam] = useState<{
-    [userId: number]: string;
-  }>({});
-  const [errorMessage, setErrorMessage] = useState("");
+  // State for UI controls
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [roleFilter, setRoleFilter] = useState<UserRole | "">(""); // Use '' for "All Roles" option
 
-  const client = useApolloClient();
+  // Debounce search term
+  const [debouncedSearchTerm] = useDebounce(searchTerm, 500);
+
+  // Other state
+  const [users, setUsers] = useState<GetUsersQueryData["users"]>([]);
   const loggedInUser = useAuthStore((state) => state.user);
 
+  const userQueryVariables = {
+    page: page || null,
+    pageSize: pageSize || null,
+    search: debouncedSearchTerm || null,
+    role: roleFilter || null,
+  };
+
+  // Variables for the count query (filters only)
+  const countQueryVariables = {
+    search: debouncedSearchTerm || undefined,
+    role: roleFilter || undefined,
+  };
+
+  // --- Queries ---
+
+  // Fetch Paginated/Filtered Users
   const {
     loading: loadingUsers,
     error: errorUsers,
     data: dataUsers,
-  } = useQuery<GetUsersQueryData>(GET_USERS);
-
-  const { loading: loadingTeams, data: dataTeams } =
-    useQuery<GetSimpleTeamsQueryData>(GET_SIMPLE_TEAMS);
-
-  const [updateUserRole] = useMutation(UPDATE_USER_ROLE);
-  const [addUserToTeam] = useMutation(ADD_USER_TO_TEAM, {
-    onError: (error) => {
-      console.error("Error adding user to team:", error);
-      setErrorMessage(
-        error.message || "Failed to add user to team. Please try again."
-      );
-    },
-  });
-  const [removeUserFromTeam] = useMutation(REMOVE_USER_FROM_TEAM, {
-    onError: (error) => {
-      console.error("Error removing user from team:", error);
-      setErrorMessage(
-        error.message || "Failed to remove user from team. Please try again."
-      );
-    },
+    networkStatus,
+  } = useQuery<GetUsersQueryData>(GET_MANAGEMENT_USERS, {
+    variables: userQueryVariables,
+    notifyOnNetworkStatusChange: true,
+    // fetchPolicy: "cache-and-network" // Consider this if cache updates aren't reliable enough
   });
 
+  // Fetch Total User Count (matching filters)
+  const { data: countData, error: countError } =
+    useQuery<GetUsersCountQueryData>(GET_USERS_COUNT, {
+      variables: countQueryVariables,
+      fetchPolicy: "cache-and-network", // Count should reflect current filters
+    });
+
+  // Fetch All Teams (for dropdowns in rows)
+  const {
+    loading: loadingTeams,
+    data: dataTeams,
+    error: teamsError,
+  } = useQuery<GetSimpleTeamsQueryData>(GET_SIMPLE_TEAMS);
+
+  // Calculate total pages
+  const totalUsers = countData?.usersCount ?? 0;
+  const totalPages = Math.ceil(totalUsers / pageSize);
+
+  // --- Effects ---
+
+  // Update local users state when data arrives/changes
   useEffect(() => {
-    if (dataUsers) {
+    if (dataUsers?.users) {
       setUsers(dataUsers.users);
     }
   }, [dataUsers]);
 
-  if (loadingUsers || loadingTeams) return <p>Loading User Data...</p>;
-  if (errorUsers) {
-    const graphQLError = errorUsers.graphQLErrors[0];
-    if (graphQLError && graphQLError.extensions?.code === "FORBIDDEN") {
+  // Reset to page 1 when filters or page size change
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearchTerm, roleFilter, pageSize]);
+
+  // --- Loading/Error Handling ---
+  const isLoading =
+    loadingUsers &&
+    networkStatus !== NetworkStatus.refetch &&
+    networkStatus !== NetworkStatus.setVariables;
+  const isRefetching =
+    networkStatus === NetworkStatus.refetch ||
+    networkStatus === NetworkStatus.setVariables;
+  const combinedError = errorUsers || countError || teamsError; // Combine potential errors
+
+  if (isLoading || loadingTeams) return <p>Loading User Data...</p>; // Initial load for users or teams
+
+  if (combinedError) {
+    const error = combinedError as ApolloError; // Cast for accessing details
+    console.error("Data loading error:", error);
+    const graphQLError = error.graphQLErrors?.[0];
+    if (graphQLError?.extensions?.code === "FORBIDDEN") {
       return <p>You do not have permission to view users.</p>;
     }
-    return <p>Error loading users: {errorUsers.message}</p>;
+    return <p>Error loading data: {error.message}</p>;
   }
 
-  const handleTeamSelect = (userId: number, teamId: string) => {
-    setSelectedTeam((prev) => ({ ...prev, [userId]: teamId }));
-  };
-
-  const handleAddToTeam = async (userId: number): Promise<void> => {
-    const teamId = selectedTeam[userId];
-    if (!teamId) {
-      setErrorMessage("Please select a team first.");
-      return;
-    }
-    setErrorMessage("");
-    try {
-      await addUserToTeam({ variables: { userId, teamId } });
-
-      const allTeamsData = client.readQuery<GetSimpleTeamsQueryData>({
-        query: GET_SIMPLE_TEAMS,
-      });
-      const teamToAdd = allTeamsData?.getAllSimpleTeams.find(
-        (t) => t.id === teamId
-      );
-      if (!teamToAdd) {
-        console.warn(`Team details for ID ${teamId} not found in cache.`);
-        return;
-      }
-
-      const userCacheId = client.cache.identify({
-        __typename: "User",
-        id: userId,
-      });
-      if (!userCacheId) {
-        console.warn(`Could not generate cache ID for User:${userId}`);
-        return;
-      }
-
-      const existingUserFragment = client.readFragment<UserFragmentData>({
-        id: userCacheId,
-        fragment: USER_CORE_FIELDS_FRAGMENT,
-      });
-      if (
-        !existingUserFragment ||
-        existingUserFragment.teams.some((t) => t.id === teamId)
-      ) {
-        console.warn(
-          `User fragment ${userCacheId} not found or team ${teamId} already exists.`
-        );
-        return;
-      }
-
-      const updatedTeams = [
-        ...existingUserFragment.teams,
-        { id: teamId, name: teamToAdd.name, __typename: "Team" as const },
-      ];
-      client.writeFragment({
-        id: userCacheId,
-        fragment: USER_CORE_FIELDS_FRAGMENT,
-        data: { ...existingUserFragment, teams: updatedTeams },
-      });
-
-      if (loggedInUser && userId === loggedInUser.id) {
-        loggedInUserTeamsVersion(loggedInUserTeamsVersion() + 1);
-        console.log("Incremented loggedInUserTeamsVersion (Add).");
-      }
-      console.log(`Successfully updated cache for user ${userId} (Add).`);
-    } catch (error) {
-      console.error("Error adding user to team:", error);
-      setErrorMessage(
-        error instanceof Error ? error.message : "Failed to add user to team."
-      );
-    }
-  };
-
-  const handleRemoveFromTeam = async (
-    userId: number,
-    teamId: string
-  ): Promise<void> => {
-    setErrorMessage("");
-    try {
-      await removeUserFromTeam({ variables: { userId, teamId } });
-
-      const userCacheId = client.cache.identify({
-        __typename: "User",
-        id: userId,
-      });
-      if (!userCacheId) {
-        console.warn(`Could not generate cache ID for User:${userId}`);
-        return;
-      }
-
-      const existingUserFragment = client.readFragment<UserFragmentData>({
-        id: userCacheId,
-        fragment: USER_CORE_FIELDS_FRAGMENT,
-      });
-      if (!existingUserFragment) {
-        console.warn(`User fragment ${userCacheId} not found.`);
-        return;
-      }
-
-      const updatedTeams = existingUserFragment.teams.filter(
-        (team) => team.id !== teamId
-      );
-      if (updatedTeams.length === existingUserFragment.teams.length) {
-        console.warn(
-          `Team ${teamId} not found in fragment for user ${userId}.`
-        );
-        return;
-      }
-
-      client.writeFragment({
-        id: userCacheId,
-        fragment: USER_CORE_FIELDS_FRAGMENT,
-        data: { ...existingUserFragment, teams: updatedTeams },
-      });
-
-      if (loggedInUser && userId === loggedInUser.id) {
-        loggedInUserTeamsVersion(loggedInUserTeamsVersion() + 1);
-        console.log("Incremented loggedInUserTeamsVersion (Remove).");
-      }
-      console.log(`Successfully updated cache for user ${userId} (Remove).`);
-    } catch (error) {
-      console.error("Error removing user from team:", error);
-      setErrorMessage(
-        error instanceof Error
-          ? error.message
-          : "Failed to remove user from team."
-      );
-    }
-  };
-
-  const handleRoleChange = async (userId: number, newRole: string) => {
-    if (!Object.values(UserRole).includes(newRole as UserRole)) {
-      setErrorMessage(`Invalid role selected: ${newRole}`);
-      return;
-    }
-    setErrorMessage("");
-    try {
-      const result = await updateUserRole({ variables: { userId, newRole } });
-      const updatedRole = result.data?.updateUserRole?.role;
-      if (!updatedRole) {
-        console.warn(
-          "Role mutation succeeded but did not return updated role."
-        );
-        return;
-      }
-
-      const userCacheId = client.cache.identify({
-        __typename: "User",
-        id: userId,
-      });
-      if (!userCacheId) {
-        console.warn(`Could not generate cache ID for User:${userId}`);
-        return;
-      }
-
-      client.writeFragment({
-        id: userCacheId,
-        fragment: gql`
-          fragment UpdateUserRoleData on User {
-            role
-          }
-        `,
-        data: { role: updatedRole },
-      });
-      console.log(`Successfully updated role cache for user ${userId}.`);
-    } catch (error) {
-      console.error("Error updating user role:", error);
-      if (error instanceof ApolloError) {
-        setErrorMessage(
-          error.graphQLErrors[0]?.message || "Error updating role"
-        );
-      } else {
-        setErrorMessage("An unexpected error occurred during role update.");
-      }
-    }
-  };
-
+  // Prepare data for table (casting role string to enum)
   const usersForTable: UserTableRowType[] = users.map((user) => ({
     ...user,
-    role: user.role as UserRole,
+    role: user.role as UserRole, // Cast role string to enum for UserRow prop type
   }));
 
+  // --- Render ---
   return (
-    <div className="mb-6 shadow-md">
-      <UserTable
-        users={usersForTable}
-        teams={dataTeams?.getAllSimpleTeams || []}
-        onTeamSelect={handleTeamSelect}
-        onAddToTeam={handleAddToTeam}
-        onRemoveFromTeam={handleRemoveFromTeam}
-        onRoleChange={handleRoleChange}
-      />
-      {errorMessage && <p className="mt-2 text-red-500">{errorMessage}</p>}
+    <div className="mb-6 shadow-md p-4 border rounded-lg bg-white">
+      {" "}
+      {/* Added bg-white */}
+      <h2 className="text-xl font-semibold mb-4">User Management</h2>{" "}
+      {/* Added Title */}
+      {/* Search and Filter Controls */}
+      <div className="mb-4 flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-4 items-center">
+        <div className="flex-grow w-full sm:w-auto">
+          <label htmlFor="userSearch" className="sr-only">
+            Search by email
+          </label>
+          <input
+            id="userSearch"
+            type="text"
+            placeholder="Search by email..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full p-2 border rounded text-sm focus:ring-indigo-500 focus:border-indigo-500"
+          />
+        </div>
+        <div className="w-full sm:w-auto">
+          <label htmlFor="roleFilter" className="sr-only">
+            Filter by role
+          </label>
+          <select
+            id="roleFilter"
+            value={roleFilter}
+            onChange={(e) => setRoleFilter(e.target.value as UserRole | "")}
+            className="w-full p-2 border rounded text-sm focus:ring-indigo-500 focus:border-indigo-500"
+          >
+            <option value="">All Roles</option>
+            {Object.values(UserRole).map((role) => (
+              <option key={role} value={role}>
+                {role}
+              </option>
+            ))}
+          </select>
+        </div>
+        {/* Page Size Selector */}
+        <div className="text-sm text-gray-700 w-full sm:w-auto sm:ml-auto">
+          <label htmlFor="pageSizeSelect" className="mr-1">
+            Show:
+          </label>
+          <select
+            id="pageSizeSelect"
+            value={pageSize}
+            onChange={(e) => setPageSize(Number(e.target.value))}
+            className="border rounded px-2 py-1 mx-1 focus:ring-indigo-500 focus:border-indigo-500"
+          >
+            <option value="5">5</option>
+            <option value="10">10</option>
+            <option value="25">25</option>
+            <option value="50">50</option>
+          </select>
+          <span>entries</span>
+        </div>
+      </div>
+      {/* Table Area */}
+      {/* Render table only when initial load is complete and no critical errors */}
+      {!isLoading && !combinedError && (
+        <>
+          {/* Table with Opacity for Refetching state */}
+          <div
+            className={`transition-opacity duration-300 ${
+              isRefetching ? "opacity-50 pointer-events-none" : "opacity-100"
+            }`}
+          >
+            <UserTable
+              users={usersForTable}
+              allTeams={dataTeams?.getAllSimpleTeams || []}
+              loggedInUserId={loggedInUser?.id}
+            />
+          </div>
+
+          {/* Pagination Controls */}
+          <div className="flex flex-col sm:flex-row justify-between items-center mt-4 text-sm text-gray-700">
+            <div className="mb-2 sm:mb-0">
+              Showing{" "}
+              {Math.min(
+                totalUsers > 0 ? (page - 1) * pageSize + 1 : 0,
+                totalUsers
+              )}{" "}
+              to {Math.min(page * pageSize, totalUsers)} of {totalUsers} entries
+            </div>
+            <div className="flex items-center">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1 || isRefetching}
+                className="px-3 py-1 border rounded mr-2 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors"
+                aria-label="Previous Page"
+              >
+                {" "}
+                Previous{" "}
+              </button>
+              <span className="mx-2 font-medium">
+                Page {page} of {totalPages > 0 ? totalPages : 1}
+              </span>
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={
+                  page === totalPages || totalPages === 0 || isRefetching
+                }
+                className="px-3 py-1 border rounded ml-2 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors"
+                aria-label="Next Page"
+              >
+                {" "}
+                Next{" "}
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+      {/* Show loading indicator specifically during refetch */}
+      {isRefetching && !isLoading && (
+        <p className="text-center text-gray-500 mt-4">Updating list...</p>
+      )}
     </div>
   );
 };

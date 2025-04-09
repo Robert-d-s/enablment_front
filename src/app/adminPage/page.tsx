@@ -8,11 +8,25 @@ import TotalTimeSpent from "@/app/components/Admin/totalTimeSpent";
 import RatesManager from "@/app/components/Admin/ratesManager";
 import InvoiceSummary from "@/app/components/Admin/invoiceSummary";
 import DBSyncPage from "@/app/dbSynch/page";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const AdminPage: React.FC = () => {
   return (
     <>
       <NavigationBar />
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="dark" // Or "dark" or "colored"
+      />
       <div className="container mx-auto p-4 font-roboto-condensed">
         <div className="mb-6 shadow-lg">
           <DBSyncPage />

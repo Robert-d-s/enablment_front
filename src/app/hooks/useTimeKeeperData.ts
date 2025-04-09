@@ -1,100 +1,83 @@
 import { useQuery } from "@apollo/client";
 import { useEffect, useState } from "react";
-import {
-  PROJECTS_QUERY,
-  USER_PROJECTS_QUERY,
-} from "@/app/graphql/timeKeeperOperations";
+import { GET_MY_PROJECTS } from "@/app/components/Admin/totalTimeSpent";
 import useStore from "@/app/lib/store";
 import { useAuthStore } from "@/app/lib/authStore";
 
-// Define interfaces for our expected data shapes:
-export interface Project {
+export interface MyProject {
   id: string;
   name: string;
+  teamName?: string;
   teamId: string;
+  __typename?: "Project";
 }
 
-export interface ProjectsData {
-  projects: Project[];
-}
-
-export interface Team {
-  name: string;
-  projects: Project[];
-}
-
-export interface User {
-  id: string;
-  teams: Team[];
-}
-
-export interface UserProjectsData {
-  users: User[];
-}
-
-export interface UserProject {
-  id: string;
-  name: string;
-  teamName: string;
+interface GetMyProjectsQueryData {
+  myProjects: MyProject[];
 }
 
 const useTimeKeeperData = () => {
   const user = useAuthStore((state) => state.user);
+  const loggedInUserId = user?.id;
 
-  // Use typed queries
-  const { data: projectsData } = useQuery<ProjectsData>(PROJECTS_QUERY);
-  const { data: userProjectsData } = useQuery<UserProjectsData>(
-    USER_PROJECTS_QUERY,
-    {
-      skip: !user,
-    }
-  );
-  const { setProjects, setTeamId } = useStore();
-  const [userProjects, setUserProjects] = useState<UserProject[]>([]);
+  const {
+    data: myProjectsData,
+    loading: loadingMyProjects,
+    error: errorMyProjects,
+  } = useQuery<GetMyProjectsQueryData>(GET_MY_PROJECTS, {
+    skip: !loggedInUserId,
+    fetchPolicy: "cache-first",
+  });
+
+  const { setProjects, setTeamId } = useStore(); // Keep zustand store actions if still needed
+  const [userProjects, setUserProjects] = useState<MyProject[]>([]);
   const [currentTeamId, setCurrentTeamId] = useState<string | undefined>(
     undefined
   );
-  const selectedProject = useStore((state) => state.selectedProject);
+  const selectedProject = useStore((state) => state.selectedProject); // Keep if used
 
   useEffect(() => {
-    if (projectsData) {
-      setProjects(projectsData.projects);
+    if (myProjectsData?.myProjects) {
+      setUserProjects(myProjectsData.myProjects);
+      // Update the generic 'projects' in zustand store if other components use it?
+      // Or maybe remove setProjects from zustand if only TimeKeeper needs this list.
+      // setProjects(myProjectsData.myProjects); // Be careful with types if setProjects expects the old Project type
+    } else {
+      setUserProjects([]);
+      // setProjects([]); // Clear zustand store too?
     }
-  }, [projectsData, setProjects]);
+  }, [myProjectsData /* setProjects */]); // Adjust dependencies
 
+  // Effect to set teamId based on selectedProject
   useEffect(() => {
-    if (projectsData && selectedProject) {
-      // Use the typed projects array
-      const project = projectsData.projects.find(
+    if (myProjectsData?.myProjects && selectedProject) {
+      // Find the project in the fetched 'myProjects' list
+      const project = myProjectsData.myProjects.find(
         (p) => p.id === selectedProject
       );
-      if (project) {
-        setTeamId(project.teamId);
-        setCurrentTeamId(project.teamId);
+      if (project?.teamId) {
+        setTeamId(project.teamId); // Update zustand store
+        setCurrentTeamId(project.teamId); // Update local state if needed elsewhere in hook
+      } else {
+        // Clear if selected project not found or has no teamId
+        setTeamId(null);
+        setCurrentTeamId(undefined);
       }
+    } else if (!selectedProject) {
+      // Clear if no project is selected
+      setTeamId(null);
+      setCurrentTeamId(undefined);
     }
-  }, [projectsData, selectedProject, setTeamId]);
+  }, [myProjectsData, selectedProject, setTeamId]);
 
-  useEffect(() => {
-    if (userProjectsData && user) {
-      const currentUserId = user.id;
-      const userInfo = userProjectsData.users.find(
-        (u) => u.id === currentUserId
-      );
-      if (userInfo) {
-        const projectsList: UserProject[] = userInfo.teams.flatMap((team) =>
-          team.projects.map((project) => ({
-            id: project.id,
-            name: project.name,
-            teamName: team.name,
-          }))
-        );
-        setUserProjects(projectsList);
-      }
-    }
-  }, [userProjectsData, user]);
-
-  return { userProjects, currentTeamId };
+  // Return projects list specifically formatted for dropdowns if needed,
+  // and potentially loading/error states for projects.
+  return {
+    userProjects, // This list is now directly from GET_MY_PROJECTS
+    currentTeamId,
+    loadingUserProjects: loadingMyProjects,
+    errorUserProjects: errorMyProjects,
+  };
 };
 
 export default useTimeKeeperData;

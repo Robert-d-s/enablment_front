@@ -39,7 +39,7 @@ const GET_TOTAL_TIME_SPENT = gql`
   }
 `;
 
-const GET_MY_PROJECTS = gql`
+export const GET_MY_PROJECTS = gql`
   query GetMyProjects {
     myProjects {
       id

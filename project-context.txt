@@ -84,9 +84,11 @@ export default nextConfig;
     "react": "^19.0.0",
     "react-datepicker": "^8.0.0",
     "react-dom": "^19.0.0",
+    "react-toastify": "^11.0.5",
     "socket.io-client": "^4.8.1",
     "tailwind-merge": "^3.0.1",
     "tailwindcss-animate": "^1.0.7",
+    "use-debounce": "^10.0.4",
     "zustand": "^5.0.3"
   },
   "devDependencies": {
@@ -557,130 +559,51 @@ export interface TimerState {
 
 // ====== FILE: src\app\adminPage\page.tsx ======
 
+// src/app/adminPage/page.tsx
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { useQuery, useMutation, ApolloError } from "@apollo/client";
+import React from "react";
 import NavigationBar from "../components/NavigationBar";
-import UserTable from "@/app/components/Admin/UserTable";
-import {
-  GET_USERS,
-  GET_SIMPLE_TEAMS,
-  UPDATE_USER_ROLE,
-  ADD_USER_TO_TEAM,
-  REMOVE_USER_FROM_TEAM,
-} from "@/app/graphql/adminOperations";
+import UserManagementSection from "@/app/components/Admin/userManagementSection";
 import TotalTimeSpent from "@/app/components/Admin/totalTimeSpent";
 import RatesManager from "@/app/components/Admin/ratesManager";
 import InvoiceSummary from "@/app/components/Admin/invoiceSummary";
 import DBSyncPage from "@/app/dbSynch/page";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const AdminPage: React.FC = () => {
-  const [users, setUsers] = useState([]);
-  const [selectedTeam, setSelectedTeam] = useState<{
-    [userId: number]: string;
-  }>({});
-  const [errorMessage, setErrorMessage] = useState("");
-
-  const {
-    loading: loadingUsers,
-    error: errorUsers,
-    data: dataUsers,
-    refetch: refetchUsers,
-  } = useQuery(GET_USERS);
-
-  const { loading: loadingTeams, data: dataTeams } = useQuery(GET_SIMPLE_TEAMS);
-
-  const [updateUserRole] = useMutation(UPDATE_USER_ROLE);
-  const [addUserToTeam] = useMutation(ADD_USER_TO_TEAM, {
-    onCompleted: () => refetchUsers(),
-  });
-  const [removeUserFromTeam] = useMutation(REMOVE_USER_FROM_TEAM, {
-    onCompleted: () => refetchUsers(),
-    onError: (error) => {
-      console.error("Error removing user from team:", error);
-    },
-  });
-
-  useEffect(() => {
-    if (dataUsers) {
-      setUsers(dataUsers.users);
-    }
-  }, [dataUsers]);
-
-  if (loadingUsers || loadingTeams) return <p>Loading...</p>;
-  if (errorUsers) {
-    const graphQLError = errorUsers.graphQLErrors[0];
-    if (graphQLError && graphQLError.extensions?.code === "FORBIDDEN") {
-      return <p>You do not have permission to view this resource.</p>;
-    }
-    return <p>Error: {errorUsers.message}</p>;
-  }
-
-  const handleTeamSelect = (userId: number, teamId: string) => {
-    setSelectedTeam((prev) => ({ ...prev, [userId]: teamId }));
-  };
-
-  const handleAddToTeam = (userId: number) => {
-    const teamId = selectedTeam[userId];
-    if (!teamId) {
-      console.error("No team selected for user:", userId);
-      return;
-    }
-    addUserToTeam({ variables: { userId, teamId } }).catch((error) =>
-      console.error("Error adding user to team:", error)
-    );
-  };
-
-  const handleRemoveFromTeam = (userId: number, teamId: string) => {
-    removeUserFromTeam({ variables: { userId, teamId } }).catch((error) =>
-      console.error("Error removing user from team:", error)
-    );
-  };
-
-  const handleRoleChange = async (userId: number, newRole: string) => {
-    try {
-      await updateUserRole({ variables: { userId, newRole } });
-      setErrorMessage("");
-    } catch (error) {
-      if (error instanceof ApolloError) {
-        setErrorMessage(
-          error.graphQLErrors[0]?.message || "Error updating role"
-        );
-      } else {
-        console.error("Error updating user role:", error);
-        setErrorMessage("An unexpected error occurred");
-      }
-    }
-  };
-
   return (
     <>
       <NavigationBar />
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="dark" // Or "dark" or "colored"
+      />
       <div className="container mx-auto p-4 font-roboto-condensed">
-        <div className="container mx-auto p-4 font-roboto-condensed">
-          <div className="mb-3">
-            <UserTable
-              users={users}
-              teams={dataTeams?.getAllSimpleTeams}
-              onTeamSelect={handleTeamSelect}
-              onAddToTeam={handleAddToTeam}
-              onRemoveFromTeam={handleRemoveFromTeam}
-              onRoleChange={handleRoleChange}
-            />
-            {errorMessage && <p className="text-red-500">{errorMessage}</p>}
-          </div>
-          <div className="mb-3 shadow-md">
-            <TotalTimeSpent />
-          </div>
-          <div className="mb-3 shadow-md">
-            <RatesManager />
-          </div>
-          <div className="shadow-md">
-            <InvoiceSummary />
-          </div>
+        <div className="mb-6 shadow-lg">
           <DBSyncPage />
         </div>
+        <UserManagementSection />
+        <div className="mb-6 shadow-md">
+          <TotalTimeSpent />
+        </div>
+        {/*
+        <div className="mb-6 shadow-md">
+          <RatesManager />
+        </div>
+        <div className="shadow-md">
+          <InvoiceSummary />
+        </div>
+         */}
       </div>
     </>
   );
@@ -2922,7 +2845,9 @@ export const GET_USERS = gql`
       teams {
         id
         name
+        __typename
       }
+      __typename
     }
   }
 `;
@@ -2932,6 +2857,7 @@ export const GET_SIMPLE_TEAMS = gql`
     getAllSimpleTeams {
       id
       name
+      __typename
     }
   }
 `;
@@ -2941,6 +2867,7 @@ export const UPDATE_USER_ROLE = gql`
     updateUserRole(userId: $userId, newRole: $newRole) {
       id
       role
+      __typename
     }
   }
 `;
@@ -2950,6 +2877,12 @@ export const ADD_USER_TO_TEAM = gql`
     addUserToTeam(userId: $userId, teamId: $teamId) {
       id
       email
+      teams {
+        id
+        name
+        __typename
+      }
+      __typename
     }
   }
 `;
@@ -2959,6 +2892,12 @@ export const REMOVE_USER_FROM_TEAM = gql`
     removeUserFromTeam(userId: $userId, teamId: $teamId) {
       id
       email
+      teams {
+        id
+        name
+        __typename
+      }
+      __typename
     }
   }
 `;
@@ -3213,103 +3152,99 @@ export const useFeedbackState = () => {
 
 // ====== FILE: src\app\hooks\useTimeKeeperData.ts ======
 
+// src/app/hooks/useTimeKeeperData.ts
 import { useQuery } from "@apollo/client";
 import { useEffect, useState } from "react";
-import {
-  PROJECTS_QUERY,
-  USER_PROJECTS_QUERY,
-} from "@/app/graphql/timeKeeperOperations";
+// Import the CORRECT query
+import { GET_MY_PROJECTS } from "@/app/components/Admin/totalTimeSpent"; // Import from where you defined it
+// Remove unused imports: PROJECTS_QUERY, USER_PROJECTS_QUERY
 import useStore from "@/app/lib/store";
 import { useAuthStore } from "@/app/lib/authStore";
 
-// Define interfaces for our expected data shapes:
-export interface Project {
+// Keep MyProject interface (or import if defined elsewhere)
+export interface MyProject {
   id: string;
   name: string;
+  teamName?: string;
   teamId: string;
+  __typename?: "Project";
 }
 
-export interface ProjectsData {
-  projects: Project[];
+// Keep GetMyProjectsQueryData interface
+interface GetMyProjectsQueryData {
+  myProjects: MyProject[];
 }
 
-export interface Team {
-  name: string;
-  projects: Project[];
-}
-
-export interface User {
-  id: string;
-  teams: Team[];
-}
-
-export interface UserProjectsData {
-  users: User[];
-}
-
-export interface UserProject {
-  id: string;
-  name: string;
-  teamName: string;
-}
+// Remove unused interfaces: Project, ProjectsData, Team, User, UserProjectsData
 
 const useTimeKeeperData = () => {
   const user = useAuthStore((state) => state.user);
+  const loggedInUserId = user?.id; // Needed for skip logic
 
-  // Use typed queries
-  const { data: projectsData } = useQuery<ProjectsData>(PROJECTS_QUERY);
-  const { data: userProjectsData } = useQuery<UserProjectsData>(
-    USER_PROJECTS_QUERY,
-    {
-      skip: !user,
-    }
-  );
-  const { setProjects, setTeamId } = useStore();
-  const [userProjects, setUserProjects] = useState<UserProject[]>([]);
+  // Use the new GET_MY_PROJECTS query
+  const {
+    data: myProjectsData,
+    loading: loadingMyProjects,
+    error: errorMyProjects,
+  } = useQuery<GetMyProjectsQueryData>(GET_MY_PROJECTS, {
+    skip: !loggedInUserId, // Skip if not logged in
+    fetchPolicy: "cache-first", // Good default
+  });
+
+  // REMOVE the old queries:
+  // const { data: projectsData } = useQuery<ProjectsData>(PROJECTS_QUERY);
+  // const { data: userProjectsData } = useQuery<UserProjectsData>(USER_PROJECTS_QUERY, { skip: !user });
+
+  const { setProjects, setTeamId } = useStore(); // Keep zustand store actions if still needed
+  const [userProjects, setUserProjects] = useState<MyProject[]>([]); // State holds MyProject now
   const [currentTeamId, setCurrentTeamId] = useState<string | undefined>(
     undefined
   );
-  const selectedProject = useStore((state) => state.selectedProject);
+  const selectedProject = useStore((state) => state.selectedProject); // Keep if used
 
+  // Effect to populate projects dropdown data
   useEffect(() => {
-    if (projectsData) {
-      setProjects(projectsData.projects);
+    if (myProjectsData?.myProjects) {
+      setUserProjects(myProjectsData.myProjects);
+      // Update the generic 'projects' in zustand store if other components use it?
+      // Or maybe remove setProjects from zustand if only TimeKeeper needs this list.
+      // setProjects(myProjectsData.myProjects); // Be careful with types if setProjects expects the old Project type
+    } else {
+      setUserProjects([]);
+      // setProjects([]); // Clear zustand store too?
     }
-  }, [projectsData, setProjects]);
+  }, [myProjectsData /* setProjects */]); // Adjust dependencies
 
+  // Effect to set teamId based on selectedProject
   useEffect(() => {
-    if (projectsData && selectedProject) {
-      // Use the typed projects array
-      const project = projectsData.projects.find(
+    if (myProjectsData?.myProjects && selectedProject) {
+      // Find the project in the fetched 'myProjects' list
+      const project = myProjectsData.myProjects.find(
         (p) => p.id === selectedProject
       );
-      if (project) {
-        setTeamId(project.teamId);
-        setCurrentTeamId(project.teamId);
+      if (project?.teamId) {
+        setTeamId(project.teamId); // Update zustand store
+        setCurrentTeamId(project.teamId); // Update local state if needed elsewhere in hook
+      } else {
+        // Clear if selected project not found or has no teamId
+        setTeamId(null);
+        setCurrentTeamId(undefined);
       }
+    } else if (!selectedProject) {
+      // Clear if no project is selected
+      setTeamId(null);
+      setCurrentTeamId(undefined);
     }
-  }, [projectsData, selectedProject, setTeamId]);
+  }, [myProjectsData, selectedProject, setTeamId]);
 
-  useEffect(() => {
-    if (userProjectsData && user) {
-      const currentUserId = user.id;
-      const userInfo = userProjectsData.users.find(
-        (u) => u.id === currentUserId
-      );
-      if (userInfo) {
-        const projectsList: UserProject[] = userInfo.teams.flatMap((team) =>
-          team.projects.map((project) => ({
-            id: project.id,
-            name: project.name,
-            teamName: team.name,
-          }))
-        );
-        setUserProjects(projectsList);
-      }
-    }
-  }, [userProjectsData, user]);
-
-  return { userProjects, currentTeamId };
+  // Return projects list specifically formatted for dropdowns if needed,
+  // and potentially loading/error states for projects.
+  return {
+    userProjects, // This list is now directly from GET_MY_PROJECTS
+    currentTeamId,
+    loadingUserProjects: loadingMyProjects,
+    errorUserProjects: errorMyProjects,
+  };
 };
 
 export default useTimeKeeperData;
@@ -4242,6 +4177,7 @@ import {
   createHttpLink,
   from,
   Observable,
+  makeVar,
 } from "@apollo/client";
 import { setContext } from "@apollo/client/link/context";
 import { onError } from "@apollo/client/link/error";
@@ -4256,6 +4192,8 @@ const REFRESH_TOKEN_MUTATION = gql`
     }
   }
 `;
+
+export const loggedInUserTeamsVersion = makeVar(0);
 
 // --- Auth Link: Adds Access Token Header ---
 const authLink = setContext((operation, { headers }) => {
@@ -5687,41 +5625,27 @@ export default RatesManager;
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useQuery } from "@apollo/client";
-import gql from "graphql-tag";
+import { useQuery, gql } from "@apollo/client";
 import { useAuthStore } from "@/app/lib/authStore";
-import useCurrentUser from "@/app/hooks/useCurrentUser";
 import { formatTimeFromMilliseconds } from "@/app/utils/timeUtils";
+import { useReactiveVar } from "@apollo/client";
+import { loggedInUserTeamsVersion } from "@/app/lib/apolloClient";
 
-interface Project {
+interface MyProject {
   id: string;
   name: string;
   teamName?: string;
+  teamId: string;
+  __typename?: "Project";
 }
 
-interface Team {
-  name: string;
-  projects: Project[];
+interface GetMyProjectsQueryData {
+  myProjects: MyProject[];
 }
 
-interface User {
-  id: string;
-  email: string;
-  teams?: Team[];
+interface GetTotalTimeSpentQueryData {
+  getTotalTimeSpent: number | null;
 }
-
-const GET_DROPDOWN_OPTIONS = gql`
-  query {
-    users {
-      id
-      email
-    }
-    projects {
-      id
-      name
-    }
-  }
-`;
 
 const GET_TOTAL_TIME_SPENT = gql`
   query GetTotalTimeSpent(
@@ -5739,17 +5663,14 @@ const GET_TOTAL_TIME_SPENT = gql`
   }
 `;
 
-const GET_USER_PROJECTS = gql`
-  query GetUserProjects {
-    users {
+export const GET_MY_PROJECTS = gql`
+  query GetMyProjects {
+    myProjects {
       id
-      teams {
-        name
-        projects {
-          id
-          name
-        }
-      }
+      name
+      teamId
+      teamName
+      __typename
     }
   }
 `;
@@ -5757,148 +5678,474 @@ const GET_USER_PROJECTS = gql`
 const getCurrentDate = () => new Date().toISOString().split("T")[0];
 
 const TotalTimeSpent: React.FC = () => {
-  const [totalTime, setTotalTime] = useState(0);
-  const [selectedProject, setSelectedProject] = useState<string | null>(null);
+  const [totalTime, setTotalTime] = useState<number | null>(null);
+  const [selectedProject, setSelectedProject] = useState<string>("");
   const [startDate, setStartDate] = useState(getCurrentDate());
   const [endDate, setEndDate] = useState(getCurrentDate());
 
-  // Use the auth store instead of reactive variable
-  useCurrentUser();
-  const loggedInUser = useAuthStore((state) => state.user);
-  const [userProjects, setUserProjects] = useState<Project[]>([]);
+  const [userProjects, setUserProjects] = useState<MyProject[]>([]);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const { data: userProjectsData } = useQuery(GET_USER_PROJECTS, {
-    skip: !loggedInUser,
+  const loggedInUser = useAuthStore((state) => state.user);
+  const loggedInUserId = loggedInUser?.id;
+  const teamsVersion = useReactiveVar(loggedInUserTeamsVersion);
+
+  const {
+    loading: loadingUserProjects,
+    error: errorUserProjects,
+    data: myProjectsData,
+    refetch: refetchMyProjects,
+  } = useQuery<GetMyProjectsQueryData>(GET_MY_PROJECTS, {
+    skip: !loggedInUserId,
+    fetchPolicy: "cache-and-network",
+    onCompleted: (data) => {
+      if (data?.myProjects) {
+        const currentProjects = data.myProjects;
+        setUserProjects(currentProjects);
+        const selectedExists = currentProjects.some(
+          (p) => p.id === selectedProject
+        );
+        if (!selectedExists && currentProjects.length > 0) {
+          setSelectedProject(currentProjects[0].id);
+        } else if (!selectedExists && currentProjects.length === 0) {
+          setSelectedProject("");
+        }
+      } else {
+        setUserProjects([]);
+        setSelectedProject("");
+      }
+    },
+    onError: (error) => {
+      console.error("Error fetching my projects:", error);
+      setErrorMessage("Could not load your projects.");
+    },
   });
 
-  const { error: errorOptions } = useQuery(GET_DROPDOWN_OPTIONS);
   const {
     loading: loadingTime,
     error: errorTime,
     data: timeData,
-    refetch,
-  } = useQuery(GET_TOTAL_TIME_SPENT, {
+    refetch: refetchTotalTime,
+  } = useQuery<GetTotalTimeSpentQueryData>(GET_TOTAL_TIME_SPENT, {
     variables: {
-      userId: loggedInUser ? parseFloat(loggedInUser.id) : null,
+      userId: loggedInUserId,
       projectId: selectedProject,
-      startDate,
-      endDate,
+      startDate: startDate,
+      endDate: endDate,
     },
-    skip: !loggedInUser || !selectedProject,
+    skip: !loggedInUserId || !selectedProject || !startDate || !endDate,
+    fetchPolicy: "cache-first",
+    notifyOnNetworkStatusChange: true,
+    onError: (error) => {
+      console.error("Error fetching total time:", error);
+      setErrorMessage("Could not calculate total time for the selection.");
+      setTotalTime(null);
+    },
   });
 
   useEffect(() => {
-    if (userProjectsData && loggedInUser) {
-      const userWithProjects = userProjectsData.users.find(
-        (user: User) => user.id === loggedInUser.id
+    if (loggedInUserId) {
+      console.log(
+        `Teams version changed to ${teamsVersion}, refetching my projects.`
       );
-      if (userWithProjects) {
-        const projectsWithTeamName = userWithProjects.teams.flatMap(
-          (team: Team) =>
-            team.projects.map((project: Project) => ({
-              ...project,
-              teamName: team.name,
-            }))
-        );
-        setUserProjects(projectsWithTeamName);
-      }
+      refetchMyProjects().catch((err) => {
+        console.error("Failed to refetch my projects on version change:", err);
+        setErrorMessage("Failed to update project list.");
+      });
     }
-  }, [userProjectsData, loggedInUser]);
+  }, [teamsVersion, loggedInUserId, refetchMyProjects]);
 
   useEffect(() => {
-    if (selectedProject) {
-      refetch();
+    if (loggedInUserId && selectedProject && startDate && endDate) {
+      console.log("Inputs changed, refetching total time...");
+      refetchTotalTime({
+        userId: loggedInUserId,
+        projectId: selectedProject,
+        startDate: startDate,
+        endDate: endDate,
+      }).catch((err) => {
+        console.error("Manual refetch failed:", err);
+        setErrorMessage("Failed to refresh total time.");
+      });
+    } else if (!selectedProject) {
+      setTotalTime(null);
     }
-  }, [selectedProject, startDate, endDate, refetch]);
+  }, [loggedInUserId, selectedProject, startDate, endDate, refetchTotalTime]);
 
   useEffect(() => {
     if (timeData) {
-      setTotalTime(timeData.getTotalTimeSpent);
+      setTotalTime(timeData.getTotalTimeSpent ?? 0);
+      if (!errorTime) setErrorMessage(null);
     }
-  }, [timeData]);
+    if (timeData && timeData.getTotalTimeSpent === null) {
+      setTotalTime(0);
+    }
+  }, [timeData, errorTime]);
 
-  if (loadingTime) return <p>Loading...</p>;
-  if (errorOptions || errorTime?.message) {
-    const errorMessage = errorOptions
-      ? errorOptions.message
-      : errorTime?.message;
-    return (
-      <div className="bg-red-50 border-l-8 border-red-400 p-4 mb-4">
-        <div className="flex">
-          <div className="flex-shrink-0">
-            <svg
-              className="h-5 w-5 text-red-400"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-              aria-hidden="true"
-            >
-              <path
-                fillRule="evenodd"
-                d="M8.257 3.099c.366-.47.977-.751 1.743-.751s1.377.281 1.743.75l6.857 8.8c.38.487.4 1.128.06 1.625a1.162 1.162 0 01-.86.426H2.25c-.334 0-.65-.14-.86-.426a1.163 1.163 0 01-.06-1.625l6.857-8.8z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </div>
-          <div className="ml-3">
-            <h3 className="text-sm font-medium text-red-800">Error</h3>
-            <div className="text-sm text-red-600">
-              <p>{errorMessage}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const isLoading = loadingUserProjects || loadingTime;
+  const displayError =
+    errorMessage || errorUserProjects?.message || errorTime?.message;
 
   return (
-    <div className="p-6 bg-black shadow-md flex flex-row justify-between items-center">
-      <h3 className="text-lg font-bold text-white">
-        Get Time Spent on Project
+    <div className="p-6 bg-black shadow-md flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0 md:space-x-6">
+      <h3 className="text-lg font-bold text-white whitespace-nowrap">
+        Time Spent Analysis (My Projects)
       </h3>
-      <div>
+
+      {/* Project Selector */}
+      <div className="flex-grow w-full md:w-auto">
         <select
-          id="projectSelector"
-          value={selectedProject || ""}
+          id="myProjectSelectorForTime"
+          value={selectedProject}
           onChange={(e) => setSelectedProject(e.target.value)}
-          className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+          className="w-full p-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          disabled={loadingUserProjects || userProjects.length === 0}
         >
-          <option value="">Select a Project</option>
-          {userProjects.map((project: Project) => (
+          <option value="">
+            {loadingUserProjects
+              ? "Loading My Projects..."
+              : userProjects.length === 0
+              ? "No Projects Found"
+              : "Select My Project"}
+          </option>
+          {userProjects.map((project) => (
             <option key={project.id} value={project.id}>
-              {project.name} (Team: {project.teamName})
+              {project.name} {project.teamName ? `(${project.teamName})` : ""}
             </option>
           ))}
         </select>
       </div>
 
       {/* Date Pickers */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="flex-grow w-full md:w-auto flex flex-col sm:flex-row gap-2">
         <input
           type="date"
           id="startDatePicker"
           value={startDate}
           onChange={(e) => setStartDate(e.target.value)}
-          className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+          className="w-full p-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          aria-label="Start Date"
         />
         <input
           type="date"
           id="endDatePicker"
           value={endDate}
           onChange={(e) => setEndDate(e.target.value)}
-          className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+          className="w-full p-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          aria-label="End Date"
         />
       </div>
 
       {/* Total Time Display */}
-      <p className="text-lg font-medium text-white">
-        Total Time: {formatTimeFromMilliseconds(totalTime)}
-      </p>
+      <div className="text-center md:text-right whitespace-nowrap">
+        {isLoading && !displayError && (
+          <p className="text-gray-400">Loading Time...</p>
+        )}
+        {displayError && <p className="text-red-400 text-sm">{displayError}</p>}
+        {!isLoading && !displayError && (
+          <p className="text-lg font-medium text-white">
+            Total:{" "}
+            {totalTime !== null ? formatTimeFromMilliseconds(totalTime) : "N/A"}
+          </p>
+        )}
+      </div>
     </div>
   );
 };
 
 export default TotalTimeSpent;
+
+// ====== FILE: src\app\components\Admin\userManagementSection.tsx ======
+
+// src/app/components/Admin/UserManagementSection.tsx
+"use client";
+
+import React, { useEffect, useState } from "react";
+import { useQuery, gql, NetworkStatus, ApolloError } from "@apollo/client";
+import { useDebounce } from "use-debounce";
+import UserTable from "@/app/components/Admin/UserTable";
+import { User as UserTableRowType } from "@/app/components/Admin/UserRow";
+import { UserRole } from "@/app/components/Admin/UserRoleSelect";
+import { GET_SIMPLE_TEAMS } from "@/app/graphql/adminOperations"; // Keep this for team dropdowns
+import { useAuthStore } from "@/app/lib/authStore";
+
+const GET_MANAGEMENT_USERS = gql`
+  query GetManagementUsers(
+    $page: Int
+    $pageSize: Int
+    $search: String
+    $role: UserRole
+  ) {
+    users(
+      args: { page: $page, pageSize: $pageSize, search: $search, role: $role }
+    ) {
+      id
+      email
+      role
+      teams {
+        id
+        name
+        __typename
+      }
+      __typename
+    }
+  }
+`;
+
+const GET_USERS_COUNT = gql`
+  query GetUsersManagementCount($search: String, $role: UserRole) {
+    usersCount(search: $search, role: $role)
+  }
+`;
+
+// --- Interfaces ---
+interface GetUsersQueryData {
+  users: Array<{
+    id: number;
+    email: string;
+    role: string;
+    teams: Array<{ id: string; name: string; __typename: "Team" }>;
+    __typename: "User";
+  }>;
+}
+
+interface GetSimpleTeamsQueryData {
+  getAllSimpleTeams: Array<{
+    id: string;
+    name: string;
+    __typename: "SimpleTeamDTO";
+  }>;
+}
+
+interface GetUsersCountQueryData {
+  usersCount: number;
+}
+
+// --- Component ---
+const UserManagementSection: React.FC = () => {
+  // State for UI controls
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [roleFilter, setRoleFilter] = useState<UserRole | "">(""); // Use '' for "All Roles" option
+
+  // Debounce search term
+  const [debouncedSearchTerm] = useDebounce(searchTerm, 500);
+
+  // Other state
+  const [users, setUsers] = useState<GetUsersQueryData["users"]>([]);
+  const loggedInUser = useAuthStore((state) => state.user);
+
+  const userQueryVariables = {
+    page: page || null,
+    pageSize: pageSize || null,
+    search: debouncedSearchTerm || null,
+    role: roleFilter || null,
+  };
+
+  // Variables for the count query (filters only)
+  const countQueryVariables = {
+    search: debouncedSearchTerm || undefined,
+    role: roleFilter || undefined,
+  };
+
+  // --- Queries ---
+
+  // Fetch Paginated/Filtered Users
+  const {
+    loading: loadingUsers,
+    error: errorUsers,
+    data: dataUsers,
+    networkStatus,
+  } = useQuery<GetUsersQueryData>(GET_MANAGEMENT_USERS, {
+    variables: userQueryVariables,
+    notifyOnNetworkStatusChange: true,
+    // fetchPolicy: "cache-and-network" // Consider this if cache updates aren't reliable enough
+  });
+
+  // Fetch Total User Count (matching filters)
+  const { data: countData, error: countError } =
+    useQuery<GetUsersCountQueryData>(GET_USERS_COUNT, {
+      variables: countQueryVariables,
+      fetchPolicy: "cache-and-network", // Count should reflect current filters
+    });
+
+  // Fetch All Teams (for dropdowns in rows)
+  const {
+    loading: loadingTeams,
+    data: dataTeams,
+    error: teamsError,
+  } = useQuery<GetSimpleTeamsQueryData>(GET_SIMPLE_TEAMS);
+
+  // Calculate total pages
+  const totalUsers = countData?.usersCount ?? 0;
+  const totalPages = Math.ceil(totalUsers / pageSize);
+
+  // --- Effects ---
+
+  // Update local users state when data arrives/changes
+  useEffect(() => {
+    if (dataUsers?.users) {
+      setUsers(dataUsers.users);
+    }
+  }, [dataUsers]);
+
+  // Reset to page 1 when filters or page size change
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearchTerm, roleFilter, pageSize]);
+
+  // --- Loading/Error Handling ---
+  const isLoading =
+    loadingUsers &&
+    networkStatus !== NetworkStatus.refetch &&
+    networkStatus !== NetworkStatus.setVariables;
+  const isRefetching =
+    networkStatus === NetworkStatus.refetch ||
+    networkStatus === NetworkStatus.setVariables;
+  const combinedError = errorUsers || countError || teamsError; // Combine potential errors
+
+  if (isLoading || loadingTeams) return <p>Loading User Data...</p>; // Initial load for users or teams
+
+  if (combinedError) {
+    const error = combinedError as ApolloError; // Cast for accessing details
+    console.error("Data loading error:", error);
+    const graphQLError = error.graphQLErrors?.[0];
+    if (graphQLError?.extensions?.code === "FORBIDDEN") {
+      return <p>You do not have permission to view users.</p>;
+    }
+    return <p>Error loading data: {error.message}</p>;
+  }
+
+  // Prepare data for table (casting role string to enum)
+  const usersForTable: UserTableRowType[] = users.map((user) => ({
+    ...user,
+    role: user.role as UserRole, // Cast role string to enum for UserRow prop type
+  }));
+
+  // --- Render ---
+  return (
+    <div className="mb-6 shadow-md p-4 border rounded-lg bg-white">
+      {" "}
+      {/* Added bg-white */}
+      <h2 className="text-xl font-semibold mb-4">User Management</h2>{" "}
+      {/* Added Title */}
+      {/* Search and Filter Controls */}
+      <div className="mb-4 flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-4 items-center">
+        <div className="flex-grow w-full sm:w-auto">
+          <label htmlFor="userSearch" className="sr-only">
+            Search by email
+          </label>
+          <input
+            id="userSearch"
+            type="text"
+            placeholder="Search by email..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full p-2 border rounded text-sm focus:ring-indigo-500 focus:border-indigo-500"
+          />
+        </div>
+        <div className="w-full sm:w-auto">
+          <label htmlFor="roleFilter" className="sr-only">
+            Filter by role
+          </label>
+          <select
+            id="roleFilter"
+            value={roleFilter}
+            onChange={(e) => setRoleFilter(e.target.value as UserRole | "")}
+            className="w-full p-2 border rounded text-sm focus:ring-indigo-500 focus:border-indigo-500"
+          >
+            <option value="">All Roles</option>
+            {Object.values(UserRole).map((role) => (
+              <option key={role} value={role}>
+                {role}
+              </option>
+            ))}
+          </select>
+        </div>
+        {/* Page Size Selector */}
+        <div className="text-sm text-gray-700 w-full sm:w-auto sm:ml-auto">
+          <label htmlFor="pageSizeSelect" className="mr-1">
+            Show:
+          </label>
+          <select
+            id="pageSizeSelect"
+            value={pageSize}
+            onChange={(e) => setPageSize(Number(e.target.value))}
+            className="border rounded px-2 py-1 mx-1 focus:ring-indigo-500 focus:border-indigo-500"
+          >
+            <option value="5">5</option>
+            <option value="10">10</option>
+            <option value="25">25</option>
+            <option value="50">50</option>
+          </select>
+          <span>entries</span>
+        </div>
+      </div>
+      {/* Table Area */}
+      {/* Render table only when initial load is complete and no critical errors */}
+      {!isLoading && !combinedError && (
+        <>
+          {/* Table with Opacity for Refetching state */}
+          <div
+            className={`transition-opacity duration-300 ${
+              isRefetching ? "opacity-50 pointer-events-none" : "opacity-100"
+            }`}
+          >
+            <UserTable
+              users={usersForTable}
+              allTeams={dataTeams?.getAllSimpleTeams || []}
+              loggedInUserId={loggedInUser?.id}
+            />
+          </div>
+
+          {/* Pagination Controls */}
+          <div className="flex flex-col sm:flex-row justify-between items-center mt-4 text-sm text-gray-700">
+            <div className="mb-2 sm:mb-0">
+              Showing{" "}
+              {Math.min(
+                totalUsers > 0 ? (page - 1) * pageSize + 1 : 0,
+                totalUsers
+              )}{" "}
+              to {Math.min(page * pageSize, totalUsers)} of {totalUsers} entries
+            </div>
+            <div className="flex items-center">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1 || isRefetching}
+                className="px-3 py-1 border rounded mr-2 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors"
+                aria-label="Previous Page"
+              >
+                {" "}
+                Previous{" "}
+              </button>
+              <span className="mx-2 font-medium">
+                Page {page} of {totalPages > 0 ? totalPages : 1}
+              </span>
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={
+                  page === totalPages || totalPages === 0 || isRefetching
+                }
+                className="px-3 py-1 border rounded ml-2 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors"
+                aria-label="Next Page"
+              >
+                {" "}
+                Next{" "}
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+      {/* Show loading indicator specifically during refetch */}
+      {isRefetching && !isLoading && (
+        <p className="text-center text-gray-500 mt-4">Updating list...</p>
+      )}
+    </div>
+  );
+};
+
+export default UserManagementSection;
 
 // ====== FILE: src\app\components\Admin\UserRoleSelect.tsx ======
 
@@ -5940,12 +6187,23 @@ export default UserRoleSelect;
 // ====== FILE: src\app\components\Admin\UserRow.tsx ======
 
 "use client";
-import React from "react";
+
+import React, { useState, useCallback } from "react";
+import { useMutation, useApolloClient, gql, ApolloError } from "@apollo/client";
+import { toast } from "react-toastify";
+import {
+  ADD_USER_TO_TEAM,
+  REMOVE_USER_FROM_TEAM,
+  UPDATE_USER_ROLE,
+  GET_SIMPLE_TEAMS,
+} from "@/app/graphql/adminOperations";
+import { loggedInUserTeamsVersion } from "@/app/lib/apolloClient";
 import UserRoleSelect, { UserRole } from "./UserRoleSelect";
 
 export interface Team {
   id: string;
   name: string;
+  __typename?: "Team" | "SimpleTeamDTO";
 }
 
 export interface User {
@@ -5953,80 +6211,481 @@ export interface User {
   email: string;
   role: UserRole;
   teams: Team[];
+  __typename?: "User";
 }
+
+type UserFragmentData = {
+  id: number;
+  email: string;
+  role: string;
+  teams: Array<{ id: string; name: string; __typename: "Team" }>;
+  __typename: "User";
+};
+
+interface GetSimpleTeamsQueryData {
+  getAllSimpleTeams: Array<{
+    id: string;
+    name: string;
+    __typename: "SimpleTeamDTO";
+  }>;
+}
+
+const USER_CORE_FIELDS_FRAGMENT = gql`
+  fragment UserCoreFieldsRow on User {
+    id
+    email
+    role
+    teams {
+      id
+      name
+      __typename
+    }
+    __typename
+  }
+`;
 
 interface UserRowProps {
   user: User;
-  teams: Team[];
-  onTeamSelect: (userId: number, teamId: string) => void;
-  onAddToTeam: (userId: number) => void;
-  onRemoveFromTeam: (userId: number, teamId: string) => void;
-  onRoleChange: (userId: number, newRole: UserRole) => void;
+  allTeams: Team[];
+  loggedInUserId: number | undefined;
 }
 
 const UserRow: React.FC<UserRowProps> = ({
   user,
-  teams,
-  onTeamSelect,
-  onAddToTeam,
-  onRemoveFromTeam,
-  onRoleChange,
+  allTeams,
+  loggedInUserId,
 }) => {
+  const [selectedTeamIdForRow, setSelectedTeamIdForRow] = useState<string>("");
+  const [isAdding, setIsAdding] = useState(false);
+  const [confirmingRemoveTeamId, setConfirmingRemoveTeamId] = useState<
+    string | null
+  >(null);
+  const [isProcessingRemove, setIsProcessingRemove] = useState<string | null>(
+    null
+  );
+  const [isChangingRole, setIsChangingRole] = useState(false);
+  const [rowError, setRowError] = useState<string | null>(null);
+
+  const client = useApolloClient();
+
+  const [addUserToTeamMutation] = useMutation(ADD_USER_TO_TEAM, {
+    onError: (error) => {
+      console.error("Error adding user to team:", error);
+      const errorMsg = error.message || "Failed to add user to team.";
+      setRowError(errorMsg);
+      toast.error(`Error: ${errorMsg}`);
+      setIsAdding(false);
+    },
+  });
+  const [removeUserFromTeamMutation] = useMutation(REMOVE_USER_FROM_TEAM, {
+    onError: (error) => {
+      console.error("Error removing user from team:", error);
+      const errorMsg = error.message || "Failed to remove user from team.";
+      setRowError(errorMsg);
+      toast.error(`Error: ${errorMsg}`);
+      setIsProcessingRemove(null); // Use isProcessingRemove here
+      setConfirmingRemoveTeamId(null); // Also clear confirmation state on error
+    },
+  });
+  const [updateUserRoleMutation] = useMutation(UPDATE_USER_ROLE, {
+    onError: (error) => {
+      console.error("Error updating user role:", error);
+      const errorMsg =
+        error instanceof ApolloError
+          ? error.graphQLErrors[0]?.message || "Error updating role"
+          : "An unexpected error occurred during role update.";
+      setRowError(errorMsg);
+      toast.error(`Error: ${errorMsg}`);
+      setIsChangingRole(false);
+    },
+  });
+
+  const handleAddToTeam = useCallback(async () => {
+    if (!selectedTeamIdForRow) {
+      setRowError("Please select a team first.");
+      return;
+    }
+    setRowError(null);
+    setIsAdding(true);
+
+    try {
+      await addUserToTeamMutation({
+        variables: { userId: user.id, teamId: selectedTeamIdForRow },
+      });
+
+      const allTeamsData = client.readQuery<GetSimpleTeamsQueryData>({
+        query: GET_SIMPLE_TEAMS,
+      });
+      const teamToAdd = allTeamsData?.getAllSimpleTeams.find(
+        (t) => t.id === selectedTeamIdForRow
+      );
+      if (!teamToAdd) {
+        throw new Error("Team details not found in cache");
+      }
+
+      const userCacheId = client.cache.identify({
+        __typename: "User",
+        id: user.id,
+      });
+      if (!userCacheId) {
+        throw new Error("Could not identify user in cache");
+      }
+
+      const existingUserFragment = client.readFragment<UserFragmentData>({
+        id: userCacheId,
+        fragment: USER_CORE_FIELDS_FRAGMENT,
+      });
+      if (
+        !existingUserFragment ||
+        existingUserFragment.teams.some((t) => t.id === selectedTeamIdForRow)
+      ) {
+        console.log("User fragment not found or team already added.");
+        setIsAdding(false);
+        return;
+      }
+
+      const updatedTeams = [
+        ...existingUserFragment.teams,
+        {
+          id: selectedTeamIdForRow,
+          name: teamToAdd.name,
+          __typename: "Team" as const,
+        },
+      ];
+      client.writeFragment({
+        id: userCacheId,
+        fragment: USER_CORE_FIELDS_FRAGMENT,
+        data: { ...existingUserFragment, teams: updatedTeams },
+      });
+
+      if (loggedInUserId && user.id === loggedInUserId) {
+        loggedInUserTeamsVersion(loggedInUserTeamsVersion() + 1);
+      }
+      console.log(`Successfully updated cache for user ${user.id} (Add).`);
+      toast.success(`Added ${user.email} to team ${teamToAdd.name}!`);
+    } catch (error) {
+      console.error("Catch block for handleAddToTeam:", error);
+      if (!rowError) {
+        // Check if error wasn't already set by onError
+        const errorMsg =
+          error instanceof Error ? error.message : "Failed to add to team.";
+        setRowError(errorMsg);
+        toast.error(`Error: ${errorMsg}`);
+      }
+    } finally {
+      setIsAdding(false);
+    }
+  }, [
+    user.id,
+    selectedTeamIdForRow,
+    addUserToTeamMutation,
+    client,
+    loggedInUserId,
+    rowError,
+  ]);
+
+  const requestRemoveConfirmation = (teamId: string) => {
+    setConfirmingRemoveTeamId(teamId);
+    setRowError(null);
+  };
+
+  const cancelRemoveConfirmation = () => {
+    setConfirmingRemoveTeamId(null);
+  };
+
+  const executeRemoveTeam = useCallback(
+    async (teamIdToRemove: string) => {
+      if (!teamIdToRemove) return;
+      setRowError(null);
+      setIsProcessingRemove(teamIdToRemove);
+      setConfirmingRemoveTeamId(null);
+
+      try {
+        await removeUserFromTeamMutation({
+          variables: { userId: user.id, teamId: teamIdToRemove },
+        });
+
+        const userCacheId = client.cache.identify({
+          __typename: "User",
+          id: user.id,
+        });
+        if (!userCacheId) {
+          throw new Error("Could not identify user in cache");
+        }
+        const existingUserFragment = client.readFragment<UserFragmentData>({
+          id: userCacheId,
+          fragment: USER_CORE_FIELDS_FRAGMENT,
+        });
+        if (!existingUserFragment) {
+          throw new Error("User fragment not found in cache");
+        }
+
+        const updatedTeams = existingUserFragment.teams.filter(
+          (team) => team.id !== teamIdToRemove
+        );
+        if (updatedTeams.length === existingUserFragment.teams.length) {
+          console.warn(
+            `Team ${teamIdToRemove} not found in fragment for user ${user.id}.`
+          );
+          setIsProcessingRemove(null); // Still need to clear processing state
+          return;
+        }
+
+        client.writeFragment({
+          id: userCacheId,
+          fragment: USER_CORE_FIELDS_FRAGMENT,
+          data: { ...existingUserFragment, teams: updatedTeams },
+        });
+
+        if (loggedInUserId && user.id === loggedInUserId) {
+          loggedInUserTeamsVersion(loggedInUserTeamsVersion() + 1);
+        }
+        console.log(`Successfully updated cache for user ${user.id} (Remove).`);
+        toast.success(`Removed ${user.email} from team!`);
+      } catch (error) {
+        console.error("Catch block for executeRemoveTeam:", error);
+        if (!rowError) {
+          const errorMsg =
+            error instanceof Error
+              ? error.message
+              : "Failed to remove from team.";
+          setRowError(errorMsg);
+          toast.error(`Error: ${errorMsg}`);
+        }
+      } finally {
+        setIsProcessingRemove(null);
+      }
+    },
+    [user.id, removeUserFromTeamMutation, client, loggedInUserId, rowError]
+  );
+
+  const handleRoleChange = useCallback(
+    async (newRole: UserRole) => {
+      if (newRole === user.role) return;
+      setRowError(null);
+      setIsChangingRole(true);
+
+      try {
+        const result = await updateUserRoleMutation({
+          variables: { userId: user.id, newRole },
+        });
+        const updatedRole = result.data?.updateUserRole?.role;
+        if (!updatedRole) {
+          throw new Error("Mutation did not return updated role.");
+        }
+
+        const userCacheId = client.cache.identify({
+          __typename: "User",
+          id: user.id,
+        });
+        if (!userCacheId) {
+          throw new Error("Could not identify user in cache");
+        }
+
+        client.writeFragment({
+          id: userCacheId,
+          fragment: gql`
+            fragment UpdateUserRoleDataRow on User {
+              role
+            }
+          `,
+          data: { role: updatedRole },
+        });
+        console.log(`Successfully updated role cache for user ${user.id}.`);
+        toast.success(`Role for ${user.email} updated to ${newRole}!`);
+      } catch (error) {
+        console.error("Catch block for handleRoleChange:", error);
+        if (!rowError) {
+          const errorMsg =
+            error instanceof ApolloError
+              ? error.graphQLErrors[0]?.message || "Error updating role"
+              : error instanceof Error
+              ? error.message
+              : "Failed to update role.";
+          setRowError(errorMsg);
+          toast.error(`Error: ${errorMsg}`);
+        }
+      } finally {
+        setIsChangingRole(false);
+      }
+    },
+    [user.id, user.role, updateUserRoleMutation, client, rowError]
+  );
+
   return (
-    <tr>
-      <td className="px-6 py-4 whitespace-nowrap border-b border-gray-200 shadow-md">
-        {user.email}
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap border-b border-gray-200 shadow-md">
-        {/* Inline team select (skipping separate TeamSelect file) */}
-        <select onChange={(e) => onTeamSelect(user.id, e.target.value)}>
-          <option value="">Select team...</option>
-          {teams.map((team) => (
-            <option key={team.id} value={team.id}>
-              {team.name}
-            </option>
-          ))}
-        </select>
-        <button
-          className="ml-20 bg-black hover:bg-green-700 text-white font-bold py-1 px-2 rounded"
-          onClick={() => onAddToTeam(user.id)}
-        >
-          Add to Team
-        </button>
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap border-b border-gray-200 shadow-md">
-        {user.teams && user.teams.length > 0 ? (
-          <ul className="list-disc list-inside space-y-2">
-            {user.teams.map((team) => (
-              <li
-                key={team.id}
-                className="flex items-center justify-between border-b border-gray-200"
-              >
-                {team.name}
-                <button
-                  onClick={() => onRemoveFromTeam(user.id, team.id)}
-                  className="ml-4 bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded border-b border-gray-200"
+    <>
+      <tr>
+        <td className="px-6 py-4 whitespace-nowrap border-b border-gray-200 shadow-md">
+          {user.email}
+          {rowError && <p className="text-red-500 text-xs mt-1">{rowError}</p>}
+        </td>
+
+        <td className="px-6 py-4 whitespace-nowrap border-b border-gray-200 shadow-md align-top">
+          <div className="flex flex-col space-y-3">
+            <div className="flex items-center space-x-2">
+              <div className="relative flex-grow">
+                <select
+                  value={selectedTeamIdForRow}
+                  onChange={(e) => setSelectedTeamIdForRow(e.target.value)}
+                  className="w-full px-3 py-1 border border-gray-300 rounded appearance-none text-sm"
+                  disabled={isAdding}
                 >
-                  Remove
-                </button>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p>No teams assigned</p>
-        )}
-      </td>
-      <td className="border-b border-gray-200 shadow-md">
-        <UserRoleSelect
-          currentRole={user.role}
-          onRoleChange={(newRole) => onRoleChange(user.id, newRole)}
-        />
-      </td>
-    </tr>
+                  <option value="">Select team...</option>
+                  {allTeams.map((team) => (
+                    <option key={team.id} value={team.id}>
+                      {team.name}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                  <svg
+                    className="w-4 h-4 text-gray-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M19 9l-7 7-7-7"
+                    ></path>
+                  </svg>
+                </div>
+              </div>
+              <button
+                onClick={handleAddToTeam}
+                disabled={isAdding || !selectedTeamIdForRow}
+                className={`bg-black text-white font-bold py-1 px-2 rounded flex items-center text-sm disabled:opacity-50 ${
+                  isAdding ? "bg-gray-500" : "hover:bg-green-700"
+                }`}
+              >
+                {isAdding ? (
+                  <>
+                    <svg
+                      className="animate-spin mr-1 h-3 w-3 text-white"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                    Adding...
+                  </>
+                ) : (
+                  <svg
+                    className="w-3 h-3 mr-1"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                    ></path>
+                  </svg>
+                )}
+                Add
+              </button>
+            </div>
+
+            {user.teams && user.teams.length > 0 ? (
+              <div className="flex flex-wrap gap-1 pt-1">
+                {user.teams.map((team) => (
+                  <div
+                    key={team.id}
+                    className={`rounded-full px-2 py-0.5 text-xs flex items-center border ${
+                      confirmingRemoveTeamId === team.id
+                        ? "bg-red-100 border-red-400"
+                        : "bg-gray-100 border-gray-300"
+                    }`}
+                  >
+                    <span>{team.name}</span>
+                    {confirmingRemoveTeamId === team.id ? (
+                      <>
+                        <button
+                          onClick={() => executeRemoveTeam(team.id)}
+                          disabled={isProcessingRemove === team.id}
+                          className="ml-1.5 px-1 py-0.5 bg-red-500 text-white rounded text-xxs hover:bg-red-700 disabled:opacity-50"
+                          title="Confirm Remove"
+                        >
+                          {isProcessingRemove === team.id ? "..." : "Confirm"}
+                        </button>
+                        <button
+                          onClick={cancelRemoveConfirmation}
+                          disabled={isProcessingRemove === team.id}
+                          className="ml-1 px-1 py-0.5 bg-gray-300 text-black rounded text-xxs hover:bg-gray-400 disabled:opacity-50"
+                          title="Cancel"
+                        >
+                          {" "}
+                          X{" "}
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        onClick={() => requestRemoveConfirmation(team.id)}
+                        disabled={
+                          !!isProcessingRemove ||
+                          confirmingRemoveTeamId === team.id
+                        }
+                        className="ml-1.5 text-gray-400 hover:text-red-600 disabled:opacity-50"
+                        title="Remove from team"
+                      >
+                        <svg
+                          className="w-3 h-3"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M6 18L18 6M6 6l12 12"
+                          ></path>
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <span className="text-gray-500 text-xs italic pt-1">
+                No teams assigned
+              </span>
+            )}
+          </div>
+        </td>
+
+        <td className="px-6 py-4 whitespace-nowrap border-b border-gray-200 shadow-md">
+          {isChangingRole ? (
+            <span className="text-xs text-gray-500 italic">Updating...</span>
+          ) : (
+            <UserRoleSelect
+              currentRole={user.role}
+              onRoleChange={handleRoleChange}
+            />
+          )}
+        </td>
+      </tr>
+    </>
   );
 };
 
-export default UserRow;
+export default React.memo(UserRow);
 
 // ====== FILE: src\app\components\Admin\UserTable.tsx ======
 
@@ -6036,53 +6695,43 @@ import UserRow, { User, Team } from "./UserRow";
 
 interface UserTableProps {
   users: User[];
-  teams: Team[];
-  onTeamSelect: (userId: number, teamId: string) => void;
-  onAddToTeam: (userId: number) => void;
-  onRemoveFromTeam: (userId: number, teamId: string) => void;
-  onRoleChange: (userId: number, newRole: string) => void;
+  allTeams: Team[];
+  loggedInUserId: number | undefined;
 }
 
 const UserTable: React.FC<UserTableProps> = ({
   users,
-  teams,
-  onTeamSelect,
-  onAddToTeam,
-  onRemoveFromTeam,
-  onRoleChange,
-}) => (
-  <table className="min-w-full table-auto">
-    <thead className="bg-black">
-      <tr>
-        <th className="px-6 py-3 text-left text-lg font-medium text-white uppercase tracking-wider">
-          User
-        </th>
-        <th className="px-6 py-3 text-left text-lg font-medium text-white uppercase tracking-wider">
-          Teams
-        </th>
-        <th className="px-6 py-3 text-left text-lg font-medium text-white uppercase tracking-wider">
-          Assigned
-        </th>
-        <th className="px-6 py-3 text-left text-lg font-medium text-white uppercase tracking-wider">
-          Role
-        </th>
-      </tr>
-    </thead>
-    <tbody>
-      {users.map((user) => (
-        <UserRow
-          key={user.id}
-          user={user}
-          teams={teams}
-          onTeamSelect={onTeamSelect}
-          onAddToTeam={onAddToTeam}
-          onRemoveFromTeam={onRemoveFromTeam}
-          onRoleChange={onRoleChange}
-        />
-      ))}
-    </tbody>
-  </table>
-);
+  allTeams,
+  loggedInUserId,
+}) => {
+  return (
+    <table className="min-w-full table-auto">
+      <thead className="bg-black">
+        <tr>
+          <th className="px-6 py-3 text-left text-lg font-medium text-white uppercase tracking-wider">
+            User
+          </th>
+          <th className="px-6 py-3 text-left text-lg font-medium text-white uppercase tracking-wider">
+            Team Management
+          </th>
+          <th className="px-6 py-3 text-left text-lg font-medium text-white uppercase tracking-wider">
+            Role
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        {users.map((user) => (
+          <UserRow
+            key={user.id}
+            user={user}
+            allTeams={allTeams}
+            loggedInUserId={loggedInUserId}
+          />
+        ))}
+      </tbody>
+    </table>
+  );
+};
 
 export default UserTable;
 
