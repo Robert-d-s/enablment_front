@@ -21,11 +21,11 @@ const TimeKeeper: React.FC = () => {
   const timerState = useTimer();
   const { userProjects, currentTeamId } = useTimeKeeperData();
   const feedbackState = useFeedbackState();
+  const loggedInUser = useAuthStore((state) => state.user);
 
   const [currentEntryId, setCurrentEntryId] = useState<number | null>(null);
 
   useCurrentUser();
-  const loggedInUser = useAuthStore((state) => state.user);
 
   const {
     ratesData,

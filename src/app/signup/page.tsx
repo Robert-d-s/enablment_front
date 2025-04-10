@@ -58,7 +58,6 @@ const Signup: React.FC = () => {
     onError: (error) => {
       console.error("Error during signup:", error);
 
-      // Check for email already exists error
       if (error.message.includes("Email already exists")) {
         setErrors({
           ...errors,
@@ -73,9 +72,6 @@ const Signup: React.FC = () => {
         const validationError = error.graphQLErrors.find(
           (e) => e.extensions?.code === "BAD_USER_INPUT"
         );
-        // const message = (validationError?.extensions?.originalError as any)
-        //   ?.message;
-        // setErrors({ general: `Signup failed: ${message || "Invalid input."}` });
         const extensions = validationError?.extensions as
           | GraphQLErrorExtensions
           | undefined;
@@ -87,7 +83,6 @@ const Signup: React.FC = () => {
         } else if (typeof originalMsg === "string") {
           extractedMessage = originalMsg;
         }
-
         setErrors({
           general: `Signup failed: ${extractedMessage || "Invalid input."}`,
         });
@@ -107,14 +102,12 @@ const Signup: React.FC = () => {
     let valid = true;
     const newErrors: { email?: string; password?: string } = {};
 
-    // Check if email is valid
     const emailRegex = /\S+@\S+\.\S+/;
     if (!email || !emailRegex.test(email)) {
       newErrors.email = "Please provide a valid email address.";
       valid = false;
     }
 
-    // Check if password is valid
     if (!password || !passwordRegex.test(password)) {
       newErrors.password =
         "Password must be at least 8 characters long, have at least one uppercase letter, and one special character.";

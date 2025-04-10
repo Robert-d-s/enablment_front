@@ -9,7 +9,6 @@ export const useTimer = (): TimerState & {
   resumeTimes: Date[];
   calculateTotalActiveTime: () => number;
 } => {
-  // --- Get state and actions from the Zustand store ---
   const { isRunning, initialStartTimeISO, pauseTimesISO, resumeTimesISO } =
     useTimerStore();
 
@@ -208,10 +207,10 @@ export const useTimer = (): TimerState & {
           timerRef.current
         );
         clearInterval(timerRef.current);
-        timerRef.current = null; // Ensure ref is cleared on cleanup
+        timerRef.current = null;
       }
     };
-  }, [isRunning, updateDisplay]); // Depend on isRunning from store and the memoized updateDisplay
+  }, [isRunning, updateDisplay]);
 
   // --- Control Functions (Dispatch actions to the store) ---
   const start = () => {
@@ -226,13 +225,11 @@ export const useTimer = (): TimerState & {
 
     if (!currentInitialISO) {
       console.log("useTimer start: Setting initial time in store.");
-      setInitialStartTimeInStore(now); // Update Store
+      setInitialStartTimeInStore(now);
     } else if (!currentlyRunning) {
-      // ***MODIFIED CONDITION***: Only add resume time if we were actually paused
-      // (i.e., if the number of pauses is greater than the number of resumes)
       if (currentPausesISO.length > currentResumesISO.length) {
         console.log("useTimer start: Adding RESUME time to store.");
-        addResumeTimeToStore(now); // Update Store
+        addResumeTimeToStore(now);
       } else {
         console.log(
           "useTimer start: Starting timer (not resuming from a pause)."
@@ -245,12 +242,11 @@ export const useTimer = (): TimerState & {
       return;
     }
     console.log("useTimer start: Setting isRunning=true in store.");
-    setTimerRunning(true); // Update Store
+    setTimerRunning(true);
   };
 
   const pause = () => {
     if (isRunning) {
-      // Check store value via hook selector
       console.log(
         "useTimer pause: Adding pause time and setting isRunning=false in store."
       );
@@ -280,22 +276,20 @@ export const useTimer = (): TimerState & {
     console.log("Resetting state and setting new start time in store...");
     resetTimerStateInStore();
     setInitialStartTimeInStore(date);
-
     setDisplayTime("00:00:00");
   };
 
   return {
-    isRunning, // From store
-    startTime: initialStartTime, // Derived Date object
-    displayTime, // Local display state
-    start, // Dispatcher function
-    pause, // Dispatcher function
-    reset, // Dispatcher function
-    setStartTime: handleManualSetStartTime, // Dispatcher function
-    // Provide derived Date objects
+    isRunning,
+    startTime: initialStartTime,
+    displayTime,
+    start,
+    pause,
+    reset,
+    setStartTime: handleManualSetStartTime,
     initialStartTime: initialStartTime,
     pauseTimes: pauseTimes,
     resumeTimes: resumeTimes,
-    calculateTotalActiveTime, // The calculation function
+    calculateTotalActiveTime,
   };
 };

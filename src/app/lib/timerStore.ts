@@ -1,4 +1,3 @@
-// src/app/lib/timerStore.ts
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 
@@ -54,15 +53,14 @@ export const useTimerStore = create<TimerPersistedState & TimerActions>()(
           rateIdForTimer: rateId,
         }),
       resetTimerState: () => {
-        console.log("Resetting timer state in Zustand store"); // Add log
+        console.log("Resetting timer state in Zustand store");
         set({ ...initialState });
       },
     }),
     {
-      name: "timer-storage", // Key for localStorage
+      name: "timer-storage",
       storage: createJSONStorage(() => localStorage),
       onRehydrateStorage: () => {
-        // Log when state is rehydrated
         console.log("Zustand timer state rehydrated from localStorage");
         return (state, error) => {
           if (error) {

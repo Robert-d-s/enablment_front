@@ -4,7 +4,6 @@ import type { TimerState, TimeEntry } from "../types";
 interface HandlersConfig {
   timerState: TimerState & {
     initialStartTime: Date | null;
-    // elapsedBeforePause: number;
     pauseTimes: Date[];
     resumeTimes: Date[];
     calculateTotalActiveTime: () => number;

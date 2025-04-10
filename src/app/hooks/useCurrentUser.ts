@@ -41,7 +41,6 @@ export const useCurrentUser = () => {
     },
     onError: (error) => {
       console.error("Error fetching current user:", error);
-
       const isAuthError =
         error.graphQLErrors.some(
           (gqlError) =>

@@ -25,21 +25,17 @@ const Login: React.FC = () => {
   const [password, setPassword] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const router = useRouter();
-  // Get the combined setAuth action from the store
   const setAuth = useAuthStore((state) => state.setAuth);
 
   const [login, { loading }] = useMutation<LoginData>(LOGIN_MUTATION, {
-    client: client, // Use the configured Apollo client
+    client: client,
     onCompleted: (data) => {
-      // Check if login data, token, AND user are present
       if (data?.login?.access_token && data?.login?.user) {
         const { access_token, user } = data.login;
         console.log("Login successful. Storing token and user data.");
         setAuth(access_token, user);
-        // Redirect after successful state update
         router.push("/timeKeeper");
       } else {
-        // Handle cases where backend response is missing expected data
         const errorMsg = "Login failed: Incomplete data received from server.";
         setErrorMessage(errorMsg);
         console.error(errorMsg, data);
