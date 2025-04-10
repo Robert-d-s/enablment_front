@@ -5,26 +5,22 @@ import { useQuery } from "@apollo/client";
 import gql from "graphql-tag";
 import ProjectSelector from "../ProjectSelector";
 
-// --- Interfaces ---
-
-// Interface for the data coming from the GraphQL query
 interface QueryRateDetail {
   rateId: number;
   rateName: string;
   hours: number;
   cost: number;
   ratePerHour: number;
-  __typename?: string; // Allow __typename from Apollo
+  __typename?: string;
 }
 
-// Interface for the invoice data state and query result
 interface InvoiceData {
   projectId: string;
   projectName: string;
   totalHours: number;
   totalCost: number;
-  rates: QueryRateDetail[]; // Use QueryRateDetail for incoming data
-  __typename?: string; // Allow __typename
+  rates: QueryRateDetail[];
+  __typename?: string;
 }
 
 interface Team {
@@ -32,22 +28,19 @@ interface Team {
   name: string;
 }
 
-// Use a more precise type for projects used in the selector
 interface ProjectForSelector {
   id: string;
   name: string;
   teamId: string;
-  teamName: string; // This should be guaranteed by projectsWithTeamNames
+  teamName: string;
 }
 
-// Type for raw project data from query
 interface RawProject {
   id: string;
   name: string;
   teamId: string;
 }
 
-// --- GraphQL Queries ---
 const GET_PROJECTS = gql`
   query GetRawProjects {
     projects {
@@ -85,7 +78,6 @@ const GET_INVOICE_FOR_PROJECT = gql`
   }
 `;
 
-// --- Type for Query Results ---
 interface GetRawProjectsData {
   projects: RawProject[];
 }
@@ -95,18 +87,15 @@ interface GetAllTeamsData {
 }
 
 interface GetInvoiceData {
-  invoiceForProject: InvoiceData | null; // Allow null if no data found
+  invoiceForProject: InvoiceData | null;
 }
 
-// --- Component ---
 const InvoiceSummary: React.FC = () => {
-  // --- State ---
   const [selectedProject, setSelectedProject] = useState<string>("");
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
   const [invoiceData, setInvoiceData] = useState<InvoiceData | null>(null);
 
-  // --- Data Fetching ---
   const { data: projectsData } = useQuery<GetRawProjectsData>(GET_PROJECTS);
   const { data: teamsData } = useQuery<GetAllTeamsData>(GET_ALL_TEAMS);
 
@@ -115,27 +104,23 @@ const InvoiceSummary: React.FC = () => {
       variables: {
         input: {
           projectId: selectedProject,
-          // Ensure dates are valid before converting, pass null if empty/invalid
           startDate: startDate ? new Date(startDate).toISOString() : null,
           endDate: endDate ? new Date(endDate).toISOString() : null,
         },
       },
-      // Only run query when all inputs are valid and selected
       skip: !selectedProject || !startDate || !endDate,
-      fetchPolicy: "network-only", // Re-fetch when variables change
+      fetchPolicy: "network-only",
       notifyOnNetworkStatusChange: true,
       onCompleted: (data) => {
-        // Update state when data successfully arrives
         setInvoiceData(data?.invoiceForProject ?? null);
         console.log("Invoice data received:", data?.invoiceForProject);
       },
       onError: (error) => {
         console.error("Error fetching invoice:", error);
-        setInvoiceData(null); // Clear data on error
+        setInvoiceData(null);
       },
     });
 
-  // --- Memoized Derived Data ---
   const teamIdToNameMap = useMemo(() => {
     if (!teamsData?.getAllSimpleTeams) return {};
     return teamsData.getAllSimpleTeams.reduce(
@@ -148,17 +133,14 @@ const InvoiceSummary: React.FC = () => {
   }, [teamsData]);
 
   const projectsWithTeamNames = useMemo<ProjectForSelector[]>(() => {
-    // Use specific type
     if (!projectsData?.projects || Object.keys(teamIdToNameMap).length === 0)
       return [];
     return projectsData.projects.map((project) => ({
       ...project,
-      // Ensure teamName is always a string for the selector
       teamName: teamIdToNameMap[project.teamId] || "Unknown Team",
     }));
   }, [projectsData, teamIdToNameMap]);
 
-  // Memoize finding the teamId for the selected invoice project
   const projectTeamId = useMemo<string | undefined>(() => {
     if (!invoiceData || !projectsData?.projects) return undefined;
     return projectsData.projects.find(
@@ -166,7 +148,6 @@ const InvoiceSummary: React.FC = () => {
     )?.teamId;
   }, [projectsData, invoiceData]);
 
-  // --- Logging Effect (Optional, for debugging) ---
   useEffect(() => {
     console.log("Invoice State Update:", {
       selectedProject,
@@ -185,15 +166,12 @@ const InvoiceSummary: React.FC = () => {
     errorInvoice,
   ]);
 
-  // --- Helper Functions ---
   const formatCurrency = (value: number | null | undefined): string => {
-    if (value === null || value === undefined) return "-"; // Handle null/undefined
-    // Added safety check for non-numbers
+    if (value === null || value === undefined) return "-";
     if (isNaN(value)) return "Invalid";
 
     try {
       return new Intl.NumberFormat("da-DK", {
-        // Use Danish locale for DKK
         style: "currency",
         currency: "DKK",
         minimumFractionDigits: 2,
@@ -201,11 +179,10 @@ const InvoiceSummary: React.FC = () => {
       }).format(value);
     } catch (e) {
       console.error("Error formatting currency:", e);
-      return String(value); // Fallback
+      return String(value);
     }
   };
 
-  // --- Render Logic ---
   const renderInvoiceDetails = () => {
     if (loadingInvoice) {
       return <p className="text-gray-400 mt-4">Loading Invoice...</p>;
@@ -219,23 +196,19 @@ const InvoiceSummary: React.FC = () => {
       );
     }
     if (invoiceData) {
-      // Check if invoiceData exists (not null)
       return (
         <div className="mt-4 p-6 bg-white shadow-md rounded-lg">
           <h4 className="text-md font-bold bg-slate-200 p-2 rounded-t-lg">
             {" "}
-            {/* Added padding/rounding */}
             Project: {invoiceData.projectName} - Team:{" "}
             {teamIdToNameMap && projectTeamId
-              ? teamIdToNameMap[projectTeamId] || "N/A" // Display N/A if not found
+              ? teamIdToNameMap[projectTeamId] || "N/A"
               : "..."}
           </h4>
           <div className="p-2 space-y-1">
             {" "}
-            {/* Added padding */}
             <p className="border-b border-gray-200 pb-1">
               Total Hours: {invoiceData.totalHours?.toFixed(2) ?? "N/A"}{" "}
-              {/* Added nullish coalescing */}
             </p>
             <p className="border-b border-gray-200 pb-1">
               Total Cost: {formatCurrency(invoiceData.totalCost)}
@@ -245,21 +218,16 @@ const InvoiceSummary: React.FC = () => {
               {invoiceData.rates && invoiceData.rates.length > 0 ? (
                 <ul className="list-disc list-inside pl-4 pt-1">
                   {" "}
-                  {/* Added list styling */}
-                  {invoiceData.rates.map(
-                    (
-                      rate: QueryRateDetail // Use QueryRateDetail type
-                    ) => (
-                      <li
-                        className="border-b border-gray-100 py-1 text-sm" // Adjusted styling
-                        key={rate.rateId} // Use number rateId
-                      >
-                        {rate.rateName}: {rate.hours?.toFixed(2) ?? "N/A"} hours
-                        at {formatCurrency(rate.cost)} (
-                        {formatCurrency(rate.ratePerHour)} / h)
-                      </li>
-                    )
-                  )}
+                  {invoiceData.rates.map((rate: QueryRateDetail) => (
+                    <li
+                      className="border-b border-gray-100 py-1 text-sm"
+                      key={rate.rateId}
+                    >
+                      {rate.rateName}: {rate.hours?.toFixed(2) ?? "N/A"} hours
+                      at {formatCurrency(rate.cost)} (
+                      {formatCurrency(rate.ratePerHour)} / h)
+                    </li>
+                  ))}
                 </ul>
               ) : (
                 <p className="text-gray-500 text-sm pt-1">
@@ -271,7 +239,6 @@ const InvoiceSummary: React.FC = () => {
         </div>
       );
     }
-    // If inputs are selected but no data/error/loading state exists
     if (selectedProject && startDate && endDate) {
       return (
         <p className="text-gray-400 mt-4">
@@ -280,7 +247,6 @@ const InvoiceSummary: React.FC = () => {
       );
     }
 
-    // If inputs are not yet selected
     return (
       <p className="text-gray-500 mt-4">
         Please select a project and date range.
@@ -288,14 +254,13 @@ const InvoiceSummary: React.FC = () => {
     );
   };
 
-  // --- Component Return ---
   return (
     <div className="p-6 bg-black shadow-md rounded-lg">
       <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0 md:space-x-4 mb-4">
         <h3 className="text-lg font-bold text-white">Invoice Summary</h3>
         <div className="flex-grow">
           <ProjectSelector
-            projects={projectsWithTeamNames} // Pass memoized list
+            projects={projectsWithTeamNames}
             selectedProject={selectedProject}
             onProjectChange={setSelectedProject}
           />

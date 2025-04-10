@@ -1,5 +1,4 @@
 "use client";
-
 import React, { useState } from "react";
 import { useQuery, useMutation, gql, ApolloError } from "@apollo/client";
 
@@ -15,7 +14,6 @@ interface Rate {
   rate: number;
 }
 
-// GraphQL Queries and Mutations
 const GET_ALL_SIMPLE_TEAMS = gql`
   query GetAllSimpleTeams {
     getAllSimpleTeams {

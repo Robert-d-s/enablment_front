@@ -34,14 +34,13 @@ const AdminPage: React.FC = () => {
         <div className="mb-6 shadow-md">
           <TotalTimeSpent />
         </div>
-        {/*
+
         <div className="mb-6 shadow-md">
           <RatesManager />
         </div>
         <div className="shadow-md">
           <InvoiceSummary />
         </div>
-         */}
       </div>
     </>
   );

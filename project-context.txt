@@ -559,7 +559,6 @@ export interface TimerState {
 
 // ====== FILE: src\app\adminPage\page.tsx ======
 
-// src/app/adminPage/page.tsx
 "use client";
 
 import React from "react";
@@ -596,14 +595,13 @@ const AdminPage: React.FC = () => {
         <div className="mb-6 shadow-md">
           <TotalTimeSpent />
         </div>
-        {/*
+
         <div className="mb-6 shadow-md">
           <RatesManager />
         </div>
         <div className="shadow-md">
           <InvoiceSummary />
         </div>
-         */}
       </div>
     </>
   );
@@ -1602,7 +1600,7 @@ import { formatTimeFromMilliseconds } from "../utils/timeUtils";
 interface Project {
   id: string;
   name: string;
-  teamName: string;
+  teamName?: string;
 }
 
 interface Rate {
@@ -1674,7 +1672,7 @@ export default ProjectRateSelectors;
 import React from "react";
 
 type ProjectSelectorProps = {
-  projects: { id: string; name: string; teamName: string }[];
+  projects: { id: string; name: string; teamName?: string }[];
   selectedProject: string;
   onProjectChange: (projectId: string) => void;
   className?: string;
@@ -3071,7 +3069,6 @@ export const useCurrentUser = () => {
     },
     onError: (error) => {
       console.error("Error fetching current user:", error);
-
       const isAuthError =
         error.graphQLErrors.some(
           (gqlError) =>
@@ -3152,16 +3149,14 @@ export const useFeedbackState = () => {
 
 // ====== FILE: src\app\hooks\useTimeKeeperData.ts ======
 
-// src/app/hooks/useTimeKeeperData.ts
 import { useQuery } from "@apollo/client";
 import { useEffect, useState } from "react";
-// Import the CORRECT query
-import { GET_MY_PROJECTS } from "@/app/components/Admin/totalTimeSpent"; // Import from where you defined it
-// Remove unused imports: PROJECTS_QUERY, USER_PROJECTS_QUERY
+import { GET_MY_PROJECTS } from "@/app/components/Admin/totalTimeSpent";
 import useStore from "@/app/lib/store";
 import { useAuthStore } from "@/app/lib/authStore";
+import { useReactiveVar } from "@apollo/client";
+import { loggedInUserTeamsVersion } from "@/app/lib/apolloClient";
 
-// Keep MyProject interface (or import if defined elsewhere)
 export interface MyProject {
   id: string;
   name: string;
@@ -3170,77 +3165,67 @@ export interface MyProject {
   __typename?: "Project";
 }
 
-// Keep GetMyProjectsQueryData interface
 interface GetMyProjectsQueryData {
   myProjects: MyProject[];
 }
 
-// Remove unused interfaces: Project, ProjectsData, Team, User, UserProjectsData
-
 const useTimeKeeperData = () => {
   const user = useAuthStore((state) => state.user);
-  const loggedInUserId = user?.id; // Needed for skip logic
+  const loggedInUserId = user?.id;
+  const teamsVersion = useReactiveVar(loggedInUserTeamsVersion);
 
-  // Use the new GET_MY_PROJECTS query
   const {
     data: myProjectsData,
     loading: loadingMyProjects,
     error: errorMyProjects,
+    refetch: refetchMyProjects,
   } = useQuery<GetMyProjectsQueryData>(GET_MY_PROJECTS, {
-    skip: !loggedInUserId, // Skip if not logged in
-    fetchPolicy: "cache-first", // Good default
+    skip: !loggedInUserId,
+    fetchPolicy: "cache-first",
   });
 
-  // REMOVE the old queries:
-  // const { data: projectsData } = useQuery<ProjectsData>(PROJECTS_QUERY);
-  // const { data: userProjectsData } = useQuery<UserProjectsData>(USER_PROJECTS_QUERY, { skip: !user });
-
-  const { setProjects, setTeamId } = useStore(); // Keep zustand store actions if still needed
-  const [userProjects, setUserProjects] = useState<MyProject[]>([]); // State holds MyProject now
+  const [userProjects, setUserProjects] = useState<MyProject[]>([]);
   const [currentTeamId, setCurrentTeamId] = useState<string | undefined>(
     undefined
   );
-  const selectedProject = useStore((state) => state.selectedProject); // Keep if used
+  const selectedProject = useStore((state) => state.selectedProject);
 
-  // Effect to populate projects dropdown data
   useEffect(() => {
     if (myProjectsData?.myProjects) {
       setUserProjects(myProjectsData.myProjects);
-      // Update the generic 'projects' in zustand store if other components use it?
-      // Or maybe remove setProjects from zustand if only TimeKeeper needs this list.
-      // setProjects(myProjectsData.myProjects); // Be careful with types if setProjects expects the old Project type
     } else {
       setUserProjects([]);
-      // setProjects([]); // Clear zustand store too?
     }
-  }, [myProjectsData /* setProjects */]); // Adjust dependencies
+  }, [myProjectsData]);
 
-  // Effect to set teamId based on selectedProject
+  useEffect(() => {
+    if (teamsVersion > 0 && loggedInUserId) {
+      console.log(
+        `[useTimeKeeperData] Detected team version change (${teamsVersion}), refetching my projects...`
+      );
+      refetchMyProjects().catch((err) => {
+        console.error("Failed to refetch my projects on version change:", err);
+      });
+    }
+  }, [teamsVersion, loggedInUserId, refetchMyProjects]);
+
   useEffect(() => {
     if (myProjectsData?.myProjects && selectedProject) {
-      // Find the project in the fetched 'myProjects' list
       const project = myProjectsData.myProjects.find(
         (p) => p.id === selectedProject
       );
       if (project?.teamId) {
-        setTeamId(project.teamId); // Update zustand store
-        setCurrentTeamId(project.teamId); // Update local state if needed elsewhere in hook
+        setCurrentTeamId(project.teamId);
       } else {
-        // Clear if selected project not found or has no teamId
-        setTeamId(null);
         setCurrentTeamId(undefined);
       }
     } else if (!selectedProject) {
-      // Clear if no project is selected
-      setTeamId(null);
       setCurrentTeamId(undefined);
     }
-  }, [myProjectsData, selectedProject, setTeamId]);
+  }, [myProjectsData, selectedProject]);
 
-  // Return projects list specifically formatted for dropdowns if needed,
-  // and potentially loading/error states for projects.
   return {
-    userProjects, // This list is now directly from GET_MY_PROJECTS
+    userProjects,
     currentTeamId,
     loadingUserProjects: loadingMyProjects,
     errorUserProjects: errorMyProjects,
@@ -3257,10 +3242,9 @@ import type { TimerState, TimeEntry } from "../types";
 interface HandlersConfig {
   timerState: TimerState & {
     initialStartTime: Date | null;
-    elapsedBeforePause: number;
     pauseTimes: Date[];
     resumeTimes: Date[];
-    calculateTotalActiveTime: () => number; // Use the function from useTimer
+    calculateTotalActiveTime: () => number;
   };
   selectedProject: string;
   selectedRate: string;
@@ -3322,7 +3306,6 @@ export const useTimeKeeperHandlers = ({
       const submissionTime = new Date();
       console.log("Submission time:", submissionTime.toISOString());
 
-      // Use the calculation function from timerState
       const totalElapsedTimeMs = timerState.calculateTotalActiveTime();
       console.log(
         "Total elapsed time calculated for submission (ms):",
@@ -3334,7 +3317,6 @@ export const useTimeKeeperHandlers = ({
       );
 
       if (currentEntryId) {
-        // Update existing time entry
         console.log("Updating existing time entry with ID:", currentEntryId);
         await updateTime({
           timeInputUpdate: {
@@ -3345,7 +3327,6 @@ export const useTimeKeeperHandlers = ({
         });
         console.log("Updated existing time entry ID:", currentEntryId);
       } else {
-        // Create new time entry
         console.log("Creating new time entry with data:", {
           startTime: formatISO(timerState.initialStartTime),
           projectId: selectedProject,
@@ -3417,17 +3398,16 @@ import {
 import type { TimeEntry, Rate } from "../types";
 
 interface CreateTimeData {
-  startTime: string; // ISO String
-  endTime?: string; // ISO String (Optional)
+  startTime: string;
+  endTime?: string;
   projectId: string;
   userId: number;
   rateId: number;
   totalElapsedTime: number;
 }
 
-// Define the structure for the Apollo variables
 interface CreateTimeMutationVariables {
-  timeInputCreate: CreateTimeData; // <--- The nested object
+  timeInputCreate: CreateTimeData;
 }
 
 export const useTimeKeeperQueries = (
@@ -3448,7 +3428,6 @@ export const useTimeKeeperQueries = (
     refetch,
   } = useQuery(TOTAL_TIME_QUERY, {
     variables: {
-      // userId: parseFloat(userId),
       userId: !isNaN(parseFloat(userId)) ? parseFloat(userId) : 0,
       projectId: selectedProject,
     },
@@ -3464,48 +3443,6 @@ export const useTimeKeeperQueries = (
     UPDATE_TIME_MUTATION
   );
 
-  // return {
-  //   ratesData,
-  //   totalTimeData,
-  //   totalTimeLoading,
-  //   totalTimeError,
-  //   refetch,
-  //   createTimeEntry: (data: {
-  //     startTime: string;
-  //     projectId: string;
-  //     userId: number;
-  //     rateId: number;
-  //     totalElapsedTime: number;
-  //   }): Promise<{ data: { createTime: TimeEntry } }> =>
-  //     createTimeEntryMutation({
-  //       variables: {
-  //         timeInputCreate: {
-  //           startTime: data.startTime,
-  //           projectId: data.projectId,
-  //           userId: data.userId,
-  //           rateId: data.rateId,
-  //           totalElapsedTime: data.totalElapsedTime,
-  //           // No additional fields that might trigger ValidationPipe
-  //         },
-  //       },
-  //     }) as Promise<{
-  //       data: { createTime: TimeEntry };
-  //     }>,
-  //   updateTime: (options: {
-  //     timeInputUpdate: {
-  //       id: number;
-  //       endTime: string;
-  //       totalElapsedTime: number;
-  //     };
-  //   }): Promise<{ data: { updateTime: TimeEntry } }> =>
-  //     updateTimeEntryMutation({
-  //       variables: {
-  //         timeInputUpdate: options.timeInputUpdate,
-  //       },
-  //     }) as Promise<{
-  //       data: { updateTime: TimeEntry };
-  //     }>,
-  // };
   return {
     ratesData,
     totalTimeData,
@@ -3517,10 +3454,10 @@ export const useTimeKeeperQueries = (
     ): Promise<{ data: { createTime: TimeEntry } }> =>
       createTimeEntryMutation({
         variables: {
-          timeInputCreate: timeData, // <--- Correctly wrap the data
+          timeInputCreate: timeData,
         },
-        context: { credentials: "include" }, // Ensure cookies are sent
-      }) as Promise<{ data: { createTime: TimeEntry } }>, // Type assertion might still be needed depending on codegen
+        context: { credentials: "include" },
+      }) as Promise<{ data: { createTime: TimeEntry } }>,
 
     updateTime: (options: {
       timeInputUpdate: {
@@ -3530,7 +3467,7 @@ export const useTimeKeeperQueries = (
       };
     }): Promise<{ data: { updateTime: TimeEntry } }> =>
       updateTimeEntryMutation({
-        variables: options, // updateTime variables are already correctly structured
+        variables: options,
         context: { credentials: "include" },
       }) as Promise<{ data: { updateTime: TimeEntry } }>,
   };
@@ -3549,7 +3486,6 @@ export const useTimer = (): TimerState & {
   resumeTimes: Date[];
   calculateTotalActiveTime: () => number;
 } => {
-  // --- Get state and actions from the Zustand store ---
   const { isRunning, initialStartTimeISO, pauseTimesISO, resumeTimesISO } =
     useTimerStore();
 
@@ -3748,10 +3684,10 @@ export const useTimer = (): TimerState & {
           timerRef.current
         );
         clearInterval(timerRef.current);
-        timerRef.current = null; // Ensure ref is cleared on cleanup
+        timerRef.current = null;
       }
     };
-  }, [isRunning, updateDisplay]); // Depend on isRunning from store and the memoized updateDisplay
+  }, [isRunning, updateDisplay]);
 
   // --- Control Functions (Dispatch actions to the store) ---
   const start = () => {
@@ -3766,13 +3702,11 @@ export const useTimer = (): TimerState & {
 
     if (!currentInitialISO) {
       console.log("useTimer start: Setting initial time in store.");
-      setInitialStartTimeInStore(now); // Update Store
+      setInitialStartTimeInStore(now);
     } else if (!currentlyRunning) {
-      // ***MODIFIED CONDITION***: Only add resume time if we were actually paused
-      // (i.e., if the number of pauses is greater than the number of resumes)
       if (currentPausesISO.length > currentResumesISO.length) {
         console.log("useTimer start: Adding RESUME time to store.");
-        addResumeTimeToStore(now); // Update Store
+        addResumeTimeToStore(now);
       } else {
         console.log(
           "useTimer start: Starting timer (not resuming from a pause)."
@@ -3785,12 +3719,11 @@ export const useTimer = (): TimerState & {
       return;
     }
     console.log("useTimer start: Setting isRunning=true in store.");
-    setTimerRunning(true); // Update Store
+    setTimerRunning(true);
   };
 
   const pause = () => {
     if (isRunning) {
-      // Check store value via hook selector
       console.log(
         "useTimer pause: Adding pause time and setting isRunning=false in store."
       );
@@ -3820,41 +3753,44 @@ export const useTimer = (): TimerState & {
     console.log("Resetting state and setting new start time in store...");
     resetTimerStateInStore();
     setInitialStartTimeInStore(date);
-
     setDisplayTime("00:00:00");
   };
 
   return {
-    isRunning, // From store
-    startTime: initialStartTime, // Derived Date object
-    displayTime, // Local display state
-    start, // Dispatcher function
-    pause, // Dispatcher function
-    reset, // Dispatcher function
-    setStartTime: handleManualSetStartTime, // Dispatcher function
-    // Provide derived Date objects
+    isRunning,
+    startTime: initialStartTime,
+    displayTime,
+    start,
+    pause,
+    reset,
+    setStartTime: handleManualSetStartTime,
     initialStartTime: initialStartTime,
     pauseTimes: pauseTimes,
     resumeTimes: resumeTimes,
-    calculateTotalActiveTime, // The calculation function
+    calculateTotalActiveTime,
   };
 };
 
 // ====== FILE: src\app\issuesPage\page.tsx ======
 
 "use client";
-
-import React, { useMemo, useState, useEffect, useRef } from "react";
-import { gql, useQuery } from "@apollo/client";
+import React, {
+  useMemo,
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+} from "react";
+import { gql, useQuery, useApolloClient } from "@apollo/client";
 import NavigationBar from "../components/NavigationBar";
-import client from "@/app/lib/apolloClient";
 import { io, Socket } from "socket.io-client";
 
 type Label = {
   id: string;
   name: string;
   color: string;
-  parentId: string;
+  parentId?: string;
+  __typename?: "Label";
 };
 
 type Issue = {
@@ -3862,16 +3798,22 @@ type Issue = {
   createdAt: string;
   updatedAt: string;
   title: string;
-  dueDate: string;
+  dueDate: string | null;
   projectId: string;
   priorityLabel: string;
   identifier: string;
-  assigneeName: string;
+  assigneeName: string | null;
   projectName: string;
   state: string;
-  teamKey: string;
-  teamName: string;
+  teamKey: string | null;
+  teamName: string | null;
   labels: Label[];
+  __typename?: "Issue";
+};
+
+type IssueUpdatePayload = {
+  action: "create" | "update" | "remove";
+  issue: Partial<Issue> & { id: string };
 };
 
 type GroupedIssues = {
@@ -3899,269 +3841,507 @@ const GET_ISSUES = gql`
         name
         color
         parentId
+        __typename
       }
+      __typename
     }
   }
 `;
 
 const IssuesComponent: React.FC = () => {
+  const client = useApolloClient();
   const { loading, error, data, refetch } = useQuery<{ issues: Issue[] }>(
     GET_ISSUES,
-    { client }
+    {
+      fetchPolicy: "cache-and-network",
+      nextFetchPolicy: "cache-first",
+    }
   );
 
   const [selectedAssignee, setSelectedAssignee] = useState<string | null>(null);
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
   const [socketConnected, setSocketConnected] = useState(false);
-  const [groupedIssues, setGroupedIssues] = useState<GroupedIssues>({});
   const socket = useRef<Socket | null>(null);
+  const [reconnectAttempts, setReconnectAttempts] = useState(0);
+  const [connectionStatusMessage, setConnectionStatusMessage] =
+    useState("Connecting...");
+  const maxReconnectAttempts = 5;
 
-  const handleSelectAssignee = (assignee: string) => {
+  const handleSelectAssignee = useCallback((assignee: string | null) => {
     setSelectedAssignee(assignee);
-  };
+  }, []);
 
-  const handleSelectTeam = (team: string) => {
+  const handleSelectTeam = useCallback((team: string | null) => {
     setSelectedTeam(team);
-  };
-
-  const handleClearFilters = () => {
-    setSelectedTeam(null);
-    setSelectedAssignee(null);
-  };
+  }, []);
 
   const uniqueTeams = useMemo(() => {
     const teams = new Set<string>();
-    data?.issues.forEach((issue) => teams.add(issue.teamName));
+    data?.issues?.forEach((issue) => {
+      if (issue.teamName) teams.add(issue.teamName);
+    });
     return Array.from(teams);
   }, [data?.issues]);
 
   const uniqueAssignees = useMemo(() => {
     const assignees = new Set<string>();
-    data?.issues.forEach((issue) => assignees.add(issue.assigneeName));
-    return Array.from(assignees);
+    data?.issues?.forEach((issue) => {
+      if (issue.assigneeName) assignees.add(issue.assigneeName);
+    });
+    return Array.from(assignees).sort();
   }, [data?.issues]);
 
   const filteredIssues = useMemo(() => {
     return (
-      data?.issues.filter((issue) => {
-        return (
-          (!selectedTeam || issue.teamName === selectedTeam) &&
-          (!selectedAssignee || issue.assigneeName === selectedAssignee)
-        );
-      }) || []
+      data?.issues?.filter((issue) => {
+        const teamMatch = !selectedTeam || issue.teamName === selectedTeam;
+        const assigneeMatch =
+          !selectedAssignee || issue.assigneeName === selectedAssignee;
+        return teamMatch && assigneeMatch;
+      }) ?? []
     );
   }, [data?.issues, selectedTeam, selectedAssignee]);
 
-  useEffect(() => {
-    socket.current = io(
-      process.env.NEXT_PUBLIC_BACKEND_WEBSOCKET_URL || "http://localhost:8080",
-      {
-        transports: ["websocket"], // Force WebSocket transport instead of polling
-        path: "/socket.io",
-        reconnectionAttempts: 5,
-        reconnectionDelay: 1000,
-        timeout: 20000,
+  const groupedIssues = useMemo(() => {
+    const groups: GroupedIssues = {};
+    filteredIssues.forEach((issue) => {
+      const stateName = issue.state || "Unknown State";
+      if (!groups[stateName]) {
+        groups[stateName] = [];
       }
-    );
-
-    const currentSocket = socket.current;
-
-    console.log(
-      "Attempting to connect to:",
-      process.env.NEXT_PUBLIC_BACKEND_WEBSOCKET_URL || "http://localhost:8080"
-    );
-    socket.current.on("error", (error: Error) => {
-      console.error("Socket error:", error);
+      groups[stateName].push(issue);
     });
 
-    currentSocket?.on("connect", () => {
-      console.log("WebSocket connected successfully");
-      setSocketConnected(true);
+    const sortedGroupKeys = Object.keys(groups).sort();
+    const sortedGroups: GroupedIssues = {};
+    sortedGroupKeys.forEach((key) => {
+      groups[key].sort(
+        (a, b) =>
+          new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+      );
+      sortedGroups[key] = groups[key];
     });
-
-    currentSocket?.on("disconnect", (reason: string) => {
-      console.log("WebSocket disconnected:", reason);
-      setSocketConnected(false);
-    });
-
-    currentSocket?.on("issueUpdate", (updatedIssue: Issue) => {
-      console.log("Received issue update via WebSocket:", updatedIssue);
-      refetch();
-    });
-
-    currentSocket?.on("connect_error", (err: Error) => {
-      console.error("WebSocket connection error:", err);
-    });
-    currentSocket?.on("disconnect", (reason: string) => {
-      console.log("WebSocket disconnected:", reason);
-    });
-
-    return () => {
-      if (currentSocket) {
-        console.log("Cleaning up WebSocket connection");
-        currentSocket.disconnect();
-      }
-    };
-  }, [refetch]);
-
-  useEffect(() => {
-    if (filteredIssues) {
-      const groups: GroupedIssues = {};
-      filteredIssues.forEach((issue) => {
-        if (!groups[issue.state]) {
-          groups[issue.state] = [];
-        }
-        groups[issue.state].push(issue);
-      });
-      setGroupedIssues(groups);
-    }
+    return sortedGroups;
   }, [filteredIssues]);
 
-  if (loading) return <p>Loading issues...</p>;
-  if (error) {
-    console.error("Error loading issues:", error);
-    return <p>Error loading issues: {error.message}</p>;
-  }
+  // --- WebSocket Connection and Cache Update Effect ---
+  useEffect(() => {
+    let connectTimeout: NodeJS.Timeout | null = null; //manage retry timeouts
 
-  const handleRefresh = () => {
-    refetch();
+    const connectSocket = () => {
+      if (socket.current || reconnectAttempts >= maxReconnectAttempts) {
+        if (reconnectAttempts >= maxReconnectAttempts) {
+          setConnectionStatusMessage("Connection failed (Max attempts)");
+          console.error("Maximum reconnection attempts reached.");
+        }
+        return;
+      }
+      setConnectionStatusMessage(
+        `Connecting (Attempt ${reconnectAttempts + 1})...`
+      );
+      console.log(
+        `Attempting WS connection (attempt ${reconnectAttempts + 1})...`
+      );
+
+      const wsUrl =
+        process.env.NEXT_PUBLIC_BACKEND_WEBSOCKET_URL ||
+        "http://localhost:8080";
+      socket.current = io(wsUrl, {
+        transports: ["websocket"],
+        path: "/socket.io",
+        reconnection: false,
+        timeout: 10000,
+      });
+
+      const currentSocket = socket.current;
+
+      currentSocket.on("connect", () => {
+        console.log(`WebSocket connected: ${currentSocket.id}`);
+        setSocketConnected(true);
+        setConnectionStatusMessage("Live Updates On");
+        setReconnectAttempts(0);
+      });
+
+      currentSocket.on("connect_error", (error: Error) => {
+        console.error(`WebSocket connect_error: ${error.message}`);
+        currentSocket.disconnect();
+        socket.current = null;
+        setSocketConnected(false);
+        setConnectionStatusMessage("Connection Error");
+        setReconnectAttempts((prev) => prev + 1);
+        if (reconnectAttempts + 1 < maxReconnectAttempts) {
+          connectTimeout = setTimeout(
+            connectSocket,
+            3000 + Math.random() * 2000
+          );
+        } else {
+          setConnectionStatusMessage("Connection failed (Max attempts)");
+        }
+      });
+
+      currentSocket.on("disconnect", (reason: string) => {
+        console.log(`WebSocket disconnected: ${reason}`);
+        setSocketConnected(false);
+        socket.current = null;
+        if (
+          reason !== "io client disconnect" &&
+          reconnectAttempts < maxReconnectAttempts
+        ) {
+          setConnectionStatusMessage("Disconnected. Retrying...");
+          setReconnectAttempts((prev) => prev + 1);
+          connectTimeout = setTimeout(
+            connectSocket,
+            3000 + Math.random() * 2000
+          );
+        } else if (reason === "io client disconnect") {
+          setConnectionStatusMessage("Disconnected");
+        }
+      });
+
+      // --- Apollo Cache Update Logic ---
+      currentSocket.on("issueUpdate", (payload: IssueUpdatePayload) => {
+        console.log("Received WS issue update:", payload);
+
+        if (!payload || !payload.issue || !payload.issue.id) {
+          console.error("Received invalid issue update payload:", payload);
+          return;
+        }
+        const issueId = payload.issue.id;
+
+        try {
+          client.cache.updateQuery<{ issues: Issue[] }>(
+            { query: GET_ISSUES },
+            (existingData) => {
+              if (!existingData) {
+                console.warn(
+                  "Cache data for GET_ISSUES not found during update. Skipping cache update."
+                );
+                return existingData;
+              }
+
+              let updatedIssues: Issue[];
+
+              switch (payload.action) {
+                case "create":
+                  const newIssue = {
+                    ...payload.issue,
+                    __typename: "Issue",
+                    labels:
+                      payload.issue.labels?.map((l) => ({
+                        ...l,
+                        __typename: "Label",
+                      })) ?? [],
+                  } as Issue;
+                  if (
+                    !existingData.issues.some(
+                      (issue) => issue.id === newIssue.id
+                    )
+                  ) {
+                    updatedIssues = [...existingData.issues, newIssue];
+                    console.log(`Apollo cache: Added issue ${newIssue.id}`);
+                  } else {
+                    console.warn(
+                      `Issue ${newIssue.id} (create event) already exists. Updating instead.`
+                    );
+                    updatedIssues = existingData.issues.map((issue) =>
+                      issue.id === newIssue.id ? newIssue : issue
+                    );
+                  }
+                  break;
+
+                case "update":
+                  const issueIdToUpdate = payload.issue.id;
+                  const incomingUpdateData = payload.issue; // Keep a reference
+
+                  // Find the existing issue defensively
+                  const existingIssueIndex = existingData.issues.findIndex(
+                    (issue) => issue.id === issueIdToUpdate
+                  );
+
+                  if (existingIssueIndex === -1) {
+                    // Issue not found in cache, maybe it was filtered out or deleted?
+                    console.warn(
+                      `Issue ${issueIdToUpdate} (update event) not found in cache. Skipping cache update.`
+                    );
+                    updatedIssues = existingData.issues; // No change
+                    break;
+                  }
+
+                  // Get a *copy* of the existing issue to modify
+                  const issueToUpdate = {
+                    ...existingData.issues[existingIssueIndex],
+                  };
+
+                  // Defensively determine the updated labels
+                  let finalLabels: Label[];
+                  if (incomingUpdateData.labels !== undefined) {
+                    // Use new labels from payload if they exist (even if empty array)
+                    finalLabels = (incomingUpdateData.labels || []).map(
+                      (l) => ({
+                        ...l,
+                        __typename: "Label",
+                      })
+                    );
+                  } else {
+                    // Otherwise, keep the existing labels (handle if existing labels were null/undefined)
+                    finalLabels = (issueToUpdate.labels || []).map((l) => ({
+                      ...l,
+                      __typename: "Label",
+                    }));
+                  }
+
+                  // Create the fully updated issue object by merging
+                  // Start with the existing, layer the incoming payload, then explicitly set labels and typename
+                  const mergedUpdatedIssue: Issue = {
+                    ...issueToUpdate, // Base with existing cached data
+                    ...incomingUpdateData, // Override with fields from the payload
+                    __typename: "Issue",
+                    labels: finalLabels,
+                  };
+
+                  // Create the new array for the cache
+                  updatedIssues = [...existingData.issues]; // Create a mutable copy
+                  updatedIssues[existingIssueIndex] = mergedUpdatedIssue; // Replace the item at the found index
+
+                  console.log(
+                    `Apollo cache: Prepared update for issue ${mergedUpdatedIssue.id}`
+                  );
+                  break;
+
+                case "remove":
+                  updatedIssues = existingData.issues.filter(
+                    (issue) => issue.id !== issueId
+                  );
+                  console.log(`Apollo cache: Removed issue ${issueId}`);
+                  break;
+
+                default:
+                  console.warn("Unknown issue update action:", payload);
+                  updatedIssues = existingData.issues;
+              }
+              return { issues: updatedIssues };
+            }
+          );
+        } catch (cacheError) {
+          console.error("Error updating Apollo cache:", cacheError);
+        }
+      });
+    };
+
+    connectSocket();
+
+    return () => {
+      console.log(
+        "Cleaning up WebSocket connection/timeouts on component unmount/reconnect"
+      );
+      if (connectTimeout) clearTimeout(connectTimeout);
+      if (socket.current) {
+        socket.current.disconnect();
+        socket.current = null;
+      }
+    };
+  }, [client, reconnectAttempts]);
+
+  // --- Manual Refresh ---
+  const handleRefresh = useCallback(() => {
+    console.log("Manual refresh triggered.");
+    setConnectionStatusMessage("Refreshing...");
+    refetch()
+      .then(() => {
+        console.log("Manual refresh successful");
+        setConnectionStatusMessage(
+          socketConnected ? "Live Updates On" : "Disconnected"
+        );
+      })
+      .catch((err) => {
+        console.error("Manual refresh failed:", err);
+        setConnectionStatusMessage("Refresh failed");
+      });
+  }, [refetch, socketConnected]);
+
+  // --- Render Logic ---
+  const renderContent = () => {
+    if (loading && !data) {
+      return (
+        <p className="text-center py-10 text-gray-500">Loading issues...</p>
+      );
+    }
+    if (error) {
+      return (
+        <p className="text-center py-10 text-red-500">
+          Error loading issues: {error.message}
+        </p>
+      );
+    }
+    if (Object.keys(groupedIssues).length === 0) {
+      return (
+        <p className="text-center py-10 text-gray-500">
+          No issues match the current filters.
+        </p>
+      );
+    }
+
+    // Render the grouped issues board
+    return Object.entries(groupedIssues).map(([stateName, issues]) => (
+      <div key={stateName} className="mb-6">
+        <h2 className="text-xl font-semibold mb-3 sticky top-0 bg-gray-100 p-2 z-5 border-b capitalize">
+          {stateName.replace(/_/g, " ")} ({issues.length}){" "}
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {issues.map((issue) => (
+            <div
+              key={issue.id}
+              className="border border-gray-200 rounded p-4 shadow hover:shadow-md transition-shadow duration-200 bg-white"
+            >
+              <h3 className="text-md font-semibold mb-1">{issue.title}</h3>
+              <p className="text-xs text-gray-500 mb-2">
+                {issue.identifier} | Prj: {issue.projectName}
+              </p>
+              <div className="flex flex-wrap gap-1 mb-2 min-h-[18px]">
+                {issue.labels?.map((label) => (
+                  <span
+                    key={label.id}
+                    style={{ backgroundColor: label.color || "#cccccc" }}
+                    className="text-white text-xxs font-semibold px-1.5 py-0.5 rounded"
+                  >
+                    {label.name}
+                  </span>
+                ))}
+              </div>
+              <div className="mt-1 text-xs text-gray-600 space-y-0.5">
+                <p>
+                  <span className="font-medium">Priority:</span>{" "}
+                  {issue.priorityLabel}
+                </p>
+                <p>
+                  <span className="font-medium">Team:</span>{" "}
+                  {issue.teamName || "N/A"}
+                </p>
+                <p>
+                  <span className="font-medium">Assignee:</span>{" "}
+                  {issue.assigneeName || "Unassigned"}
+                </p>
+                {issue.dueDate && (
+                  <p>
+                    <span className="font-medium">Due:</span>{" "}
+                    {new Date(issue.dueDate).toLocaleDateString()}
+                  </p>
+                )}
+                <p className="text-gray-400 pt-1 text-xxs">
+                  Updated: {new Date(issue.updatedAt).toLocaleString()}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    ));
   };
 
   return (
     <>
       <NavigationBar />
       <div className="container mx-auto p-4 font-roboto-condensed">
-        <div className="flex">
-          <div>
-            <div className="flex flex-wrap mb-1">
-              {uniqueTeams.map((team) => (
-                <button
-                  key={team}
-                  onClick={() => handleSelectTeam(team)}
-                  className={`p-1 m-1 uppercase ${
-                    selectedTeam === team ? "bg-green-500" : "bg-black"
-                  } text-white rounded hover:bg-gray-800`}
-                  style={{ fontSize: "12px" }}
-                >
-                  {team}
-                </button>
-              ))}
-            </div>
-            <div className="flex flex-wrap mb-1">
-              {uniqueAssignees.map((assignee) => (
-                <button
-                  key={assignee}
-                  onClick={() => handleSelectAssignee(assignee)}
-                  className={`p-1 m-1 uppercase ${
-                    selectedAssignee === assignee ? "bg-green-500" : "bg-black"
-                  } text-white rounded hover:bg-gray-800`}
-                  style={{ fontSize: "12px" }}
-                >
-                  {assignee}
-                </button>
-              ))}
-            </div>
-            <button
-              onClick={handleClearFilters}
-              className="p-1 m-1 bg-gray-300 text-black rounded hover:bg-gray-400"
-              style={{ fontSize: "12px" }}
-            >
-              Clear Filters
-            </button>
-          </div>
-          <div style={{ position: "fixed", bottom: "20px", right: "20px" }}>
-            <button
-              onClick={handleRefresh}
-              className="p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600"
-              style={{ width: "40px", height: "40px" }}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                x="0px"
-                y="0px"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-              >
-                <path d="M16 15L24 15 20 20zM8 9L0 9 4 4z"></path>
-                <path d="M21 6c0-1.654-1.346-3-3-3H7.161l1.6 2H18c.551 0 1 .448 1 1v10h2V6zM3 18c0 1.654 1.346 3 3 3h10.839l-1.6-2H6c-.551 0-1-.448-1-1V8H3V18z"></path>
-              </svg>
-            </button>
-          </div>
-          <div className="fixed bottom-20 right-20 flex items-center">
-            <div
-              className={`w-3 h-3 rounded-full mr-2 ${
-                socketConnected ? "bg-green-500" : "bg-red-500"
-              }`}
-            ></div>
-            <span className="text-sm">
-              {socketConnected ? "Connected" : "Disconnected"}
+        {/* --- Filter UI --- */}
+        <div className="flex mb-4 flex-wrap items-start gap-2 border-b pb-4">
+          {/* Team Filters */}
+          <div className="flex items-center flex-wrap gap-1">
+            <span className="text-sm font-medium mr-2 flex-shrink-0">
+              Teams:
             </span>
+            <button
+              onClick={() => handleSelectTeam(null)}
+              className={`p-1 px-2 m-1 text-xs ${
+                !selectedTeam
+                  ? "bg-blue-500 text-white"
+                  : "bg-gray-200 text-black"
+              } rounded hover:bg-gray-300`}
+            >
+              ALL
+            </button>
+            {uniqueTeams.map((team) => (
+              <button
+                key={team}
+                onClick={() => handleSelectTeam(team)}
+                className={`p-1 px-2 m-1 uppercase text-xs ${
+                  selectedTeam === team ? "bg-green-500" : "bg-black"
+                } text-white rounded hover:bg-gray-800`}
+              >
+                {team}
+              </button>
+            ))}
+          </div>
+          {/* Assignee Filters */}
+          <div className="flex items-center flex-wrap gap-1">
+            <span className="text-sm font-medium mr-2 flex-shrink-0">
+              Assignees:
+            </span>
+            <button
+              onClick={() => handleSelectAssignee(null)}
+              className={`p-1 px-2 m-1 text-xs ${
+                !selectedAssignee
+                  ? "bg-blue-500 text-white"
+                  : "bg-gray-200 text-black"
+              } rounded hover:bg-gray-300`}
+            >
+              ALL
+            </button>
+            {uniqueAssignees.map((assignee) => (
+              <button
+                key={assignee}
+                onClick={() => handleSelectAssignee(assignee)}
+                className={`p-1 px-2 m-1 uppercase text-xs ${
+                  selectedAssignee === assignee ? "bg-green-500" : "bg-black"
+                } text-white rounded hover:bg-gray-800`}
+              >
+                {assignee || "Unassigned"}
+              </button>
+            ))}
           </div>
         </div>
-        {Object.keys(groupedIssues).length > 0 ? (
-          Object.entries(groupedIssues)
-            .filter(([, issues]) => {
-              if (selectedTeam) {
-                return issues.some((issue) => issue.teamName === selectedTeam);
-              }
-              return true;
-            })
-            .map(([stateName, issues]) => (
-              <div key={stateName}>
-                <h2 className="text-2xl text-white font-bold mb-4 bg-black p-2">
-                  {stateName}
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {issues.map((issue) => (
-                    <div
-                      key={issue.id}
-                      className="border border-gray-200 rounded p-4 shadow-md "
-                    >
-                      <h3 className="text-xl font-semibold">{issue.title}</h3>
-                      <p className="text-sm text-gray-800 bg-slate-200">
-                        Project: {issue.projectName}
-                      </p>
-                      <div className="flex flex-wrap mt-2">
-                        {issue.labels.map((label) => (
-                          <span
-                            key={label.id}
-                            style={{ backgroundColor: label.color }}
-                            className="text-white text-xs font-semibold mr-2 mb-2 px-2 py-1 rounded"
-                          >
-                            {label.name}
-                          </span>
-                        ))}
-                      </div>
-                      <div className="mt-2 text-sm text-gray-500">
-                        <p className="border-b border-gray-200">
-                          Priority: {issue.priorityLabel}
-                        </p>
-                        <p className="border-b border-gray-200">
-                          State: {issue.state}
-                        </p>
-                        <p className="border-b border-gray-200">
-                          Team Key: {issue.teamKey}
-                        </p>
-                        <p className="border-b border-gray-200">
-                          Team: {issue.teamName}
-                        </p>
-                        <p className="border-b border-gray-200">
-                          Assignee: {issue.assigneeName}
-                        </p>
-                        <p className="border-b border-gray-200">
-                          Identifier: {issue.identifier}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))
-        ) : (
-          <div>No issues found.</div>
-        )}
+
+        {/* --- Manual Refresh & Connection Status --- */}
+        <div
+          style={{
+            position: "fixed",
+            bottom: "20px",
+            right: "20px",
+            zIndex: 10,
+          }}
+        >
+          <button
+            onClick={handleRefresh}
+            className="..."
+            aria-label="Refresh Issues"
+          >
+            {/* Refresh Icon */}
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={1.5}
+              stroke="currentColor"
+              className="w-6 h-6"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"
+              />
+            </svg>
+          </button>
+        </div>
+        <div className="fixed bottom-4 left-4 flex items-center bg-white px-2 py-1 rounded shadow-md text-xs z-10">
+          <div
+            className={`w-2 h-2 rounded-full mr-2 ${
+              socketConnected ? "bg-green-500 animate-pulse" : "bg-red-500"
+            }`}
+          ></div>
+          <span> {connectionStatusMessage} </span>
+        </div>
+
+        {/* --- Issue Board Content --- */}
+        <div className="mt-4">{renderContent()}</div>
       </div>
     </>
   );
@@ -4466,58 +4646,26 @@ export const getAccessToken = () => useAuthStore.getState().accessToken;
 // ====== FILE: src\app\lib\store.ts ======
 
 "use client";
-
 import { create } from "zustand";
-import type { Project } from "@/app/hooks/useTimeKeeperData";
-import type { Rate } from "@/app/types";
-
-interface StoreUser {
-  id: string;
-  email: string;
-  teams?: { name: string; projects: Project[] }[];
-}
 
 type Store = {
-  users: StoreUser[];
-  projects: Project[];
-  rates: Rate[];
-  selectedUser: string;
   selectedProject: string;
   selectedRate: string;
-  setUsers: (users: StoreUser[]) => void;
-  setProjects: (projects: Project[]) => void;
-  setRates: (rates: Rate[]) => void;
-  setSelectedUser: (selectedUser: string) => void;
   setSelectedProject: (selectedProject: string) => void;
   setSelectedRate: (selectedRate: string) => void;
-
-  teamId: string | null;
-  setTeamId: (teamId: string | null) => void;
 };
 
 const useStore = create<Store>((set) => ({
-  users: [],
-  projects: [],
-  rates: [],
-  selectedUser: "",
   selectedProject: "",
   selectedRate: "",
-  setUsers: (users) => set({ users }),
-  setProjects: (projects) => set({ projects }),
-  setRates: (rates) => set({ rates }),
-  setSelectedUser: (selectedUser) => set({ selectedUser }),
   setSelectedProject: (selectedProject) => set({ selectedProject }),
   setSelectedRate: (selectedRate) => set({ selectedRate }),
-
-  teamId: null,
-  setTeamId: (teamId) => set({ teamId }),
 }));
 
 export default useStore;
 
 // ====== FILE: src\app\lib\timerStore.ts ======
 
-// src/app/lib/timerStore.ts
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 
@@ -4573,15 +4721,14 @@ export const useTimerStore = create<TimerPersistedState & TimerActions>()(
           rateIdForTimer: rateId,
         }),
       resetTimerState: () => {
-        console.log("Resetting timer state in Zustand store"); // Add log
+        console.log("Resetting timer state in Zustand store");
         set({ ...initialState });
       },
     }),
     {
-      name: "timer-storage", // Key for localStorage
+      name: "timer-storage",
       storage: createJSONStorage(() => localStorage),
       onRehydrateStorage: () => {
-        // Log when state is rehydrated
         console.log("Zustand timer state rehydrated from localStorage");
         return (state, error) => {
           if (error) {
@@ -4631,21 +4778,17 @@ const Login: React.FC = () => {
   const [password, setPassword] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const router = useRouter();
-  // Get the combined setAuth action from the store
   const setAuth = useAuthStore((state) => state.setAuth);
 
   const [login, { loading }] = useMutation<LoginData>(LOGIN_MUTATION, {
-    client: client, // Use the configured Apollo client
+    client: client,
     onCompleted: (data) => {
-      // Check if login data, token, AND user are present
       if (data?.login?.access_token && data?.login?.user) {
         const { access_token, user } = data.login;
         console.log("Login successful. Storing token and user data.");
         setAuth(access_token, user);
-        // Redirect after successful state update
         router.push("/timeKeeper");
       } else {
-        // Handle cases where backend response is missing expected data
         const errorMsg = "Login failed: Incomplete data received from server.";
         setErrorMessage(errorMsg);
         console.error(errorMsg, data);
@@ -4797,7 +4940,6 @@ const Signup: React.FC = () => {
     onError: (error) => {
       console.error("Error during signup:", error);
 
-      // Check for email already exists error
       if (error.message.includes("Email already exists")) {
         setErrors({
           ...errors,
@@ -4812,9 +4954,6 @@ const Signup: React.FC = () => {
         const validationError = error.graphQLErrors.find(
           (e) => e.extensions?.code === "BAD_USER_INPUT"
         );
-        // const message = (validationError?.extensions?.originalError as any)
-        //   ?.message;
-        // setErrors({ general: `Signup failed: ${message || "Invalid input."}` });
         const extensions = validationError?.extensions as
           | GraphQLErrorExtensions
           | undefined;
@@ -4826,7 +4965,6 @@ const Signup: React.FC = () => {
         } else if (typeof originalMsg === "string") {
           extractedMessage = originalMsg;
         }
-
         setErrors({
           general: `Signup failed: ${extractedMessage || "Invalid input."}`,
         });
@@ -4846,14 +4984,12 @@ const Signup: React.FC = () => {
     let valid = true;
     const newErrors: { email?: string; password?: string } = {};
 
-    // Check if email is valid
     const emailRegex = /\S+@\S+\.\S+/;
     if (!email || !emailRegex.test(email)) {
       newErrors.email = "Please provide a valid email address.";
       valid = false;
     }
 
-    // Check if password is valid
     if (!password || !passwordRegex.test(password)) {
       newErrors.password =
         "Password must be at least 8 characters long, have at least one uppercase letter, and one special character.";
@@ -4970,11 +5106,11 @@ const TimeKeeper: React.FC = () => {
   const timerState = useTimer();
   const { userProjects, currentTeamId } = useTimeKeeperData();
   const feedbackState = useFeedbackState();
+  const loggedInUser = useAuthStore((state) => state.user);
 
   const [currentEntryId, setCurrentEntryId] = useState<number | null>(null);
 
   useCurrentUser();
-  const loggedInUser = useAuthStore((state) => state.user);
 
   const {
     ratesData,
@@ -4987,7 +5123,7 @@ const TimeKeeper: React.FC = () => {
   } = useTimeKeeperQueries(
     currentTeamId!,
     selectedProject,
-    loggedInUser?.id || ""
+    loggedInUser?.id?.toString() ?? ""
   );
 
   const { handleDateChange, handleSubmit, handleReset } = useTimeKeeperHandlers(
@@ -4995,7 +5131,7 @@ const TimeKeeper: React.FC = () => {
       timerState,
       selectedProject,
       selectedRate,
-      userId: loggedInUser?.id || "",
+      userId: loggedInUser?.id?.toString() ?? "",
       createTimeEntry,
       updateTime,
       currentEntryId,
@@ -5035,7 +5171,10 @@ const TimeKeeper: React.FC = () => {
           disabledSubmit={timerState.isRunning || !timerState.initialStartTime}
         />
         <ProjectRateSelectors
-          userProjects={userProjects}
+          userProjects={userProjects.map((p) => ({
+            ...p,
+            teamName: p.teamName ?? "Unknown Team",
+          }))}
           selectedProject={selectedProject}
           setSelectedProject={setSelectedProject}
           rates={ratesData?.rates ?? []}
@@ -5111,26 +5250,22 @@ import { useQuery } from "@apollo/client";
 import gql from "graphql-tag";
 import ProjectSelector from "../ProjectSelector";
 
-// --- Interfaces ---
-
-// Interface for the data coming from the GraphQL query
 interface QueryRateDetail {
   rateId: number;
   rateName: string;
   hours: number;
   cost: number;
   ratePerHour: number;
-  __typename?: string; // Allow __typename from Apollo
+  __typename?: string;
 }
 
-// Interface for the invoice data state and query result
 interface InvoiceData {
   projectId: string;
   projectName: string;
   totalHours: number;
   totalCost: number;
-  rates: QueryRateDetail[]; // Use QueryRateDetail for incoming data
-  __typename?: string; // Allow __typename
+  rates: QueryRateDetail[];
+  __typename?: string;
 }
 
 interface Team {
@@ -5138,22 +5273,19 @@ interface Team {
   name: string;
 }
 
-// Use a more precise type for projects used in the selector
 interface ProjectForSelector {
   id: string;
   name: string;
   teamId: string;
-  teamName: string; // This should be guaranteed by projectsWithTeamNames
+  teamName: string;
 }
 
-// Type for raw project data from query
 interface RawProject {
   id: string;
   name: string;
   teamId: string;
 }
 
-// --- GraphQL Queries ---
 const GET_PROJECTS = gql`
   query GetRawProjects {
     projects {
@@ -5191,7 +5323,6 @@ const GET_INVOICE_FOR_PROJECT = gql`
   }
 `;
 
-// --- Type for Query Results ---
 interface GetRawProjectsData {
   projects: RawProject[];
 }
@@ -5201,18 +5332,15 @@ interface GetAllTeamsData {
 }
 
 interface GetInvoiceData {
-  invoiceForProject: InvoiceData | null; // Allow null if no data found
+  invoiceForProject: InvoiceData | null;
 }
 
-// --- Component ---
 const InvoiceSummary: React.FC = () => {
-  // --- State ---
   const [selectedProject, setSelectedProject] = useState<string>("");
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
   const [invoiceData, setInvoiceData] = useState<InvoiceData | null>(null);
 
-  // --- Data Fetching ---
   const { data: projectsData } = useQuery<GetRawProjectsData>(GET_PROJECTS);
   const { data: teamsData } = useQuery<GetAllTeamsData>(GET_ALL_TEAMS);
 
@@ -5221,27 +5349,23 @@ const InvoiceSummary: React.FC = () => {
       variables: {
         input: {
           projectId: selectedProject,
-          // Ensure dates are valid before converting, pass null if empty/invalid
           startDate: startDate ? new Date(startDate).toISOString() : null,
           endDate: endDate ? new Date(endDate).toISOString() : null,
         },
       },
-      // Only run query when all inputs are valid and selected
       skip: !selectedProject || !startDate || !endDate,
-      fetchPolicy: "network-only", // Re-fetch when variables change
+      fetchPolicy: "network-only",
       notifyOnNetworkStatusChange: true,
       onCompleted: (data) => {
-        // Update state when data successfully arrives
         setInvoiceData(data?.invoiceForProject ?? null);
         console.log("Invoice data received:", data?.invoiceForProject);
       },
       onError: (error) => {
         console.error("Error fetching invoice:", error);
-        setInvoiceData(null); // Clear data on error
+        setInvoiceData(null);
       },
     });
 
-  // --- Memoized Derived Data ---
   const teamIdToNameMap = useMemo(() => {
     if (!teamsData?.getAllSimpleTeams) return {};
     return teamsData.getAllSimpleTeams.reduce(
@@ -5254,17 +5378,14 @@ const InvoiceSummary: React.FC = () => {
   }, [teamsData]);
 
   const projectsWithTeamNames = useMemo<ProjectForSelector[]>(() => {
-    // Use specific type
     if (!projectsData?.projects || Object.keys(teamIdToNameMap).length === 0)
       return [];
     return projectsData.projects.map((project) => ({
       ...project,
-      // Ensure teamName is always a string for the selector
       teamName: teamIdToNameMap[project.teamId] || "Unknown Team",
     }));
   }, [projectsData, teamIdToNameMap]);
 
-  // Memoize finding the teamId for the selected invoice project
   const projectTeamId = useMemo<string | undefined>(() => {
     if (!invoiceData || !projectsData?.projects) return undefined;
     return projectsData.projects.find(
@@ -5272,7 +5393,6 @@ const InvoiceSummary: React.FC = () => {
     )?.teamId;
   }, [projectsData, invoiceData]);
 
-  // --- Logging Effect (Optional, for debugging) ---
   useEffect(() => {
     console.log("Invoice State Update:", {
       selectedProject,
@@ -5291,15 +5411,12 @@ const InvoiceSummary: React.FC = () => {
     errorInvoice,
   ]);
 
-  // --- Helper Functions ---
   const formatCurrency = (value: number | null | undefined): string => {
-    if (value === null || value === undefined) return "-"; // Handle null/undefined
-    // Added safety check for non-numbers
+    if (value === null || value === undefined) return "-";
     if (isNaN(value)) return "Invalid";
 
     try {
       return new Intl.NumberFormat("da-DK", {
-        // Use Danish locale for DKK
         style: "currency",
         currency: "DKK",
         minimumFractionDigits: 2,
@@ -5307,11 +5424,10 @@ const InvoiceSummary: React.FC = () => {
       }).format(value);
     } catch (e) {
       console.error("Error formatting currency:", e);
-      return String(value); // Fallback
+      return String(value);
     }
   };
 
-  // --- Render Logic ---
   const renderInvoiceDetails = () => {
     if (loadingInvoice) {
       return <p className="text-gray-400 mt-4">Loading Invoice...</p>;
@@ -5325,23 +5441,19 @@ const InvoiceSummary: React.FC = () => {
       );
     }
     if (invoiceData) {
-      // Check if invoiceData exists (not null)
       return (
         <div className="mt-4 p-6 bg-white shadow-md rounded-lg">
           <h4 className="text-md font-bold bg-slate-200 p-2 rounded-t-lg">
             {" "}
-            {/* Added padding/rounding */}
             Project: {invoiceData.projectName} - Team:{" "}
             {teamIdToNameMap && projectTeamId
-              ? teamIdToNameMap[projectTeamId] || "N/A" // Display N/A if not found
+              ? teamIdToNameMap[projectTeamId] || "N/A"
               : "..."}
           </h4>
           <div className="p-2 space-y-1">
             {" "}
-            {/* Added padding */}
             <p className="border-b border-gray-200 pb-1">
               Total Hours: {invoiceData.totalHours?.toFixed(2) ?? "N/A"}{" "}
-              {/* Added nullish coalescing */}
             </p>
             <p className="border-b border-gray-200 pb-1">
               Total Cost: {formatCurrency(invoiceData.totalCost)}
@@ -5351,21 +5463,16 @@ const InvoiceSummary: React.FC = () => {
               {invoiceData.rates && invoiceData.rates.length > 0 ? (
                 <ul className="list-disc list-inside pl-4 pt-1">
                   {" "}
-                  {/* Added list styling */}
-                  {invoiceData.rates.map(
-                    (
-                      rate: QueryRateDetail // Use QueryRateDetail type
-                    ) => (
-                      <li
-                        className="border-b border-gray-100 py-1 text-sm" // Adjusted styling
-                        key={rate.rateId} // Use number rateId
-                      >
-                        {rate.rateName}: {rate.hours?.toFixed(2) ?? "N/A"} hours
-                        at {formatCurrency(rate.cost)} (
-                        {formatCurrency(rate.ratePerHour)} / h)
-                      </li>
-                    )
-                  )}
+                  {invoiceData.rates.map((rate: QueryRateDetail) => (
+                    <li
+                      className="border-b border-gray-100 py-1 text-sm"
+                      key={rate.rateId}
+                    >
+                      {rate.rateName}: {rate.hours?.toFixed(2) ?? "N/A"} hours
+                      at {formatCurrency(rate.cost)} (
+                      {formatCurrency(rate.ratePerHour)} / h)
+                    </li>
+                  ))}
                 </ul>
               ) : (
                 <p className="text-gray-500 text-sm pt-1">
@@ -5377,7 +5484,6 @@ const InvoiceSummary: React.FC = () => {
         </div>
       );
     }
-    // If inputs are selected but no data/error/loading state exists
     if (selectedProject && startDate && endDate) {
       return (
         <p className="text-gray-400 mt-4">
@@ -5386,7 +5492,6 @@ const InvoiceSummary: React.FC = () => {
       );
     }
 
-    // If inputs are not yet selected
     return (
       <p className="text-gray-500 mt-4">
         Please select a project and date range.
@@ -5394,14 +5499,13 @@ const InvoiceSummary: React.FC = () => {
     );
   };
 
-  // --- Component Return ---
   return (
     <div className="p-6 bg-black shadow-md rounded-lg">
       <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0 md:space-x-4 mb-4">
         <h3 className="text-lg font-bold text-white">Invoice Summary</h3>
         <div className="flex-grow">
           <ProjectSelector
-            projects={projectsWithTeamNames} // Pass memoized list
+            projects={projectsWithTeamNames}
             selectedProject={selectedProject}
             onProjectChange={setSelectedProject}
           />
@@ -5433,7 +5537,6 @@ export default InvoiceSummary;
 // ====== FILE: src\app\components\Admin\ratesManager.tsx ======
 
 "use client";
-
 import React, { useState } from "react";
 import { useQuery, useMutation, gql, ApolloError } from "@apollo/client";
 
@@ -5449,7 +5552,6 @@ interface Rate {
   rate: number;
 }
 
-// GraphQL Queries and Mutations
 const GET_ALL_SIMPLE_TEAMS = gql`
   query GetAllSimpleTeams {
     getAllSimpleTeams {
@@ -5693,7 +5795,6 @@ const TotalTimeSpent: React.FC = () => {
   const {
     loading: loadingUserProjects,
     error: errorUserProjects,
-    data: myProjectsData,
     refetch: refetchMyProjects,
   } = useQuery<GetMyProjectsQueryData>(GET_MY_PROJECTS, {
     skip: !loggedInUserId,
@@ -6195,7 +6296,6 @@ import {
   ADD_USER_TO_TEAM,
   REMOVE_USER_FROM_TEAM,
   UPDATE_USER_ROLE,
-  GET_SIMPLE_TEAMS,
 } from "@/app/graphql/adminOperations";
 import { loggedInUserTeamsVersion } from "@/app/lib/apolloClient";
 import UserRoleSelect, { UserRole } from "./UserRoleSelect";
@@ -6213,36 +6313,6 @@ export interface User {
   teams: Team[];
   __typename?: "User";
 }
-
-type UserFragmentData = {
-  id: number;
-  email: string;
-  role: string;
-  teams: Array<{ id: string; name: string; __typename: "Team" }>;
-  __typename: "User";
-};
-
-interface GetSimpleTeamsQueryData {
-  getAllSimpleTeams: Array<{
-    id: string;
-    name: string;
-    __typename: "SimpleTeamDTO";
-  }>;
-}
-
-const USER_CORE_FIELDS_FRAGMENT = gql`
-  fragment UserCoreFieldsRow on User {
-    id
-    email
-    role
-    teams {
-      id
-      name
-      __typename
-    }
-    __typename
-  }
-`;
 
 interface UserRowProps {
   user: User;
@@ -6283,8 +6353,8 @@ const UserRow: React.FC<UserRowProps> = ({
       const errorMsg = error.message || "Failed to remove user from team.";
       setRowError(errorMsg);
       toast.error(`Error: ${errorMsg}`);
-      setIsProcessingRemove(null); // Use isProcessingRemove here
-      setConfirmingRemoveTeamId(null); // Also clear confirmation state on error
+      setIsProcessingRemove(null);
+      setConfirmingRemoveTeamId(null);
     },
   });
   const [updateUserRoleMutation] = useMutation(UPDATE_USER_ROLE, {
@@ -6313,60 +6383,19 @@ const UserRow: React.FC<UserRowProps> = ({
         variables: { userId: user.id, teamId: selectedTeamIdForRow },
       });
 
-      const allTeamsData = client.readQuery<GetSimpleTeamsQueryData>({
-        query: GET_SIMPLE_TEAMS,
-      });
-      const teamToAdd = allTeamsData?.getAllSimpleTeams.find(
-        (t) => t.id === selectedTeamIdForRow
+      console.log(
+        `[UserRow Add] Checking if user ${user.id} matches loggedInUser ${loggedInUserId}`
       );
-      if (!teamToAdd) {
-        throw new Error("Team details not found in cache");
-      }
-
-      const userCacheId = client.cache.identify({
-        __typename: "User",
-        id: user.id,
-      });
-      if (!userCacheId) {
-        throw new Error("Could not identify user in cache");
-      }
-
-      const existingUserFragment = client.readFragment<UserFragmentData>({
-        id: userCacheId,
-        fragment: USER_CORE_FIELDS_FRAGMENT,
-      });
-      if (
-        !existingUserFragment ||
-        existingUserFragment.teams.some((t) => t.id === selectedTeamIdForRow)
-      ) {
-        console.log("User fragment not found or team already added.");
-        setIsAdding(false);
-        return;
-      }
-
-      const updatedTeams = [
-        ...existingUserFragment.teams,
-        {
-          id: selectedTeamIdForRow,
-          name: teamToAdd.name,
-          __typename: "Team" as const,
-        },
-      ];
-      client.writeFragment({
-        id: userCacheId,
-        fragment: USER_CORE_FIELDS_FRAGMENT,
-        data: { ...existingUserFragment, teams: updatedTeams },
-      });
-
       if (loggedInUserId && user.id === loggedInUserId) {
-        loggedInUserTeamsVersion(loggedInUserTeamsVersion() + 1);
+        const currentVersion = loggedInUserTeamsVersion();
+        loggedInUserTeamsVersion(currentVersion + 1);
+        console.log(
+          `[UserRow Add] Incremented teamsVersion to: ${loggedInUserTeamsVersion()}`
+        );
       }
-      console.log(`Successfully updated cache for user ${user.id} (Add).`);
-      toast.success(`Added ${user.email} to team ${teamToAdd.name}!`);
     } catch (error) {
       console.error("Catch block for handleAddToTeam:", error);
       if (!rowError) {
-        // Check if error wasn't already set by onError
         const errorMsg =
           error instanceof Error ? error.message : "Failed to add to team.";
         setRowError(errorMsg);
@@ -6379,7 +6408,6 @@ const UserRow: React.FC<UserRowProps> = ({
     user.id,
     selectedTeamIdForRow,
     addUserToTeamMutation,
-    client,
     loggedInUserId,
     rowError,
   ]);
@@ -6405,43 +6433,16 @@ const UserRow: React.FC<UserRowProps> = ({
           variables: { userId: user.id, teamId: teamIdToRemove },
         });
 
-        const userCacheId = client.cache.identify({
-          __typename: "User",
-          id: user.id,
-        });
-        if (!userCacheId) {
-          throw new Error("Could not identify user in cache");
-        }
-        const existingUserFragment = client.readFragment<UserFragmentData>({
-          id: userCacheId,
-          fragment: USER_CORE_FIELDS_FRAGMENT,
-        });
-        if (!existingUserFragment) {
-          throw new Error("User fragment not found in cache");
-        }
-
-        const updatedTeams = existingUserFragment.teams.filter(
-          (team) => team.id !== teamIdToRemove
+        console.log(
+          `[UserRow Remove] Checking if user ${user.id} matches loggedInUser ${loggedInUserId}`
         );
-        if (updatedTeams.length === existingUserFragment.teams.length) {
-          console.warn(
-            `Team ${teamIdToRemove} not found in fragment for user ${user.id}.`
-          );
-          setIsProcessingRemove(null); // Still need to clear processing state
-          return;
-        }
-
-        client.writeFragment({
-          id: userCacheId,
-          fragment: USER_CORE_FIELDS_FRAGMENT,
-          data: { ...existingUserFragment, teams: updatedTeams },
-        });
-
         if (loggedInUserId && user.id === loggedInUserId) {
-          loggedInUserTeamsVersion(loggedInUserTeamsVersion() + 1);
+          const currentVersion = loggedInUserTeamsVersion();
+          loggedInUserTeamsVersion(currentVersion + 1);
+          console.log(
+            `[UserRow Remove] Incremented teamsVersion to: ${loggedInUserTeamsVersion()}`
+          );
         }
-        console.log(`Successfully updated cache for user ${user.id} (Remove).`);
-        toast.success(`Removed ${user.email} from team!`);
       } catch (error) {
         console.error("Catch block for executeRemoveTeam:", error);
         if (!rowError) {
@@ -6456,7 +6457,7 @@ const UserRow: React.FC<UserRowProps> = ({
         setIsProcessingRemove(null);
       }
     },
-    [user.id, removeUserFromTeamMutation, client, loggedInUserId, rowError]
+    [user.id, removeUserFromTeamMutation, loggedInUserId, rowError]
   );
 
   const handleRoleChange = useCallback(
@@ -6509,7 +6510,7 @@ const UserRow: React.FC<UserRowProps> = ({
         setIsChangingRole(false);
       }
     },
-    [user.id, user.role, updateUserRoleMutation, client, rowError]
+    [user.id, user.role, updateUserRoleMutation, client, rowError, user.email]
   );
 
   return (
