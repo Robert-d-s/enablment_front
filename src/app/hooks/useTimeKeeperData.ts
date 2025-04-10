@@ -1,7 +1,6 @@
 import { useQuery } from "@apollo/client";
 import { useEffect, useState } from "react";
 import { GET_MY_PROJECTS } from "@/app/components/Admin/totalTimeSpent";
-import useStore from "@/app/lib/store";
 import { useAuthStore } from "@/app/lib/authStore";
 import { useReactiveVar } from "@apollo/client";
 import { loggedInUserTeamsVersion } from "@/app/lib/apolloClient";
@@ -18,7 +17,7 @@ interface GetMyProjectsQueryData {
   myProjects: MyProject[];
 }
 
-const useTimeKeeperData = () => {
+const useTimeKeeperData = (selectedProject: string | null) => {
   const user = useAuthStore((state) => state.user);
   const loggedInUserId = user?.id;
   const teamsVersion = useReactiveVar(loggedInUserTeamsVersion);
@@ -30,14 +29,14 @@ const useTimeKeeperData = () => {
     refetch: refetchMyProjects,
   } = useQuery<GetMyProjectsQueryData>(GET_MY_PROJECTS, {
     skip: !loggedInUserId,
-    fetchPolicy: "cache-first",
+    fetchPolicy: "cache-and-network",
+    nextFetchPolicy: "cache-first",
   });
 
   const [userProjects, setUserProjects] = useState<MyProject[]>([]);
   const [currentTeamId, setCurrentTeamId] = useState<string | undefined>(
     undefined
   );
-  const selectedProject = useStore((state) => state.selectedProject);
 
   useEffect(() => {
     if (myProjectsData?.myProjects) {

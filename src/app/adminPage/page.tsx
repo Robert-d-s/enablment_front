@@ -24,12 +24,9 @@ const AdminPage: React.FC = () => {
         pauseOnFocusLoss
         draggable
         pauseOnHover
-        theme="dark" // Or "dark" or "colored"
+        theme="dark"
       />
       <div className="container mx-auto p-4 font-roboto-condensed">
-        <div className="mb-6 shadow-lg">
-          <DBSyncPage />
-        </div>
         <UserManagementSection />
         <div className="mb-6 shadow-md">
           <TotalTimeSpent />
@@ -40,6 +37,9 @@ const AdminPage: React.FC = () => {
         </div>
         <div className="shadow-md">
           <InvoiceSummary />
+        </div>
+        <div className="mb-6 shadow-lg">
+          <DBSyncPage />
         </div>
       </div>
     </>

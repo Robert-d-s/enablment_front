@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from "react";
 import { useTimer } from "@/app/hooks/useTimer";
-import useStore from "@/app/lib/store";
 import { useAuthStore } from "@/app/lib/authStore";
 import useCurrentUser from "@/app/hooks/useCurrentUser";
 import { useFeedbackState } from "@/app/hooks/useFeedbackState";
@@ -14,16 +13,25 @@ import FeedbackMessages from "@/app/components/FeedbackMessages";
 import TimerDisplay from "@/app/components/TimerDisplay";
 import TimerControls from "@/app/components/TimerControls";
 import ProjectRateSelectors from "@/app/components/ProjectRateSelectors";
+import { useTimerStore } from "@/app/lib/timerStore";
 
 const TimeKeeper: React.FC = () => {
-  const { selectedProject, setSelectedProject, selectedRate, setSelectedRate } =
-    useStore();
-  const timerState = useTimer();
-  const { userProjects, currentTeamId } = useTimeKeeperData();
-  const feedbackState = useFeedbackState();
+  const [uiSelectedProject, setUiSelectedProject] = useState<string>("");
+  const [uiSelectedRate, setUiSelectedRate] = useState<string>("");
   const loggedInUser = useAuthStore((state) => state.user);
-
-  const [currentEntryId, setCurrentEntryId] = useState<number | null>(null);
+  const userIdString = loggedInUser?.id?.toString() ?? "";
+  const currentEntryId = useTimerStore((state) => state.currentEntryId);
+  const activeTimerProjectId = useTimerStore(
+    (state) => state.activeTimerProjectId
+  );
+  const activeTimerRateId = useTimerStore((state) => state.activeTimerRateId);
+  const initialStartTimeISO = useTimerStore(
+    (state) => state.initialStartTimeISO
+  );
+  const setCurrentEntryId = useTimerStore((state) => state.setCurrentEntryId);
+  const timerState = useTimer(uiSelectedProject, uiSelectedRate);
+  const { userProjects, currentTeamId } = useTimeKeeperData(uiSelectedProject);
+  const feedbackState = useFeedbackState();
 
   useCurrentUser();
 
@@ -35,18 +43,14 @@ const TimeKeeper: React.FC = () => {
     refetch,
     createTimeEntry,
     updateTime,
-  } = useTimeKeeperQueries(
-    currentTeamId!,
-    selectedProject,
-    loggedInUser?.id?.toString() ?? ""
-  );
+  } = useTimeKeeperQueries(currentTeamId, uiSelectedProject, userIdString);
 
   const { handleDateChange, handleSubmit, handleReset } = useTimeKeeperHandlers(
     {
       timerState,
-      selectedProject,
-      selectedRate,
-      userId: loggedInUser?.id?.toString() ?? "",
+      timerProjectId: activeTimerProjectId ?? "",
+      timerRateId: activeTimerRateId ?? "",
+      userId: userIdString,
       createTimeEntry,
       updateTime,
       currentEntryId,
@@ -59,10 +63,24 @@ const TimeKeeper: React.FC = () => {
   );
 
   useEffect(() => {
-    if (selectedProject) {
+    if (initialStartTimeISO) {
+      setUiSelectedProject(activeTimerProjectId ?? "");
+      setUiSelectedRate(activeTimerRateId ?? "");
+    } else {
+      setUiSelectedProject("");
+      setUiSelectedRate("");
+    }
+  }, [activeTimerProjectId, activeTimerRateId, initialStartTimeISO]);
+
+  useEffect(() => {
+    if (uiSelectedProject && loggedInUser?.id) {
       refetch();
     }
-  }, [selectedProject, refetch]);
+  }, [uiSelectedProject, refetch, loggedInUser?.id]);
+
+  const isStartPauseDisabled = !uiSelectedProject || !uiSelectedRate;
+  const isResetDisabled = !timerState.initialStartTime;
+  const isSubmitDisabled = timerState.isRunning || !timerState.initialStartTime;
 
   return (
     <>
@@ -81,20 +99,20 @@ const TimeKeeper: React.FC = () => {
           }
           handleReset={handleReset}
           handleSubmit={handleSubmit}
-          disabledStartPause={!selectedProject || !selectedRate}
-          disabledReset={!timerState.initialStartTime}
-          disabledSubmit={timerState.isRunning || !timerState.initialStartTime}
+          disabledStartPause={isStartPauseDisabled}
+          disabledReset={isResetDisabled}
+          disabledSubmit={isSubmitDisabled}
         />
         <ProjectRateSelectors
           userProjects={userProjects.map((p) => ({
             ...p,
             teamName: p.teamName ?? "Unknown Team",
           }))}
-          selectedProject={selectedProject}
-          setSelectedProject={setSelectedProject}
+          selectedProject={uiSelectedProject}
+          setSelectedProject={setUiSelectedProject}
           rates={ratesData?.rates ?? []}
-          selectedRate={selectedRate}
-          setSelectedRate={setSelectedRate}
+          selectedRate={uiSelectedRate}
+          setSelectedRate={setUiSelectedRate}
           totalTimeLoading={totalTimeLoading}
           totalTimeError={totalTimeError}
           totalTime={totalTimeData?.getTotalTimeForUserProject ?? 0}

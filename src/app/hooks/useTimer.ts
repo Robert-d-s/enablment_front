@@ -3,7 +3,10 @@ import { format } from "date-fns";
 import type { TimerState } from "../types";
 import { useTimerStore } from "@/app/lib/timerStore";
 
-export const useTimer = (): TimerState & {
+export const useTimer = (
+  selectedProjectId: string | null,
+  selectedRateId: string | null
+): TimerState & {
   initialStartTime: Date | null;
   pauseTimes: Date[];
   resumeTimes: Date[];
@@ -18,6 +21,7 @@ export const useTimer = (): TimerState & {
     addPauseTime: addPauseTimeToStore,
     addResumeTime: addResumeTimeToStore,
     resetTimerState: resetTimerStateInStore,
+    setActiveTimerProjectAndRate,
   } = useTimerStore();
 
   // --- Local state for display only ---
@@ -214,6 +218,10 @@ export const useTimer = (): TimerState & {
 
   // --- Control Functions (Dispatch actions to the store) ---
   const start = () => {
+    if (!selectedProjectId || !selectedRateId) {
+      console.error("Cannot start timer: Project and Rate must be selected.");
+      return;
+    }
     const now = new Date();
     // Check Zustand state directly for most up-to-date values before dispatching
     const {
@@ -226,6 +234,10 @@ export const useTimer = (): TimerState & {
     if (!currentInitialISO) {
       console.log("useTimer start: Setting initial time in store.");
       setInitialStartTimeInStore(now);
+      setActiveTimerProjectAndRate(selectedProjectId, selectedRateId);
+      console.log(
+        `useTimer start: Storing active project (${selectedProjectId}) and rate (${selectedRateId})`
+      );
     } else if (!currentlyRunning) {
       if (currentPausesISO.length > currentResumesISO.length) {
         console.log("useTimer start: Adding RESUME time to store.");
@@ -265,6 +277,12 @@ export const useTimer = (): TimerState & {
 
   const handleManualSetStartTime = (date: Date | null) => {
     console.log("useTimer handleManualSetStartTime:", date?.toISOString());
+    if (!selectedProjectId || !selectedRateId) {
+      console.error(
+        "Cannot set start time: Project and Rate must be selected."
+      );
+      return;
+    }
     const currentlyRunning = useTimerStore.getState().isRunning;
     if (currentlyRunning) {
       // Need to pause first *before* resetting state
@@ -276,6 +294,10 @@ export const useTimer = (): TimerState & {
     console.log("Resetting state and setting new start time in store...");
     resetTimerStateInStore();
     setInitialStartTimeInStore(date);
+    setActiveTimerProjectAndRate(selectedProjectId, selectedRateId);
+    console.log(
+      `useTimer manual set: Storing active project (${selectedProjectId}) and rate (${selectedRateId})`
+    );
     setDisplayTime("00:00:00");
   };
 

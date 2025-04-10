@@ -9,6 +9,8 @@ interface TimerPersistedState {
   currentEntryId: number | null;
   projectIdForTimer: string | null;
   rateIdForTimer: string | null;
+  activeTimerProjectId: string | null;
+  activeTimerRateId: string | null;
 }
 
 interface TimerActions {
@@ -17,7 +19,10 @@ interface TimerActions {
   addPauseTime: (date: Date) => void;
   addResumeTime: (date: Date) => void;
   setCurrentEntryId: (id: number | null) => void;
-  setProjectAndRate: (projectId: string | null, rateId: string | null) => void;
+  setActiveTimerProjectAndRate: (
+    projectId: string | null,
+    rateId: string | null
+  ) => void;
   resetTimerState: () => void;
 }
 
@@ -29,6 +34,8 @@ const initialState: TimerPersistedState = {
   currentEntryId: null,
   projectIdForTimer: null,
   rateIdForTimer: null,
+  activeTimerProjectId: null,
+  activeTimerRateId: null,
 };
 
 export const useTimerStore = create<TimerPersistedState & TimerActions>()(
@@ -47,10 +54,10 @@ export const useTimerStore = create<TimerPersistedState & TimerActions>()(
           resumeTimesISO: [...state.resumeTimesISO, date.toISOString()],
         })),
       setCurrentEntryId: (id) => set({ currentEntryId: id }),
-      setProjectAndRate: (projectId, rateId) =>
+      setActiveTimerProjectAndRate: (projectId, rateId) =>
         set({
-          projectIdForTimer: projectId,
-          rateIdForTimer: rateId,
+          activeTimerProjectId: projectId,
+          activeTimerRateId: rateId,
         }),
       resetTimerState: () => {
         console.log("Resetting timer state in Zustand store");

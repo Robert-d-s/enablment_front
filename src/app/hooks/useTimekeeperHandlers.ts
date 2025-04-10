@@ -8,8 +8,8 @@ interface HandlersConfig {
     resumeTimes: Date[];
     calculateTotalActiveTime: () => number;
   };
-  selectedProject: string;
-  selectedRate: string;
+  timerProjectId: string;
+  timerRateId: string;
   userId: string;
   createTimeEntry: (data: {
     startTime: string;
@@ -31,8 +31,8 @@ interface HandlersConfig {
 
 export const useTimeKeeperHandlers = ({
   timerState,
-  selectedProject,
-  selectedRate,
+  timerProjectId,
+  timerRateId,
   userId,
   createTimeEntry,
   updateTime,
@@ -54,32 +54,42 @@ export const useTimeKeeperHandlers = ({
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setSubmissionError("");
     if (
       !timerState.initialStartTime ||
-      !selectedProject ||
+      !timerProjectId ||
       !userId ||
-      !selectedRate
+      !timerRateId
     ) {
-      console.error("Missing required data for time entry.");
+      const errorMsg =
+        "Timer session data (Project/Rate) is incomplete. Cannot submit.";
+      console.error(errorMsg, {
+        start: timerState.initialStartTime,
+        proj: timerProjectId,
+        rate: timerRateId,
+        user: userId,
+      });
+      setSubmissionError(errorMsg);
       return;
     }
 
     try {
       const submissionTime = new Date();
-      console.log("Submission time:", submissionTime.toISOString());
-
       const totalElapsedTimeMs = timerState.calculateTotalActiveTime();
-      console.log(
-        "Total elapsed time calculated for submission (ms):",
-        totalElapsedTimeMs
-      );
-      console.log(
-        "Total elapsed time in seconds:",
-        Math.floor(totalElapsedTimeMs / 1000)
-      );
+
+      if (totalElapsedTimeMs < 0) {
+        console.error("Calculated negative elapsed time, resetting timer.", {
+          totalElapsedTimeMs,
+        });
+        setSubmissionError(
+          "Timer error: Invalid elapsed time calculated. Please reset."
+        );
+        handleReset();
+        return;
+      }
 
       if (currentEntryId) {
-        console.log("Updating existing time entry with ID:", currentEntryId);
+        console.log(`Updating time entry ID ${currentEntryId}.`);
         await updateTime({
           timeInputUpdate: {
             id: currentEntryId,
@@ -87,57 +97,46 @@ export const useTimeKeeperHandlers = ({
             totalElapsedTime: totalElapsedTimeMs,
           },
         });
-        console.log("Updated existing time entry ID:", currentEntryId);
+        console.log("Successfully updated time entry ID:", currentEntryId);
       } else {
-        console.log("Creating new time entry with data:", {
+        console.log(
+          `Creating new time entry for project ${timerProjectId}, rate ${timerRateId}`
+        );
+        const result = await createTimeEntry({
           startTime: formatISO(timerState.initialStartTime),
-          projectId: selectedProject,
+          projectId: timerProjectId,
           userId: parseFloat(userId),
-          rateId: parseFloat(selectedRate),
+          rateId: parseFloat(timerRateId),
           totalElapsedTime: totalElapsedTimeMs,
         });
 
-        try {
-          const result = await createTimeEntry({
-            startTime: formatISO(timerState.initialStartTime),
-            projectId: selectedProject,
-            userId: parseFloat(userId),
-            rateId: parseFloat(selectedRate),
-            totalElapsedTime: totalElapsedTimeMs,
-          });
-          console.log(
-            "Success creating time entry with minimal required fields:",
-            JSON.stringify(result, null, 2)
+        if (result?.data?.createTime?.id) {
+          const newEntryId = result.data.createTime.id;
+          setCurrentEntryId(newEntryId);
+          console.log("Successfully created time entry, new ID:", newEntryId);
+        } else {
+          throw new Error(
+            "Time entry created, but no ID was returned from the server."
           );
-
-          if (result?.data?.createTime?.id) {
-            setCurrentEntryId(result.data.createTime.id);
-            console.log("Set current entry ID to:", result.data.createTime.id);
-          }
-        } catch (err) {
-          console.error("Failed to create time entry:", err);
-          throw err;
         }
       }
 
       showSuccessMessage();
-
       if (timerState.isRunning) {
         timerState.pause();
       }
     } catch (error: unknown) {
+      console.error("Error during time entry submission:", error);
       if (error instanceof Error) {
-        setSubmissionError(`Error with time entry: ${error.message}`);
+        setSubmissionError(`Submit Failed: ${error.message}`);
       } else {
-        setSubmissionError("Unknown error");
+        setSubmissionError("An unknown error occurred during submission.");
       }
-      console.error("Error submitting time entry:", error);
     }
   };
 
   const handleReset = (): void => {
     timerState.reset();
-    setCurrentEntryId(null);
     showResetMessage();
   };
 
