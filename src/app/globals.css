@@ -162,3 +162,19 @@
 .react-datepicker__time-list::-webkit-scrollbar-thumb:hover {
   background-color: hsl(var(--muted-foreground));
 }
+
+div[data-radix-popper-content-wrapper] {
+  background-color: white !important;
+  color: black !important;
+}
+
+/* Ensure the dropdown stays above other content */
+div[data-radix-popper-content-wrapper] {
+  z-index: 50 !important;
+}
+
+/* Improve hover effects */
+[data-slot="select-item"]:hover {
+  background-color: #f1f5f9 !important;
+  color: black !important;
+}

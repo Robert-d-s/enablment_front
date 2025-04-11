@@ -10,16 +10,16 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"; // Import shadcn Select
-import { Label } from "@/components/ui/label"; // Import shadcn Label
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
   CardDescription,
-} from "@/components/ui/card"; // Use Card
-import { Hourglass, Loader2 } from "lucide-react"; // Icons
+} from "@/components/ui/card";
+import { Hourglass, Loader2 } from "lucide-react";
 
 interface Project {
   id: string;
@@ -45,6 +45,20 @@ interface ProjectRateSelectorsProps {
   totalTime: number;
 }
 
+const selectDropdownStyle = {
+  backgroundColor: "white",
+  color: "black",
+  border: "1px solid #e2e8f0",
+  boxShadow:
+    "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+};
+
+const selectItemStyle = {
+  backgroundColor: "white",
+  color: "black",
+  cursor: "pointer",
+};
+
 const ProjectRateSelectors: React.FC<ProjectRateSelectorsProps> = ({
   userProjects,
   selectedProject,
@@ -57,8 +71,7 @@ const ProjectRateSelectors: React.FC<ProjectRateSelectorsProps> = ({
   totalTime,
 }) => {
   return (
-    // Group selectors and info in a Card
-    <Card>
+    <Card className="overflow-visible">
       <CardHeader>
         <CardTitle>Project & Rate</CardTitle>
         <CardDescription>
@@ -71,22 +84,35 @@ const ProjectRateSelectors: React.FC<ProjectRateSelectorsProps> = ({
           <Label htmlFor="project-select">Project</Label>
           <Select
             value={selectedProject ?? ""}
-            onValueChange={setSelectedProject} // onValueChange for shadcn Select
+            onValueChange={setSelectedProject}
             disabled={userProjects.length === 0}
           >
-            <SelectTrigger id="project-select">
+            <SelectTrigger
+              id="project-select"
+              className="w-full border-input"
+              style={{ backgroundColor: "white", color: "black" }}
+            >
               <SelectValue placeholder="Select a project..." />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent
+              style={selectDropdownStyle}
+              className="border border-slate-200 rounded"
+              position="popper"
+            >
               {userProjects.length > 0 ? (
                 userProjects.map((project) => (
-                  <SelectItem key={project.id} value={project.id}>
+                  <SelectItem
+                    key={project.id}
+                    value={project.id}
+                    style={selectItemStyle}
+                    className="hover:bg-slate-100 rounded"
+                  >
                     {project.name}{" "}
                     {project.teamName ? `(${project.teamName})` : ""}
                   </SelectItem>
                 ))
               ) : (
-                <div className="p-2 text-sm text-muted-foreground">
+                <div className="p-2 text-sm text-gray-500">
                   No projects found.
                 </div>
               )}
@@ -100,20 +126,33 @@ const ProjectRateSelectors: React.FC<ProjectRateSelectorsProps> = ({
           <Select
             value={selectedRate ?? ""}
             onValueChange={setSelectedRate}
-            disabled={!selectedProject || rates.length === 0} // Disable if no project or no rates for project
+            disabled={!selectedProject || rates.length === 0}
           >
-            <SelectTrigger id="rate-select">
+            <SelectTrigger
+              id="rate-select"
+              className="w-full border-input"
+              style={{ backgroundColor: "white", color: "black" }}
+            >
               <SelectValue placeholder="Select a rate..." />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent
+              style={selectDropdownStyle}
+              className="border border-slate-200 rounded"
+              position="popper"
+            >
               {rates.length > 0 ? (
                 rates.map((rate) => (
-                  <SelectItem key={rate.id} value={rate.id}>
+                  <SelectItem
+                    key={rate.id}
+                    value={rate.id}
+                    style={selectItemStyle}
+                    className="hover:bg-slate-100 rounded"
+                  >
                     {rate.name} ({rate.rate} DKK/h)
                   </SelectItem>
                 ))
               ) : (
-                <div className="p-2 text-sm text-muted-foreground">
+                <div className="p-2 text-sm text-gray-500">
                   {selectedProject
                     ? "No rates for this project."
                     : "Select a project first."}
