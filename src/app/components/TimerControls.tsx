@@ -1,5 +1,7 @@
 "use client";
 import React from "react";
+import { Button } from "@/components/ui/button";
+import { Play, Pause, RotateCcw, Send } from "lucide-react";
 
 interface TimerControlsProps {
   isRunning: boolean;
@@ -21,33 +23,50 @@ const TimerControls: React.FC<TimerControlsProps> = ({
   disabledSubmit,
 }) => {
   return (
-    <form onSubmit={handleSubmit}>
-      <div className="flex justify-center mt-auto py-6">
-        <button
+    <form onSubmit={handleSubmit} className="w-full">
+      <div className="flex justify-center items-center gap-4 mt-4 w-full">
+        <Button
           type="button"
+          variant={isRunning ? "destructive" : "default"}
+          size="lg"
           onClick={handleStartStop}
-          className={`px-6 py-6 ${
-            isRunning ? "bg-red-500" : "bg-green-500"
-          } text-white text-2xl rounded-full`}
           disabled={disabledStartPause}
+          className={`flex items-center gap-2 ${
+            isRunning
+              ? "bg-red-600 hover:bg-red-700"
+              : "bg-green-600 hover:bg-green-700"
+          }`}
         >
+          {isRunning ? (
+            <Pause className="h-5 w-5" />
+          ) : (
+            <Play className="h-5 w-5" />
+          )}
           {isRunning ? "Pause" : "Start"}
-        </button>
-        <button
+        </Button>
+
+        <Button
           type="button"
+          variant="outline"
+          size="lg"
           onClick={handleReset}
-          className="px-6 py-8 bg-yellow-500 text-white text-2xl rounded-full ml-4"
           disabled={disabledReset}
+          className="flex items-center gap-2"
         >
+          <RotateCcw className="h-5 w-5" />
           Reset
-        </button>
-        <button
+        </Button>
+
+        <Button
           type="submit"
-          className="px-3 py-8 bg-blue-500 text-white text-2xl rounded-full ml-4"
+          variant="default"
+          size="lg"
           disabled={disabledSubmit}
+          className="flex items-center gap-2"
         >
+          <Send className="h-5 w-5" />
           Submit
-        </button>
+        </Button>
       </div>
     </form>
   );

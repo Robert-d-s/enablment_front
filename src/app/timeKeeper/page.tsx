@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useTimer } from "@/app/hooks/useTimer";
 import { useAuthStore } from "@/app/lib/authStore";
 import useCurrentUser from "@/app/hooks/useCurrentUser";
@@ -9,11 +9,20 @@ import { useTimeKeeperQueries } from "@/app/hooks/useTimekeeperQueries";
 import { useTimeKeeperHandlers } from "@/app/hooks/useTimekeeperHandlers";
 import useTimeKeeperData from "@/app/hooks/useTimeKeeperData";
 import NavigationBar from "@/app/components/NavigationBar";
-import FeedbackMessages from "@/app/components/FeedbackMessages";
+// import FeedbackMessages from "@/app/components/FeedbackMessages";
 import TimerDisplay from "@/app/components/TimerDisplay";
 import TimerControls from "@/app/components/TimerControls";
 import ProjectRateSelectors from "@/app/components/ProjectRateSelectors";
 import { useTimerStore } from "@/app/lib/timerStore";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 
 const TimeKeeper: React.FC = () => {
   const [uiSelectedProject, setUiSelectedProject] = useState<string>("");
@@ -45,6 +54,31 @@ const TimeKeeper: React.FC = () => {
     updateTime,
   } = useTimeKeeperQueries(currentTeamId, uiSelectedProject, userIdString);
 
+  const showSuccessToast = useCallback(
+    () => toast.success("Time entry saved!"),
+    []
+  );
+  const showErrorToast = useCallback(
+    (message: string) => toast.error(message || "An error occurred."),
+    []
+  );
+  const showResetToast = useCallback(() => toast.info("Timer reset!"), []);
+  const showDateAlertToast = useCallback(
+    (message: string) => toast.warn(message),
+    []
+  );
+
+  useEffect(() => {
+    if (feedbackState.state.submissionError) {
+      showErrorToast(feedbackState.state.submissionError);
+      feedbackState.actions.setSubmissionError("");
+    }
+  }, [
+    feedbackState.state.submissionError,
+    showErrorToast,
+    feedbackState.actions,
+  ]);
+
   const { handleDateChange, handleSubmit, handleReset } = useTimeKeeperHandlers(
     {
       timerState,
@@ -55,10 +89,10 @@ const TimeKeeper: React.FC = () => {
       updateTime,
       currentEntryId,
       setCurrentEntryId,
-      showSuccessMessage: feedbackState.actions.showSuccessMessage,
+      showSuccessMessage: showSuccessToast,
       setSubmissionError: feedbackState.actions.setSubmissionError,
-      showDateAlert: feedbackState.actions.showDateAlert,
-      showResetMessage: feedbackState.actions.showResetMessage,
+      showDateAlert: showDateAlertToast,
+      showResetMessage: showResetToast,
     }
   );
 
@@ -85,38 +119,67 @@ const TimeKeeper: React.FC = () => {
   return (
     <>
       <NavigationBar />
-      <div className="relative max-w-6xl mx-auto p-6 rounded flex flex-col font-roboto-condensed">
-        <FeedbackMessages {...feedbackState.state} />
-        <TimerDisplay
-          {...timerState}
-          initialStartTime={timerState.initialStartTime}
-          handleDateChange={handleDateChange}
-        />
-        <TimerControls
-          isRunning={timerState.isRunning}
-          handleStartStop={
-            timerState.isRunning ? timerState.pause : timerState.start
-          }
-          handleReset={handleReset}
-          handleSubmit={handleSubmit}
-          disabledStartPause={isStartPauseDisabled}
-          disabledReset={isResetDisabled}
-          disabledSubmit={isSubmitDisabled}
-        />
-        <ProjectRateSelectors
-          userProjects={userProjects.map((p) => ({
-            ...p,
-            teamName: p.teamName ?? "Unknown Team",
-          }))}
-          selectedProject={uiSelectedProject}
-          setSelectedProject={setUiSelectedProject}
-          rates={ratesData?.rates ?? []}
-          selectedRate={uiSelectedRate}
-          setSelectedRate={setUiSelectedRate}
-          totalTimeLoading={totalTimeLoading}
-          totalTimeError={totalTimeError}
-          totalTime={totalTimeData?.getTotalTimeForUserProject ?? 0}
-        />
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="dark"
+      />
+      <div className="container mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-3 gap-6 font-roboto-condensed">
+        {/* Left Column (Timer Display & Controls) */}
+        <div className="lg:col-span-2 flex flex-col gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Time Tracker</CardTitle>
+              <CardDescription>
+                Start, pause, or submit your work time.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col items-center justify-center gap-4 p-6">
+              <TimerDisplay
+                isRunning={timerState.isRunning}
+                displayTime={timerState.displayTime}
+                initialStartTime={timerState.initialStartTime}
+                handleDateChange={handleDateChange}
+              />
+              <TimerControls
+                isRunning={timerState.isRunning}
+                handleStartStop={
+                  timerState.isRunning ? timerState.pause : timerState.start
+                }
+                handleReset={handleReset}
+                handleSubmit={handleSubmit}
+                disabledStartPause={isStartPauseDisabled}
+                disabledReset={isResetDisabled}
+                disabledSubmit={isSubmitDisabled}
+              />
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right Column (Selectors & Info) */}
+        <div className="lg:col-span-1 flex flex-col gap-6">
+          <ProjectRateSelectors
+            userProjects={userProjects.map((p) => ({
+              ...p,
+              teamName: p.teamName ?? "Unknown Team",
+            }))}
+            selectedProject={uiSelectedProject}
+            setSelectedProject={setUiSelectedProject}
+            rates={ratesData?.rates ?? []}
+            selectedRate={uiSelectedRate}
+            setSelectedRate={setUiSelectedRate}
+            totalTimeLoading={totalTimeLoading}
+            totalTimeError={totalTimeError}
+            totalTime={totalTimeData?.getTotalTimeForUserProject ?? 0}
+          />
+        </div>
       </div>
     </>
   );
