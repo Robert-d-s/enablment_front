@@ -117,8 +117,6 @@ const TimerDisplay: React.FC<TimerDisplayProps> = ({
           timeClassName={(time) => getTimeClassName(time, initialStartTime)} // Use helper for time class
           timeFormat="h:mm aa"
           timeCaption="Time"
-          // Adjust time list container - might need CSS for scrollbar
-          timeContainerClassName="border-l pl-1 ml-1 h-[196px] overflow-y-auto" // Approx height match, needs scrollbar styling
           // --- Custom Header ---
           renderCustomHeader={({
             date,

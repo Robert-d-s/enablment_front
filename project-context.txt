@@ -74,7 +74,9 @@ export default nextConfig;
   },
   "dependencies": {
     "@apollo/client": "^3.12.9",
-    "@radix-ui/react-slot": "^1.1.2",
+    "@radix-ui/react-label": "^2.1.3",
+    "@radix-ui/react-select": "^2.1.7",
+    "@radix-ui/react-slot": "^1.2.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "framer-motion": "^12.3.1",
@@ -93,10 +95,11 @@ export default nextConfig;
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
-    "@tailwindcss/postcss": "^4.0.0",
+    "@tailwindcss/postcss": "^4.1.3",
     "@types/node": "^20",
     "@types/react": "^19.0.8",
     "@types/react-dom": "^19.0.3",
+    "autoprefixer": "^10.4.21",
     "eslint": "^9",
     "eslint-config-next": "15.1.6",
     "postcss": "^8.5.2",
@@ -155,159 +158,150 @@ export default function ApolloWrapper({ children }: ApolloWrapperProps) {
 // ====== FILE: src\app\globals.css ======
 
 @import "tailwindcss";
-/*
-  ---break---
-*/
-@plugin 'tailwindcss-animate';
-/*
-  ---break---
-*/
-@custom-variant dark (&:is(.dark *));
 
-@theme {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-}
-
-/*
-  The default border color has changed to `currentColor` in Tailwind CSS v4,
-  so we've added these compatibility styles to make sure everything still
-  looks the same as it did with Tailwind CSS v3.
-
-  If we ever want to remove these styles, we need to add an explicit border
-  color utility to any element that depends on these defaults.
-*/
 @layer base {
-  *,
-  ::after,
-  ::before,
-  ::backdrop,
-  ::file-selector-button {
-    border-color: var(--color-gray-200, currentColor);
+  :root {
+    /* Define CSS variables based on the theme config for light mode */
+    /* These names MUST match the --vars used by shadcn/ui */
+    --background: 0 0% 100%;
+    --foreground: 0 0% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 3.9%;
+    --primary: 0 0% 9%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 96.1%;
+    --secondary-foreground: 0 0% 9%;
+    --muted: 0 0% 96.1%;
+    --muted-foreground: 0 0% 45.1%;
+    --accent: 0 0% 96.1%;
+    --accent-foreground: 0 0% 9%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 89.8%;
+    --input: 0 0% 89.8%;
+    --ring: 0 0% 3.9%;
+    --radius: 0.6rem;
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+  }
+
+  .dark {
+    /* Define CSS variables for dark mode */
+    --background: 0 0% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 0 0% 9%;
+    --secondary: 0 0% 14.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 14.9%;
+    --muted-foreground: 0 0% 63.9%;
+    --accent: 0 0% 14.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 14.9%;
+    --input: 0 0% 14.9%;
+    --ring: 0 0% 83.1%;
+    --radius: 0.6rem; /* Keep consistent */
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
   }
 }
 
-/*
-  ---break---
-*/
-:root {
-  --background: hsl(0 0% 100%);
-  --foreground: hsl(0 0% 3.9%);
-  --card: hsl(0 0% 100%);
-  --card-foreground: hsl(0 0% 3.9%);
-  --popover: hsl(0 0% 100%);
-  --popover-foreground: hsl(0 0% 3.9%);
-  --primary: hsl(0 0% 9%);
-  --primary-foreground: hsl(0 0% 98%);
-  --secondary: hsl(0 0% 96.1%);
-  --secondary-foreground: hsl(0 0% 9%);
-  --muted: hsl(0 0% 96.1%);
-  --muted-foreground: hsl(0 0% 45.1%);
-  --accent: hsl(0 0% 96.1%);
-  --accent-foreground: hsl(0 0% 9%);
-  --destructive: hsl(0 84.2% 60.2%);
-  --destructive-foreground: hsl(0 0% 98%);
-  --border: hsl(0 0% 89.8%);
-  --input: hsl(0 0% 89.8%);
-  --ring: hsl(0 0% 3.9%);
-  --chart-1: hsl(12 76% 61%);
-  --chart-2: hsl(173 58% 39%);
-  --chart-3: hsl(197 37% 24%);
-  --chart-4: hsl(43 74% 66%);
-  --chart-5: hsl(27 87% 67%);
-  --radius: 0.6rem;
-}
-/*
-  ---break---
-*/
-.dark {
-  --background: hsl(0 0% 3.9%);
-  --foreground: hsl(0 0% 98%);
-  --card: hsl(0 0% 3.9%);
-  --card-foreground: hsl(0 0% 98%);
-  --popover: hsl(0 0% 3.9%);
-  --popover-foreground: hsl(0 0% 98%);
-  --primary: hsl(0 0% 98%);
-  --primary-foreground: hsl(0 0% 9%);
-  --secondary: hsl(0 0% 14.9%);
-  --secondary-foreground: hsl(0 0% 98%);
-  --muted: hsl(0 0% 14.9%);
-  --muted-foreground: hsl(0 0% 63.9%);
-  --accent: hsl(0 0% 14.9%);
-  --accent-foreground: hsl(0 0% 98%);
-  --destructive: hsl(0 62.8% 30.6%);
-  --destructive-foreground: hsl(0 0% 98%);
-  --border: hsl(0 0% 14.9%);
-  --input: hsl(0 0% 14.9%);
-  --ring: hsl(0 0% 83.1%);
-  --chart-1: hsl(220 70% 50%);
-  --chart-2: hsl(160 60% 45%);
-  --chart-3: hsl(30 80% 55%);
-  --chart-4: hsl(280 65% 60%);
-  --chart-5: hsl(340 75% 55%);
-}
-/*
-  ---break---
-*/
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-destructive-foreground: var(--destructive-foreground);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-}
-/*
-  ---break---
-*/
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    /* Define border color using the CSS variable */
+    @apply border-border;
   }
   body {
+    /* Define background/foreground using CSS variables */
     @apply bg-background text-foreground;
+    /* Add font-feature-settings if needed for specific fonts */
+    /* font-feature-settings: "rlig" 1, "calt" 1; */
   }
 }
 
-/* @layer components {
-  .bg-black select,
-  .bg-black input,
-  .bg-black textarea {
-    color: white;
-  }
-} */
 @layer components {
-  /* Or append to @layer base */
-  /* Fix for dropdown and input colors in black backgrounds - INVERT COLORS */
+  /* Datepicker Overrides */
+  .react-datepicker {
+    @apply border-none bg-transparent font-sans text-sm;
+  }
+  .react-datepicker__month-container {
+    @apply w-full;
+  }
+  .react-datepicker__header {
+    @apply border-b-0 bg-transparent p-0;
+  }
+  .react-datepicker__day-names {
+    @apply mb-1 flex justify-around;
+  }
+  .react-datepicker__day-name {
+    @apply text-muted-foreground w-8 font-normal text-[0.8rem];
+  }
+  .react-datepicker__week {
+    @apply mb-1 flex justify-around;
+  }
+  .react-datepicker__time-list-item--selected,
+  .react-datepicker__time-list-item--selected:hover {
+    @apply bg-primary text-primary-foreground;
+  }
+  .react-datepicker__day--selected {
+    @apply text-primary-foreground;
+  }
+  .react-datepicker__day--keyboard-selected {
+    @apply bg-accent text-accent-foreground;
+  }
+
+  /* Fix for inputs on black backgrounds */
   .bg-black select,
   .bg-black input,
   .bg-black textarea {
-    color: black; /* Set text color to black */
-    background-color: white; /* Set background color to white */
-    border-color: var(--color-border); /* Optionally, match border color */
+    color: black;
+    background-color: white;
+    /* Use theme() helper which reads from config -> CSS vars */
+    /* border-color: theme("colors.border"); */
+    border-color: hsl(var(--border));
   }
+}
+
+/* Standard CSS for scrollbars */
+.react-datepicker__time-container
+  .react-datepicker__time
+  .react-datepicker__time-box {
+  width: auto !important;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+.react-datepicker__time-list {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--border)) hsl(var(--background));
+}
+.react-datepicker__time-list::-webkit-scrollbar {
+  width: 6px;
+}
+.react-datepicker__time-list::-webkit-scrollbar-track {
+  background: hsl(var(--background));
+  border-radius: 3px;
+}
+.react-datepicker__time-list::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--border));
+  border-radius: 3px;
+  border: 1px solid hsl(var(--background));
+}
+.react-datepicker__time-list::-webkit-scrollbar-thumb:hover {
+  background-color: hsl(var(--muted-foreground));
 }
 
 // ====== FILE: src\app\layout.tsx ======
@@ -585,12 +579,9 @@ const AdminPage: React.FC = () => {
         pauseOnFocusLoss
         draggable
         pauseOnHover
-        theme="dark" // Or "dark" or "colored"
+        theme="dark"
       />
       <div className="container mx-auto p-4 font-roboto-condensed">
-        <div className="mb-6 shadow-lg">
-          <DBSyncPage />
-        </div>
         <UserManagementSection />
         <div className="mb-6 shadow-md">
           <TotalTimeSpent />
@@ -601,6 +592,9 @@ const AdminPage: React.FC = () => {
         </div>
         <div className="shadow-md">
           <InvoiceSummary />
+        </div>
+        <div className="mb-6 shadow-lg">
+          <DBSyncPage />
         </div>
       </div>
     </>
@@ -1589,13 +1583,28 @@ export default PeopleSection;
 
 // ====== FILE: src\app\components\ProjectRateSelectors.tsx ======
 
+// src/app/components/ProjectRateSelectors.tsx
 "use client";
 
 import React from "react";
-import ProjectSelector from "./ProjectSelector";
-import RateSelector from "./RateSelector";
 import { ApolloError } from "@apollo/client";
 import { formatTimeFromMilliseconds } from "../utils/timeUtils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"; // Import shadcn Select
+import { Label } from "@/components/ui/label"; // Import shadcn Label
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card"; // Use Card
+import { Hourglass, Loader2 } from "lucide-react"; // Icons
 
 interface Project {
   id: string;
@@ -1633,33 +1642,97 @@ const ProjectRateSelectors: React.FC<ProjectRateSelectorsProps> = ({
   totalTime,
 }) => {
   return (
-    <div className="mt-6">
-      <div className="mb-4">
-        <ProjectSelector
-          projects={userProjects}
-          selectedProject={selectedProject ?? ""}
-          onProjectChange={setSelectedProject}
-        />
-      </div>
-      <div className="mb-4">
-        <RateSelector
-          rates={rates}
-          selectedRate={selectedRate ?? ""}
-          onRateChange={setSelectedRate}
-        />
-      </div>
-      <div className="mt-4">
-        {totalTimeLoading ? (
-          <p>Loading total time...</p>
-        ) : totalTimeError ? (
-          <p>Error loading total time: {totalTimeError.message}</p>
-        ) : (
-          <p>
-            Your time on project so far: {formatTimeFromMilliseconds(totalTime)}
-          </p>
-        )}
-      </div>
-    </div>
+    // Group selectors and info in a Card
+    <Card>
+      <CardHeader>
+        <CardTitle>Project & Rate</CardTitle>
+        <CardDescription>
+          Select the project and rate for this time entry.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {/* Project Selector */}
+        <div className="space-y-2">
+          <Label htmlFor="project-select">Project</Label>
+          <Select
+            value={selectedProject ?? ""}
+            onValueChange={setSelectedProject} // onValueChange for shadcn Select
+            disabled={userProjects.length === 0}
+          >
+            <SelectTrigger id="project-select">
+              <SelectValue placeholder="Select a project..." />
+            </SelectTrigger>
+            <SelectContent>
+              {userProjects.length > 0 ? (
+                userProjects.map((project) => (
+                  <SelectItem key={project.id} value={project.id}>
+                    {project.name}{" "}
+                    {project.teamName ? `(${project.teamName})` : ""}
+                  </SelectItem>
+                ))
+              ) : (
+                <div className="p-2 text-sm text-muted-foreground">
+                  No projects found.
+                </div>
+              )}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Rate Selector */}
+        <div className="space-y-2">
+          <Label htmlFor="rate-select">Rate</Label>
+          <Select
+            value={selectedRate ?? ""}
+            onValueChange={setSelectedRate}
+            disabled={!selectedProject || rates.length === 0} // Disable if no project or no rates for project
+          >
+            <SelectTrigger id="rate-select">
+              <SelectValue placeholder="Select a rate..." />
+            </SelectTrigger>
+            <SelectContent>
+              {rates.length > 0 ? (
+                rates.map((rate) => (
+                  <SelectItem key={rate.id} value={rate.id}>
+                    {rate.name} ({rate.rate} DKK/h)
+                  </SelectItem>
+                ))
+              ) : (
+                <div className="p-2 text-sm text-muted-foreground">
+                  {selectedProject
+                    ? "No rates for this project."
+                    : "Select a project first."}
+                </div>
+              )}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Total Time Display */}
+        <div className="border-t pt-4 mt-4">
+          <Label className="text-sm font-medium">Total Time on Project</Label>
+          <div className="flex items-center gap-2 mt-1">
+            <Hourglass className="h-5 w-5 text-muted-foreground" />
+            {totalTimeLoading ? (
+              <span className="flex items-center gap-1 text-muted-foreground italic">
+                <Loader2 className="h-4 w-4 animate-spin" /> Loading...
+              </span>
+            ) : totalTimeError ? (
+              <span className="text-sm text-red-600">Error loading time</span>
+            ) : (
+              <span className="text-lg font-semibold font-mono">
+                {formatTimeFromMilliseconds(totalTime)}
+              </span>
+            )}
+          </div>
+          {totalTimeError && (
+            <p className="text-xs text-red-500 mt-1">
+              {totalTimeError.message}
+            </p>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 
@@ -2039,6 +2112,8 @@ export default ServicesSection;
 
 "use client";
 import React from "react";
+import { Button } from "@/components/ui/button";
+import { Play, Pause, RotateCcw, Send } from "lucide-react";
 
 interface TimerControlsProps {
   isRunning: boolean;
@@ -2060,33 +2135,50 @@ const TimerControls: React.FC<TimerControlsProps> = ({
   disabledSubmit,
 }) => {
   return (
-    <form onSubmit={handleSubmit}>
-      <div className="flex justify-center mt-auto py-6">
-        <button
+    <form onSubmit={handleSubmit} className="w-full">
+      <div className="flex justify-center items-center gap-4 mt-4 w-full">
+        <Button
           type="button"
+          variant={isRunning ? "destructive" : "default"}
+          size="lg"
           onClick={handleStartStop}
-          className={`px-6 py-6 ${
-            isRunning ? "bg-red-500" : "bg-green-500"
-          } text-white text-2xl rounded-full`}
           disabled={disabledStartPause}
+          className={`flex items-center gap-2 ${
+            isRunning
+              ? "bg-red-600 hover:bg-red-700"
+              : "bg-green-600 hover:bg-green-700"
+          }`}
         >
+          {isRunning ? (
+            <Pause className="h-5 w-5" />
+          ) : (
+            <Play className="h-5 w-5" />
+          )}
           {isRunning ? "Pause" : "Start"}
-        </button>
-        <button
+        </Button>
+
+        <Button
           type="button"
+          variant="outline"
+          size="lg"
           onClick={handleReset}
-          className="px-6 py-8 bg-yellow-500 text-white text-2xl rounded-full ml-4"
           disabled={disabledReset}
+          className="flex items-center gap-2"
         >
+          <RotateCcw className="h-5 w-5" />
           Reset
-        </button>
-        <button
+        </Button>
+
+        <Button
           type="submit"
-          className="px-3 py-8 bg-blue-500 text-white text-2xl rounded-full ml-4"
+          variant="default"
+          size="lg"
           disabled={disabledSubmit}
+          className="flex items-center gap-2"
         >
+          <Send className="h-5 w-5" />
           Submit
-        </button>
+        </Button>
       </div>
     </form>
   );
@@ -2099,11 +2191,15 @@ export default TimerControls;
 import React from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import "@/app/globals.css";
 import {
   formatDateForDisplay,
   formatTimeFromISOString,
 } from "../utils/timeUtils";
-import { formatISO } from "date-fns";
+import { formatISO, isToday, isSameDay, getMonth } from "date-fns";
+import { Timer, ChevronLeft, ChevronRight } from "lucide-react";
+import { cn } from "@/app/lib/utils";
+import { buttonVariants } from "@/components/ui/button";
 
 interface TimerDisplayProps {
   isRunning: boolean;
@@ -2112,6 +2208,38 @@ interface TimerDisplayProps {
   handleDateChange: (date: Date | null) => void;
 }
 
+const getDayClassName = (
+  date: Date,
+  selectedDate: Date | null,
+  currentMonthDate: Date
+) => {
+  return cn(
+    buttonVariants({ variant: "ghost" }),
+    "h-8 w-8 p-0 font-normal text-sm", // Slightly smaller days
+    "aria-selected:opacity-100 rounded-md", // Keep rounding
+    !isSameDay(getMonth(date), getMonth(currentMonthDate)) &&
+      "text-muted-foreground opacity-50", // Dim days outside month
+    isToday(date) && "bg-accent text-accent-foreground",
+    selectedDate &&
+      isSameDay(date, selectedDate) &&
+      "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground", // Use hover variant
+    "focus:outline-none focus:ring-1 focus:ring-ring"
+  );
+};
+
+// Helper for Time class styling
+const getTimeClassName = (time: Date, selected: Date | null) => {
+  const isSelected =
+    selected &&
+    time.getHours() === selected.getHours() &&
+    time.getMinutes() === selected.getMinutes();
+  return cn(
+    "text-sm p-1 mx-1 flex justify-center items-center rounded-md cursor-pointer",
+    "hover:bg-accent hover:text-accent-foreground", // Hover effect
+    isSelected && "bg-primary text-primary-foreground hover:bg-primary/90" // Selected style (might be overridden by CSS)
+  );
+};
+
 const TimerDisplay: React.FC<TimerDisplayProps> = ({
   isRunning,
   displayTime,
@@ -2119,53 +2247,110 @@ const TimerDisplay: React.FC<TimerDisplayProps> = ({
   handleDateChange,
 }) => {
   return (
-    <div className="flex flex-col items-center justify-center">
-      <div
-        className={`clock-icon h-6 w-6 ${
-          isRunning ? "animate-spin" : ""
-        } text-gray-500`}
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <circle cx="12" cy="12" r="10" />
-          <line x1="12" y1="12" x2="12" y2="8" />
-          <line
-            x1="12"
-            y1="12"
-            x2="16"
-            y2="12"
-            className={isRunning ? "animate-spin" : ""}
-          />
-        </svg>
+    <div className="flex flex-col items-center gap-3 w-full">
+      {" "}
+      {/* Increased gap */}
+      {/* Timer Value */}
+      <div className="flex items-center justify-center gap-2 text-foreground mb-1">
+        <Timer
+          className={`h-5 w-5 ${
+            isRunning ? "text-green-500 animate-pulse" : "text-muted-foreground"
+          }`}
+        />
+        <div className="text-6xl md:text-7xl font-mono font-bold tracking-tighter text-center tabular-nums">
+          {" "}
+          {/* Added tabular-nums */}
+          {displayTime}
+        </div>
       </div>
-      <div className="text-7xl font-digital text-black flex items-center justify-center">
-        {displayTime}
+      {/* Start Time Display */}
+      <div className="text-xs text-muted-foreground mb-2 text-center">
+        {" "}
+        {/* Smaller text */}
+        Started:{" "}
+        {initialStartTime ? (
+          `${formatDateForDisplay(initialStartTime)} ${formatTimeFromISOString(
+            formatISO(initialStartTime)
+          )}`
+        ) : (
+          <span className="italic">Not Started</span>
+        )}
       </div>
-      <div className="mb-2">
-        Started at:{" "}
-        {initialStartTime
-          ? formatDateForDisplay(initialStartTime) +
-            " " +
-            formatTimeFromISOString(formatISO(initialStartTime))
-          : "Not Started"}
-      </div>
-      <div className="flex justify-center">
+      {/* --- Styled Date Picker --- */}
+      {/* Container mimicking shadcn card/popover */}
+      <div className="p-1 border rounded-md bg-card shadow-sm w-full max-w-[290px]">
+        {" "}
+        {/* Adjusted width slightly */}
         <DatePicker
           inline
           id="startDate"
-          selected={initialStartTime || new Date()}
+          selected={initialStartTime}
           onChange={handleDateChange}
           showTimeSelect
-          dateFormat="MMMM d, yyyy HH:mm"
-          timeIntervals={10}
-          className="form-input block w-52 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          dateFormat="MMMM d, yyyy h:mm aa"
+          timeIntervals={15}
+          preventOpenOnFocus
+          // --- Styling Props ---
+          calendarClassName="p-1 text-card-foreground text-sm" // Base text styles, padding
+          dayClassName={(date) =>
+            getDayClassName(
+              date,
+              initialStartTime,
+              initialStartTime || new Date()
+            )
+          } // Pass current month reference
+          wrapperClassName="w-full"
+          monthClassName={() => "space-y-2 p-1"}
+          weekDayClassName={() =>
+            "text-muted-foreground rounded-md w-8 font-normal text-[0.8rem]"
+          } // Style weekday names
+          timeClassName={(time) => getTimeClassName(time, initialStartTime)} // Use helper for time class
+          timeFormat="h:mm aa"
+          timeCaption="Time"
+          // Adjust time list container - might need CSS for scrollbar
+          timeContainerClassName="border-l pl-1 ml-1 h-[196px] overflow-y-auto" // Approx height match, needs scrollbar styling
+          // --- Custom Header ---
+          renderCustomHeader={({
+            date,
+            decreaseMonth,
+            increaseMonth,
+            prevMonthButtonDisabled,
+            nextMonthButtonDisabled,
+          }) => (
+            <div className="flex items-center justify-between px-1 py-1.5">
+              {" "}
+              {/* Adjusted padding */}
+              <button
+                type="button"
+                onClick={decreaseMonth}
+                disabled={prevMonthButtonDisabled}
+                className={cn(
+                  buttonVariants({ variant: "outline", size: "icon" }),
+                  "h-7 w-7 disabled:opacity-50 border"
+                )} // Ensure border
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <span className="text-sm font-medium">
+                {/* Display Month Year */}
+                {new Intl.DateTimeFormat("en-US", {
+                  month: "long",
+                  year: "numeric",
+                }).format(date)}
+              </span>
+              <button
+                type="button"
+                onClick={increaseMonth}
+                disabled={nextMonthButtonDisabled}
+                className={cn(
+                  buttonVariants({ variant: "outline", size: "icon" }),
+                  "h-7 w-7 disabled:opacity-50 border"
+                )} // Ensure border
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          )}
         />
       </div>
     </div>
@@ -3152,7 +3337,6 @@ export const useFeedbackState = () => {
 import { useQuery } from "@apollo/client";
 import { useEffect, useState } from "react";
 import { GET_MY_PROJECTS } from "@/app/components/Admin/totalTimeSpent";
-import useStore from "@/app/lib/store";
 import { useAuthStore } from "@/app/lib/authStore";
 import { useReactiveVar } from "@apollo/client";
 import { loggedInUserTeamsVersion } from "@/app/lib/apolloClient";
@@ -3169,7 +3353,7 @@ interface GetMyProjectsQueryData {
   myProjects: MyProject[];
 }
 
-const useTimeKeeperData = () => {
+const useTimeKeeperData = (selectedProject: string | null) => {
   const user = useAuthStore((state) => state.user);
   const loggedInUserId = user?.id;
   const teamsVersion = useReactiveVar(loggedInUserTeamsVersion);
@@ -3181,14 +3365,14 @@ const useTimeKeeperData = () => {
     refetch: refetchMyProjects,
   } = useQuery<GetMyProjectsQueryData>(GET_MY_PROJECTS, {
     skip: !loggedInUserId,
-    fetchPolicy: "cache-first",
+    fetchPolicy: "cache-and-network",
+    nextFetchPolicy: "cache-first",
   });
 
   const [userProjects, setUserProjects] = useState<MyProject[]>([]);
   const [currentTeamId, setCurrentTeamId] = useState<string | undefined>(
     undefined
   );
-  const selectedProject = useStore((state) => state.selectedProject);
 
   useEffect(() => {
     if (myProjectsData?.myProjects) {
@@ -3246,8 +3430,8 @@ interface HandlersConfig {
     resumeTimes: Date[];
     calculateTotalActiveTime: () => number;
   };
-  selectedProject: string;
-  selectedRate: string;
+  timerProjectId: string;
+  timerRateId: string;
   userId: string;
   createTimeEntry: (data: {
     startTime: string;
@@ -3269,8 +3453,8 @@ interface HandlersConfig {
 
 export const useTimeKeeperHandlers = ({
   timerState,
-  selectedProject,
-  selectedRate,
+  timerProjectId,
+  timerRateId,
   userId,
   createTimeEntry,
   updateTime,
@@ -3292,32 +3476,42 @@ export const useTimeKeeperHandlers = ({
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setSubmissionError("");
     if (
       !timerState.initialStartTime ||
-      !selectedProject ||
+      !timerProjectId ||
       !userId ||
-      !selectedRate
+      !timerRateId
     ) {
-      console.error("Missing required data for time entry.");
+      const errorMsg =
+        "Timer session data (Project/Rate) is incomplete. Cannot submit.";
+      console.error(errorMsg, {
+        start: timerState.initialStartTime,
+        proj: timerProjectId,
+        rate: timerRateId,
+        user: userId,
+      });
+      setSubmissionError(errorMsg);
       return;
     }
 
     try {
       const submissionTime = new Date();
-      console.log("Submission time:", submissionTime.toISOString());
-
       const totalElapsedTimeMs = timerState.calculateTotalActiveTime();
-      console.log(
-        "Total elapsed time calculated for submission (ms):",
-        totalElapsedTimeMs
-      );
-      console.log(
-        "Total elapsed time in seconds:",
-        Math.floor(totalElapsedTimeMs / 1000)
-      );
+
+      if (totalElapsedTimeMs < 0) {
+        console.error("Calculated negative elapsed time, resetting timer.", {
+          totalElapsedTimeMs,
+        });
+        setSubmissionError(
+          "Timer error: Invalid elapsed time calculated. Please reset."
+        );
+        handleReset();
+        return;
+      }
 
       if (currentEntryId) {
-        console.log("Updating existing time entry with ID:", currentEntryId);
+        console.log(`Updating time entry ID ${currentEntryId}.`);
         await updateTime({
           timeInputUpdate: {
             id: currentEntryId,
@@ -3325,57 +3519,46 @@ export const useTimeKeeperHandlers = ({
             totalElapsedTime: totalElapsedTimeMs,
           },
         });
-        console.log("Updated existing time entry ID:", currentEntryId);
+        console.log("Successfully updated time entry ID:", currentEntryId);
       } else {
-        console.log("Creating new time entry with data:", {
+        console.log(
+          `Creating new time entry for project ${timerProjectId}, rate ${timerRateId}`
+        );
+        const result = await createTimeEntry({
           startTime: formatISO(timerState.initialStartTime),
-          projectId: selectedProject,
+          projectId: timerProjectId,
           userId: parseFloat(userId),
-          rateId: parseFloat(selectedRate),
+          rateId: parseFloat(timerRateId),
           totalElapsedTime: totalElapsedTimeMs,
         });
 
-        try {
-          const result = await createTimeEntry({
-            startTime: formatISO(timerState.initialStartTime),
-            projectId: selectedProject,
-            userId: parseFloat(userId),
-            rateId: parseFloat(selectedRate),
-            totalElapsedTime: totalElapsedTimeMs,
-          });
-          console.log(
-            "Success creating time entry with minimal required fields:",
-            JSON.stringify(result, null, 2)
+        if (result?.data?.createTime?.id) {
+          const newEntryId = result.data.createTime.id;
+          setCurrentEntryId(newEntryId);
+          console.log("Successfully created time entry, new ID:", newEntryId);
+        } else {
+          throw new Error(
+            "Time entry created, but no ID was returned from the server."
           );
-
-          if (result?.data?.createTime?.id) {
-            setCurrentEntryId(result.data.createTime.id);
-            console.log("Set current entry ID to:", result.data.createTime.id);
-          }
-        } catch (err) {
-          console.error("Failed to create time entry:", err);
-          throw err;
         }
       }
 
       showSuccessMessage();
-
       if (timerState.isRunning) {
         timerState.pause();
       }
     } catch (error: unknown) {
+      console.error("Error during time entry submission:", error);
       if (error instanceof Error) {
-        setSubmissionError(`Error with time entry: ${error.message}`);
+        setSubmissionError(`Submit Failed: ${error.message}`);
       } else {
-        setSubmissionError("Unknown error");
+        setSubmissionError("An unknown error occurred during submission.");
       }
-      console.error("Error submitting time entry:", error);
     }
   };
 
   const handleReset = (): void => {
     timerState.reset();
-    setCurrentEntryId(null);
     showResetMessage();
   };
 
@@ -3480,7 +3663,10 @@ import { format } from "date-fns";
 import type { TimerState } from "../types";
 import { useTimerStore } from "@/app/lib/timerStore";
 
-export const useTimer = (): TimerState & {
+export const useTimer = (
+  selectedProjectId: string | null,
+  selectedRateId: string | null
+): TimerState & {
   initialStartTime: Date | null;
   pauseTimes: Date[];
   resumeTimes: Date[];
@@ -3495,6 +3681,7 @@ export const useTimer = (): TimerState & {
     addPauseTime: addPauseTimeToStore,
     addResumeTime: addResumeTimeToStore,
     resetTimerState: resetTimerStateInStore,
+    setActiveTimerProjectAndRate,
   } = useTimerStore();
 
   // --- Local state for display only ---
@@ -3691,6 +3878,10 @@ export const useTimer = (): TimerState & {
 
   // --- Control Functions (Dispatch actions to the store) ---
   const start = () => {
+    if (!selectedProjectId || !selectedRateId) {
+      console.error("Cannot start timer: Project and Rate must be selected.");
+      return;
+    }
     const now = new Date();
     // Check Zustand state directly for most up-to-date values before dispatching
     const {
@@ -3703,6 +3894,10 @@ export const useTimer = (): TimerState & {
     if (!currentInitialISO) {
       console.log("useTimer start: Setting initial time in store.");
       setInitialStartTimeInStore(now);
+      setActiveTimerProjectAndRate(selectedProjectId, selectedRateId);
+      console.log(
+        `useTimer start: Storing active project (${selectedProjectId}) and rate (${selectedRateId})`
+      );
     } else if (!currentlyRunning) {
       if (currentPausesISO.length > currentResumesISO.length) {
         console.log("useTimer start: Adding RESUME time to store.");
@@ -3742,6 +3937,12 @@ export const useTimer = (): TimerState & {
 
   const handleManualSetStartTime = (date: Date | null) => {
     console.log("useTimer handleManualSetStartTime:", date?.toISOString());
+    if (!selectedProjectId || !selectedRateId) {
+      console.error(
+        "Cannot set start time: Project and Rate must be selected."
+      );
+      return;
+    }
     const currentlyRunning = useTimerStore.getState().isRunning;
     if (currentlyRunning) {
       // Need to pause first *before* resetting state
@@ -3753,6 +3954,10 @@ export const useTimer = (): TimerState & {
     console.log("Resetting state and setting new start time in store...");
     resetTimerStateInStore();
     setInitialStartTimeInStore(date);
+    setActiveTimerProjectAndRate(selectedProjectId, selectedRateId);
+    console.log(
+      `useTimer manual set: Storing active project (${selectedProjectId}) and rate (${selectedRateId})`
+    );
     setDisplayTime("00:00:00");
   };
 
@@ -4361,10 +4566,9 @@ import {
 } from "@apollo/client";
 import { setContext } from "@apollo/client/link/context";
 import { onError } from "@apollo/client/link/error";
-import { useAuthStore, getAccessToken } from "./authStore"; // Import store and getter
+import { useAuthStore, getAccessToken } from "./authStore";
 import gql from "graphql-tag";
 
-// Define the refresh token mutation structure (matching backend resolver)
 const REFRESH_TOKEN_MUTATION = gql`
   mutation RefreshToken {
     refreshToken {
@@ -4375,9 +4579,7 @@ const REFRESH_TOKEN_MUTATION = gql`
 
 export const loggedInUserTeamsVersion = makeVar(0);
 
-// --- Auth Link: Adds Access Token Header ---
 const authLink = setContext((operation, { headers }) => {
-  // Exclude Authorization header for refreshToken mutation itself
   if (operation.operationName === "RefreshToken") {
     return { headers };
   }
@@ -4392,7 +4594,6 @@ const authLink = setContext((operation, { headers }) => {
   };
 });
 
-// --- Error Link: Handles Token Expiry and Refresh ---
 let isRefreshing = false;
 let pendingRequests: ((newAccessToken: string) => void)[] = [];
 
@@ -4412,18 +4613,15 @@ const errorLink = onError(
           statusCode?: number;
           message?: string;
         }
-        const originalError = extensions.originalError as OriginalError; // Cast with specific type
-
-        // Check for specific unauthenticated error scenarios
+        const originalError = extensions.originalError as OriginalError;
         const isAuthError =
-          extensions?.code === "UNAUTHORIZED" || // Custom code from backend guard
+          extensions?.code === "UNAUTHORIZED" ||
           originalError?.statusCode === 401 ||
           err.message.toLowerCase().includes("unauthorized") ||
           err.message.toLowerCase().includes("access denied") ||
           err.message.toLowerCase().includes("invalid token") ||
           err.message.toLowerCase().includes("expired token");
 
-        // Don't refresh if the failed operation was RefreshToken itself!
         if (isAuthError && operation.operationName !== "RefreshToken") {
           console.log(
             `Auth error on operation '${operation.operationName}'. Initiating refresh.`
@@ -4433,13 +4631,11 @@ const errorLink = onError(
             isRefreshing = true;
             console.log("Starting token refresh via mutation...");
 
-            // Use the client instance directly to mutate
             client
               .mutate<{ refreshToken: { access_token: string } }>({
                 mutation: REFRESH_TOKEN_MUTATION,
-                // No variables needed as refresh token is in cookie
                 context: {
-                  credentials: "include", // Crucial: ensures cookie is sent
+                  credentials: "include",
                 },
               })
               .then(({ data }) => {
@@ -4448,22 +4644,20 @@ const errorLink = onError(
                   console.error(
                     "Token refresh succeeded but no new access token received."
                   );
-                  throw new Error("New access token not received."); // Trigger catch block
+                  throw new Error("New access token not received.");
                 }
                 console.log(
                   "Token refresh successful. New access token obtained."
                 );
-                useAuthStore.getState().setAccessToken(newAccessToken); // Update store
-                resolvePendingRequests(newAccessToken); // Retry queued requests
+                useAuthStore.getState().setAccessToken(newAccessToken);
+                resolvePendingRequests(newAccessToken);
               })
               .catch((refreshError) => {
                 console.error("Token refresh mutation failed:", refreshError);
-                // Clear frontend state and redirect to login
-                useAuthStore.getState().logout(); // Clear store
-                pendingRequests = []; // Clear queue
-                // No need to call backend logout here, refresh already failed
+                useAuthStore.getState().logout();
+                pendingRequests = [];
                 if (window.location.pathname !== "/login") {
-                  window.location.href = "/login"; // Force redirect
+                  window.location.href = "/login";
                 }
               })
               .finally(() => {
@@ -4472,7 +4666,6 @@ const errorLink = onError(
               });
           }
 
-          // Return Observable to queue the original request
           return new Observable((observer) => {
             pendingRequests.push((newAccessToken) => {
               console.log(
@@ -4484,11 +4677,10 @@ const errorLink = onError(
                   Authorization: `Bearer ${newAccessToken}`,
                 },
               }));
-              forward(operation).subscribe(observer); // Resubscribe with updated context
+              forward(operation).subscribe(observer);
             });
           });
         }
-        // Handle other errors like Forbidden
         if (
           extensions?.code === "FORBIDDEN" ||
           originalError?.statusCode === 403
@@ -4498,45 +4690,34 @@ const errorLink = onError(
       }
     }
 
-    // Handle network errors (optional, but good practice)
     if (networkError) {
       console.error(`[Network error]: ${networkError.message}`, networkError);
-      // You could add specific handling for 401 network errors too if they occur
     }
   }
 );
 
-// --- HTTP Link ---
 const httpLink = createHttpLink({
-  uri: `${process.env.NEXT_PUBLIC_BACKEND_URL}/graphql`, // Your GraphQL endpoint
+  uri: `${process.env.NEXT_PUBLIC_BACKEND_URL}/graphql`,
   fetchOptions: {
     method: "POST",
   },
-  credentials: "include", // IMPORTANT: Send cookies (like refresh_token) with ALL requests
+  credentials: "include",
 });
 
-// --- Apollo Client Instance ---
 const client = new ApolloClient({
-  link: from([
-    errorLink, // Handles errors and refresh logic
-    authLink, // Adds access token header
-    httpLink, // Sends the request
-  ]),
+  link: from([errorLink, authLink, httpLink]),
   cache: new InMemoryCache(),
   defaultOptions: {
-    watchQuery: { fetchPolicy: "cache-and-network" }, // Good default
-    query: { fetchPolicy: "network-only", errorPolicy: "all" }, // Ensure fresh data, handle errors
+    watchQuery: { fetchPolicy: "cache-and-network" },
+    query: { fetchPolicy: "network-only", errorPolicy: "all" },
     mutate: { errorPolicy: "all" },
   },
 });
 
-// --- Export client and potentially the backend logout function ---
 export default client;
 
-// Updated logout function (if needed separately, often called from UI)
 export const clientLogout = async () => {
   try {
-    // Call backend logout mutation (sends access token via authLink)
     await client.mutate({
       mutation: gql`
         mutation Logout {
@@ -4545,19 +4726,15 @@ export const clientLogout = async () => {
           }
         }
       `,
-      context: { credentials: "include" }, // Ensure cookies cleared even if access token expired
+      context: { credentials: "include" },
     });
     console.log("Backend logout mutation successful.");
   } catch (error) {
     console.error("Error calling backend logout mutation:", error);
-    // Proceed with frontend logout regardless
   } finally {
-    // ALWAYS clear frontend state
     useAuthStore.getState().logout();
-    await client.resetStore(); // Clear Apollo cache
+    await client.resetStore();
     console.log("Frontend state cleared.");
-
-    // Redirect
     if (window.location.pathname !== "/login") {
       window.location.href = "/login";
     }
@@ -4590,13 +4767,10 @@ interface AuthState {
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
-      // Initial state
       user: null,
       accessToken: null,
       isForbidden: false,
       isAuthenticated: false,
-
-      // Actions
       setAuth: (token, user) =>
         set({
           accessToken: token,
@@ -4623,10 +4797,8 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: "auth-storage",
-      // IMPORTANT: Only persist user info, NOT the access token
       partialize: (state) => ({
         user: state.user,
-        // Do NOT persist accessToken or isAuthenticated - derive on load/refresh
       }),
 
       onRehydrateStorage: () => {
@@ -4640,29 +4812,7 @@ export const useAuthStore = create<AuthState>()(
   )
 );
 
-// Helper function to get token without subscribing (for Apollo Link)
 export const getAccessToken = () => useAuthStore.getState().accessToken;
-
-// ====== FILE: src\app\lib\store.ts ======
-
-"use client";
-import { create } from "zustand";
-
-type Store = {
-  selectedProject: string;
-  selectedRate: string;
-  setSelectedProject: (selectedProject: string) => void;
-  setSelectedRate: (selectedRate: string) => void;
-};
-
-const useStore = create<Store>((set) => ({
-  selectedProject: "",
-  selectedRate: "",
-  setSelectedProject: (selectedProject) => set({ selectedProject }),
-  setSelectedRate: (selectedRate) => set({ selectedRate }),
-}));
-
-export default useStore;
 
 // ====== FILE: src\app\lib\timerStore.ts ======
 
@@ -4677,6 +4827,8 @@ interface TimerPersistedState {
   currentEntryId: number | null;
   projectIdForTimer: string | null;
   rateIdForTimer: string | null;
+  activeTimerProjectId: string | null;
+  activeTimerRateId: string | null;
 }
 
 interface TimerActions {
@@ -4685,7 +4837,10 @@ interface TimerActions {
   addPauseTime: (date: Date) => void;
   addResumeTime: (date: Date) => void;
   setCurrentEntryId: (id: number | null) => void;
-  setProjectAndRate: (projectId: string | null, rateId: string | null) => void;
+  setActiveTimerProjectAndRate: (
+    projectId: string | null,
+    rateId: string | null
+  ) => void;
   resetTimerState: () => void;
 }
 
@@ -4697,6 +4852,8 @@ const initialState: TimerPersistedState = {
   currentEntryId: null,
   projectIdForTimer: null,
   rateIdForTimer: null,
+  activeTimerProjectId: null,
+  activeTimerRateId: null,
 };
 
 export const useTimerStore = create<TimerPersistedState & TimerActions>()(
@@ -4715,10 +4872,10 @@ export const useTimerStore = create<TimerPersistedState & TimerActions>()(
           resumeTimesISO: [...state.resumeTimesISO, date.toISOString()],
         })),
       setCurrentEntryId: (id) => set({ currentEntryId: id }),
-      setProjectAndRate: (projectId, rateId) =>
+      setActiveTimerProjectAndRate: (projectId, rateId) =>
         set({
-          projectIdForTimer: projectId,
-          rateIdForTimer: rateId,
+          activeTimerProjectId: projectId,
+          activeTimerRateId: rateId,
         }),
       resetTimerState: () => {
         console.log("Resetting timer state in Zustand store");
@@ -5085,9 +5242,8 @@ export default Signup;
 
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useTimer } from "@/app/hooks/useTimer";
-import useStore from "@/app/lib/store";
 import { useAuthStore } from "@/app/lib/authStore";
 import useCurrentUser from "@/app/hooks/useCurrentUser";
 import { useFeedbackState } from "@/app/hooks/useFeedbackState";
@@ -5095,20 +5251,38 @@ import { useTimeKeeperQueries } from "@/app/hooks/useTimekeeperQueries";
 import { useTimeKeeperHandlers } from "@/app/hooks/useTimekeeperHandlers";
 import useTimeKeeperData from "@/app/hooks/useTimeKeeperData";
 import NavigationBar from "@/app/components/NavigationBar";
-import FeedbackMessages from "@/app/components/FeedbackMessages";
+// import FeedbackMessages from "@/app/components/FeedbackMessages";
 import TimerDisplay from "@/app/components/TimerDisplay";
 import TimerControls from "@/app/components/TimerControls";
 import ProjectRateSelectors from "@/app/components/ProjectRateSelectors";
+import { useTimerStore } from "@/app/lib/timerStore";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 
 const TimeKeeper: React.FC = () => {
-  const { selectedProject, setSelectedProject, selectedRate, setSelectedRate } =
-    useStore();
-  const timerState = useTimer();
-  const { userProjects, currentTeamId } = useTimeKeeperData();
-  const feedbackState = useFeedbackState();
+  const [uiSelectedProject, setUiSelectedProject] = useState<string>("");
+  const [uiSelectedRate, setUiSelectedRate] = useState<string>("");
   const loggedInUser = useAuthStore((state) => state.user);
-
-  const [currentEntryId, setCurrentEntryId] = useState<number | null>(null);
+  const userIdString = loggedInUser?.id?.toString() ?? "";
+  const currentEntryId = useTimerStore((state) => state.currentEntryId);
+  const activeTimerProjectId = useTimerStore(
+    (state) => state.activeTimerProjectId
+  );
+  const activeTimerRateId = useTimerStore((state) => state.activeTimerRateId);
+  const initialStartTimeISO = useTimerStore(
+    (state) => state.initialStartTimeISO
+  );
+  const setCurrentEntryId = useTimerStore((state) => state.setCurrentEntryId);
+  const timerState = useTimer(uiSelectedProject, uiSelectedRate);
+  const { userProjects, currentTeamId } = useTimeKeeperData(uiSelectedProject);
+  const feedbackState = useFeedbackState();
 
   useCurrentUser();
 
@@ -5120,70 +5294,134 @@ const TimeKeeper: React.FC = () => {
     refetch,
     createTimeEntry,
     updateTime,
-  } = useTimeKeeperQueries(
-    currentTeamId!,
-    selectedProject,
-    loggedInUser?.id?.toString() ?? ""
+  } = useTimeKeeperQueries(currentTeamId, uiSelectedProject, userIdString);
+
+  const showSuccessToast = useCallback(
+    () => toast.success("Time entry saved!"),
+    []
   );
+  const showErrorToast = useCallback(
+    (message: string) => toast.error(message || "An error occurred."),
+    []
+  );
+  const showResetToast = useCallback(() => toast.info("Timer reset!"), []);
+  const showDateAlertToast = useCallback(
+    (message: string) => toast.warn(message),
+    []
+  );
+
+  useEffect(() => {
+    if (feedbackState.state.submissionError) {
+      showErrorToast(feedbackState.state.submissionError);
+      feedbackState.actions.setSubmissionError("");
+    }
+  }, [
+    feedbackState.state.submissionError,
+    showErrorToast,
+    feedbackState.actions,
+  ]);
 
   const { handleDateChange, handleSubmit, handleReset } = useTimeKeeperHandlers(
     {
       timerState,
-      selectedProject,
-      selectedRate,
-      userId: loggedInUser?.id?.toString() ?? "",
+      timerProjectId: activeTimerProjectId ?? "",
+      timerRateId: activeTimerRateId ?? "",
+      userId: userIdString,
       createTimeEntry,
       updateTime,
       currentEntryId,
       setCurrentEntryId,
-      showSuccessMessage: feedbackState.actions.showSuccessMessage,
+      showSuccessMessage: showSuccessToast,
       setSubmissionError: feedbackState.actions.setSubmissionError,
-      showDateAlert: feedbackState.actions.showDateAlert,
-      showResetMessage: feedbackState.actions.showResetMessage,
+      showDateAlert: showDateAlertToast,
+      showResetMessage: showResetToast,
     }
   );
 
   useEffect(() => {
-    if (selectedProject) {
+    if (initialStartTimeISO) {
+      setUiSelectedProject(activeTimerProjectId ?? "");
+      setUiSelectedRate(activeTimerRateId ?? "");
+    } else {
+      setUiSelectedProject("");
+      setUiSelectedRate("");
+    }
+  }, [activeTimerProjectId, activeTimerRateId, initialStartTimeISO]);
+
+  useEffect(() => {
+    if (uiSelectedProject && loggedInUser?.id) {
       refetch();
     }
-  }, [selectedProject, refetch]);
+  }, [uiSelectedProject, refetch, loggedInUser?.id]);
+
+  const isStartPauseDisabled = !uiSelectedProject || !uiSelectedRate;
+  const isResetDisabled = !timerState.initialStartTime;
+  const isSubmitDisabled = timerState.isRunning || !timerState.initialStartTime;
 
   return (
     <>
       <NavigationBar />
-      <div className="relative max-w-6xl mx-auto p-6 rounded flex flex-col font-roboto-condensed">
-        <FeedbackMessages {...feedbackState.state} />
-        <TimerDisplay
-          {...timerState}
-          initialStartTime={timerState.initialStartTime}
-          handleDateChange={handleDateChange}
-        />
-        <TimerControls
-          isRunning={timerState.isRunning}
-          handleStartStop={
-            timerState.isRunning ? timerState.pause : timerState.start
-          }
-          handleReset={handleReset}
-          handleSubmit={handleSubmit}
-          disabledStartPause={!selectedProject || !selectedRate}
-          disabledReset={!timerState.initialStartTime}
-          disabledSubmit={timerState.isRunning || !timerState.initialStartTime}
-        />
-        <ProjectRateSelectors
-          userProjects={userProjects.map((p) => ({
-            ...p,
-            teamName: p.teamName ?? "Unknown Team",
-          }))}
-          selectedProject={selectedProject}
-          setSelectedProject={setSelectedProject}
-          rates={ratesData?.rates ?? []}
-          selectedRate={selectedRate}
-          setSelectedRate={setSelectedRate}
-          totalTimeLoading={totalTimeLoading}
-          totalTimeError={totalTimeError}
-          totalTime={totalTimeData?.getTotalTimeForUserProject ?? 0}
-        />
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="dark"
+      />
+      <div className="container mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-3 gap-6 font-roboto-condensed">
+        {/* Left Column (Timer Display & Controls) */}
+        <div className="lg:col-span-2 flex flex-col gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Time Tracker</CardTitle>
+              <CardDescription>
+                Start, pause, or submit your work time.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col items-center justify-center gap-4 p-6">
+              <TimerDisplay
+                isRunning={timerState.isRunning}
+                displayTime={timerState.displayTime}
+                initialStartTime={timerState.initialStartTime}
+                handleDateChange={handleDateChange}
+              />
+              <TimerControls
+                isRunning={timerState.isRunning}
+                handleStartStop={
+                  timerState.isRunning ? timerState.pause : timerState.start
+                }
+                handleReset={handleReset}
+                handleSubmit={handleSubmit}
+                disabledStartPause={isStartPauseDisabled}
+                disabledReset={isResetDisabled}
+                disabledSubmit={isSubmitDisabled}
+              />
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right Column (Selectors & Info) */}
+        <div className="lg:col-span-1 flex flex-col gap-6">
+          <ProjectRateSelectors
+            userProjects={userProjects.map((p) => ({
+              ...p,
+              teamName: p.teamName ?? "Unknown Team",
+            }))}
+            selectedProject={uiSelectedProject}
+            setSelectedProject={setUiSelectedProject}
+            rates={ratesData?.rates ?? []}
+            selectedRate={uiSelectedRate}
+            setSelectedRate={setUiSelectedRate}
+            totalTimeLoading={totalTimeLoading}
+            totalTimeError={totalTimeError}
+            totalTime={totalTimeData?.getTotalTimeForUserProject ?? 0}
+          />
+        </div>
       </div>
     </>
   );
@@ -5241,8 +5479,381 @@ export function formatTimeFromMilliseconds(ms: number): string {
     .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
 }
 
+// ====== FILE: src\components\ui\button.tsx ======
+
+import * as React from "react";
+import { Slot } from "@radix-ui/react-slot";
+import { cva, type VariantProps } from "class-variance-authority";
+
+import { cn } from "@/app/lib/utils";
+
+const buttonVariants = cva(
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
+  {
+    variants: {
+      variant: {
+        default:
+          "bg-primary text-primary-foreground shadow-xs hover:bg-primary/90",
+        destructive:
+          "bg-destructive text-white shadow-xs hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
+        outline:
+          "border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
+        secondary:
+          "bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80",
+        ghost:
+          "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
+        link: "text-primary underline-offset-4 hover:underline",
+      },
+      size: {
+        default: "h-9 px-4 py-2 has-[>svg]:px-3",
+        sm: "h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5",
+        lg: "h-10 rounded-md px-6 has-[>svg]:px-4",
+        icon: "size-9",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+      size: "default",
+    },
+  }
+);
+
+function Button({
+  className,
+  variant,
+  size,
+  asChild = false,
+  ...props
+}: React.ComponentProps<"button"> &
+  VariantProps<typeof buttonVariants> & {
+    asChild?: boolean;
+  }) {
+  const Comp = asChild ? Slot : "button";
+
+  return (
+    <Comp
+      data-slot="button"
+      className={cn(buttonVariants({ variant, size, className }))}
+      {...props}
+    />
+  );
+}
+
+export { Button, buttonVariants };
+
+// ====== FILE: src\components\ui\card.tsx ======
+
+import * as React from "react";
+
+import { cn } from "@/app/lib/utils";
+
+function Card({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card"
+      className={cn(
+        "bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm",
+        className
+      )}
+      {...props}
+    />
+  );
+}
+
+function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-header"
+      className={cn(
+        "@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 px-6 has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-6",
+        className
+      )}
+      {...props}
+    />
+  );
+}
+
+function CardTitle({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-title"
+      className={cn("leading-none font-semibold", className)}
+      {...props}
+    />
+  );
+}
+
+function CardDescription({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-description"
+      className={cn("text-muted-foreground text-sm", className)}
+      {...props}
+    />
+  );
+}
+
+function CardAction({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-action"
+      className={cn(
+        "col-start-2 row-span-2 row-start-1 self-start justify-self-end",
+        className
+      )}
+      {...props}
+    />
+  );
+}
+
+function CardContent({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-content"
+      className={cn("px-6", className)}
+      {...props}
+    />
+  );
+}
+
+function CardFooter({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-footer"
+      className={cn("flex items-center px-6 [.border-t]:pt-6", className)}
+      {...props}
+    />
+  );
+}
+
+export {
+  Card,
+  CardHeader,
+  CardFooter,
+  CardTitle,
+  CardAction,
+  CardDescription,
+  CardContent,
+};
+
+// ====== FILE: src\components\ui\label.tsx ======
+
+"use client";
+
+import * as React from "react";
+import * as LabelPrimitive from "@radix-ui/react-label";
+
+import { cn } from "@/app/lib/utils";
+
+function Label({
+  className,
+  ...props
+}: React.ComponentProps<typeof LabelPrimitive.Root>) {
+  return (
+    <LabelPrimitive.Root
+      data-slot="label"
+      className={cn(
+        "flex items-center gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50",
+        className
+      )}
+      {...props}
+    />
+  );
+}
+
+export { Label };
+
+// ====== FILE: src\components\ui\select.tsx ======
+
+"use client";
+
+import * as React from "react";
+import * as SelectPrimitive from "@radix-ui/react-select";
+import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from "lucide-react";
+
+import { cn } from "@/app/lib/utils";
+
+function Select({
+  ...props
+}: React.ComponentProps<typeof SelectPrimitive.Root>) {
+  return <SelectPrimitive.Root data-slot="select" {...props} />;
+}
+
+function SelectGroup({
+  ...props
+}: React.ComponentProps<typeof SelectPrimitive.Group>) {
+  return <SelectPrimitive.Group data-slot="select-group" {...props} />;
+}
+
+function SelectValue({
+  ...props
+}: React.ComponentProps<typeof SelectPrimitive.Value>) {
+  return <SelectPrimitive.Value data-slot="select-value" {...props} />;
+}
+
+function SelectTrigger({
+  className,
+  size = "default",
+  children,
+  ...props
+}: React.ComponentProps<typeof SelectPrimitive.Trigger> & {
+  size?: "sm" | "default";
+}) {
+  return (
+    <SelectPrimitive.Trigger
+      data-slot="select-trigger"
+      data-size={size}
+      className={cn(
+        "border-input data-[placeholder]:text-muted-foreground [&_svg:not([class*='text-'])]:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:bg-input/30 dark:hover:bg-input/50 flex w-fit items-center justify-between gap-2 rounded-md border bg-transparent px-3 py-2 text-sm whitespace-nowrap shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        className
+      )}
+      {...props}
+    >
+      {children}
+      <SelectPrimitive.Icon asChild>
+        <ChevronDownIcon className="size-4 opacity-50" />
+      </SelectPrimitive.Icon>
+    </SelectPrimitive.Trigger>
+  );
+}
+
+function SelectContent({
+  className,
+  children,
+  position = "popper",
+  ...props
+}: React.ComponentProps<typeof SelectPrimitive.Content>) {
+  return (
+    <SelectPrimitive.Portal>
+      <SelectPrimitive.Content
+        data-slot="select-content"
+        className={cn(
+          "bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 relative z-50 max-h-(--radix-select-content-available-height) min-w-[8rem] origin-(--radix-select-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-md border shadow-md",
+          position === "popper" &&
+            "data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1",
+          className
+        )}
+        position={position}
+        {...props}
+      >
+        <SelectScrollUpButton />
+        <SelectPrimitive.Viewport
+          className={cn(
+            "p-1",
+            position === "popper" &&
+              "h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)] scroll-my-1"
+          )}
+        >
+          {children}
+        </SelectPrimitive.Viewport>
+        <SelectScrollDownButton />
+      </SelectPrimitive.Content>
+    </SelectPrimitive.Portal>
+  );
+}
+
+function SelectLabel({
+  className,
+  ...props
+}: React.ComponentProps<typeof SelectPrimitive.Label>) {
+  return (
+    <SelectPrimitive.Label
+      data-slot="select-label"
+      className={cn("text-muted-foreground px-2 py-1.5 text-xs", className)}
+      {...props}
+    />
+  );
+}
+
+function SelectItem({
+  className,
+  children,
+  ...props
+}: React.ComponentProps<typeof SelectPrimitive.Item>) {
+  return (
+    <SelectPrimitive.Item
+      data-slot="select-item"
+      className={cn(
+        "focus:bg-accent focus:text-accent-foreground [&_svg:not([class*='text-'])]:text-muted-foreground relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2",
+        className
+      )}
+      {...props}
+    >
+      <span className="absolute right-2 flex size-3.5 items-center justify-center">
+        <SelectPrimitive.ItemIndicator>
+          <CheckIcon className="size-4" />
+        </SelectPrimitive.ItemIndicator>
+      </span>
+      <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
+    </SelectPrimitive.Item>
+  );
+}
+
+function SelectSeparator({
+  className,
+  ...props
+}: React.ComponentProps<typeof SelectPrimitive.Separator>) {
+  return (
+    <SelectPrimitive.Separator
+      data-slot="select-separator"
+      className={cn("bg-border pointer-events-none -mx-1 my-1 h-px", className)}
+      {...props}
+    />
+  );
+}
+
+function SelectScrollUpButton({
+  className,
+  ...props
+}: React.ComponentProps<typeof SelectPrimitive.ScrollUpButton>) {
+  return (
+    <SelectPrimitive.ScrollUpButton
+      data-slot="select-scroll-up-button"
+      className={cn(
+        "flex cursor-default items-center justify-center py-1",
+        className
+      )}
+      {...props}
+    >
+      <ChevronUpIcon className="size-4" />
+    </SelectPrimitive.ScrollUpButton>
+  );
+}
+
+function SelectScrollDownButton({
+  className,
+  ...props
+}: React.ComponentProps<typeof SelectPrimitive.ScrollDownButton>) {
+  return (
+    <SelectPrimitive.ScrollDownButton
+      data-slot="select-scroll-down-button"
+      className={cn(
+        "flex cursor-default items-center justify-center py-1",
+        className
+      )}
+      {...props}
+    >
+      <ChevronDownIcon className="size-4" />
+    </SelectPrimitive.ScrollDownButton>
+  );
+}
+
+export {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectScrollDownButton,
+  SelectScrollUpButton,
+  SelectSeparator,
+  SelectTrigger,
+  SelectValue,
+};
+
 // ====== FILE: src\app\components\Admin\invoiceSummary.tsx ======
 
+// src/app/components/Admin/invoiceSummary.tsx
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
@@ -5262,45 +5873,43 @@ interface QueryRateDetail {
 interface InvoiceData {
   projectId: string;
   projectName: string;
+  teamId: string;
+  teamName: string;
   totalHours: number;
   totalCost: number;
   rates: QueryRateDetail[];
   __typename?: string;
 }
 
-interface Team {
-  id: string;
-  name: string;
-}
-
 interface ProjectForSelector {
   id: string;
   name: string;
-  teamId: string;
-  teamName: string;
+  teamName?: string;
 }
 
 interface RawProject {
   id: string;
   name: string;
   teamId: string;
+  teamName?: string;
+  __typename?: string;
 }
 
-const GET_PROJECTS = gql`
-  query GetRawProjects {
+interface GetProjectsData {
+  projects: RawProject[];
+}
+
+interface GetInvoiceData {
+  invoiceForProject: InvoiceData | null;
+}
+
+const GET_PROJECTS_FOR_SELECTOR = gql`
+  query GetProjectsForInvoiceSelector {
     projects {
       id
       name
-      teamId
-    }
-  }
-`;
-
-const GET_ALL_TEAMS = gql`
-  query GetAllSimpleTeams {
-    getAllSimpleTeams {
-      id
-      name
+      teamName
+      __typename
     }
   }
 `;
@@ -5310,6 +5919,8 @@ const GET_INVOICE_FOR_PROJECT = gql`
     invoiceForProject(input: $input) {
       projectId
       projectName
+      teamId
+      teamName
       totalHours
       totalCost
       rates {
@@ -5318,22 +5929,12 @@ const GET_INVOICE_FOR_PROJECT = gql`
         hours
         cost
         ratePerHour
+        __typename
       }
+      __typename
     }
   }
 `;
-
-interface GetRawProjectsData {
-  projects: RawProject[];
-}
-
-interface GetAllTeamsData {
-  getAllSimpleTeams: Team[];
-}
-
-interface GetInvoiceData {
-  invoiceForProject: InvoiceData | null;
-}
 
 const InvoiceSummary: React.FC = () => {
   const [selectedProject, setSelectedProject] = useState<string>("");
@@ -5341,8 +5942,11 @@ const InvoiceSummary: React.FC = () => {
   const [endDate, setEndDate] = useState<string>("");
   const [invoiceData, setInvoiceData] = useState<InvoiceData | null>(null);
 
-  const { data: projectsData } = useQuery<GetRawProjectsData>(GET_PROJECTS);
-  const { data: teamsData } = useQuery<GetAllTeamsData>(GET_ALL_TEAMS);
+  const {
+    loading: projectsLoading,
+    data: projectsData,
+    error: projectsError,
+  } = useQuery<GetProjectsData>(GET_PROJECTS_FOR_SELECTOR);
 
   const { loading: loadingInvoice, error: errorInvoice } =
     useQuery<GetInvoiceData>(GET_INVOICE_FOR_PROJECT, {
@@ -5358,7 +5962,6 @@ const InvoiceSummary: React.FC = () => {
       notifyOnNetworkStatusChange: true,
       onCompleted: (data) => {
         setInvoiceData(data?.invoiceForProject ?? null);
-        console.log("Invoice data received:", data?.invoiceForProject);
       },
       onError: (error) => {
         console.error("Error fetching invoice:", error);
@@ -5366,32 +5969,14 @@ const InvoiceSummary: React.FC = () => {
       },
     });
 
-  const teamIdToNameMap = useMemo(() => {
-    if (!teamsData?.getAllSimpleTeams) return {};
-    return teamsData.getAllSimpleTeams.reduce(
-      (acc: Record<string, string>, team) => {
-        acc[team.id] = team.name;
-        return acc;
-      },
-      {}
-    );
-  }, [teamsData]);
-
-  const projectsWithTeamNames = useMemo<ProjectForSelector[]>(() => {
-    if (!projectsData?.projects || Object.keys(teamIdToNameMap).length === 0)
-      return [];
+  const projectsForSelector = useMemo<ProjectForSelector[]>(() => {
+    if (!projectsData?.projects) return [];
     return projectsData.projects.map((project) => ({
-      ...project,
-      teamName: teamIdToNameMap[project.teamId] || "Unknown Team",
+      id: project.id,
+      name: project.name,
+      teamName: project.teamName || "Unknown Team",
     }));
-  }, [projectsData, teamIdToNameMap]);
-
-  const projectTeamId = useMemo<string | undefined>(() => {
-    if (!invoiceData || !projectsData?.projects) return undefined;
-    return projectsData.projects.find(
-      (project) => project.id === invoiceData.projectId
-    )?.teamId;
-  }, [projectsData, invoiceData]);
+  }, [projectsData]);
 
   useEffect(() => {
     console.log("Invoice State Update:", {
@@ -5412,9 +5997,13 @@ const InvoiceSummary: React.FC = () => {
   ]);
 
   const formatCurrency = (value: number | null | undefined): string => {
-    if (value === null || value === undefined) return "-";
-    if (isNaN(value)) return "Invalid";
-
+    if (
+      value === null ||
+      value === undefined ||
+      typeof value !== "number" ||
+      isNaN(value)
+    )
+      return "-";
     try {
       return new Intl.NumberFormat("da-DK", {
         style: "currency",
@@ -5427,6 +6016,9 @@ const InvoiceSummary: React.FC = () => {
       return String(value);
     }
   };
+
+  const isInitialLoading = projectsLoading;
+  const initialLoadingError = projectsError;
 
   const renderInvoiceDetails = () => {
     if (loadingInvoice) {
@@ -5444,16 +6036,12 @@ const InvoiceSummary: React.FC = () => {
       return (
         <div className="mt-4 p-6 bg-white shadow-md rounded-lg">
           <h4 className="text-md font-bold bg-slate-200 p-2 rounded-t-lg">
-            {" "}
             Project: {invoiceData.projectName} - Team:{" "}
-            {teamIdToNameMap && projectTeamId
-              ? teamIdToNameMap[projectTeamId] || "N/A"
-              : "..."}
+            {invoiceData.teamName ?? "N/A"}
           </h4>
           <div className="p-2 space-y-1">
-            {" "}
             <p className="border-b border-gray-200 pb-1">
-              Total Hours: {invoiceData.totalHours?.toFixed(2) ?? "N/A"}{" "}
+              Total Hours: {invoiceData.totalHours?.toFixed(2) ?? "N/A"}
             </p>
             <p className="border-b border-gray-200 pb-1">
               Total Cost: {formatCurrency(invoiceData.totalCost)}
@@ -5462,7 +6050,6 @@ const InvoiceSummary: React.FC = () => {
               <h5 className="font-semibold bg-slate-200 p-1">Rates Applied:</h5>
               {invoiceData.rates && invoiceData.rates.length > 0 ? (
                 <ul className="list-disc list-inside pl-4 pt-1">
-                  {" "}
                   {invoiceData.rates.map((rate: QueryRateDetail) => (
                     <li
                       className="border-b border-gray-100 py-1 text-sm"
@@ -5491,7 +6078,6 @@ const InvoiceSummary: React.FC = () => {
         </p>
       );
     }
-
     return (
       <p className="text-gray-500 mt-4">
         Please select a project and date range.
@@ -5504,11 +6090,26 @@ const InvoiceSummary: React.FC = () => {
       <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0 md:space-x-4 mb-4">
         <h3 className="text-lg font-bold text-white">Invoice Summary</h3>
         <div className="flex-grow">
-          <ProjectSelector
-            projects={projectsWithTeamNames}
-            selectedProject={selectedProject}
-            onProjectChange={setSelectedProject}
-          />
+          {isInitialLoading && (
+            <select
+              className="w-full p-2 bg-gray-200 border border-gray-300 rounded-md text-gray-500 cursor-not-allowed"
+              disabled
+            >
+              <option>Loading Projects...</option>
+            </select>
+          )}
+          {initialLoadingError && (
+            <div className="p-2 bg-red-100 text-red-700 border border-red-300 rounded">
+              Error loading projects/teams.
+            </div>
+          )}
+          {!isInitialLoading && !initialLoadingError && (
+            <ProjectSelector
+              projects={projectsForSelector}
+              selectedProject={selectedProject}
+              onProjectChange={setSelectedProject}
+            />
+          )}
         </div>
         <div className="flex-grow flex flex-col md:flex-row gap-2 md:gap-4">
           <input
@@ -5517,6 +6118,7 @@ const InvoiceSummary: React.FC = () => {
             onChange={(e) => setStartDate(e.target.value)}
             className="w-full p-2 bg-white text-black border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
             aria-label="Start Date"
+            disabled={isInitialLoading}
           />
           <input
             type="date"
@@ -5524,10 +6126,16 @@ const InvoiceSummary: React.FC = () => {
             onChange={(e) => setEndDate(e.target.value)}
             className="w-full p-2 bg-white text-black border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
             aria-label="End Date"
+            disabled={isInitialLoading}
+            min={startDate}
           />
         </div>
       </div>
-      {renderInvoiceDetails()}
+      {!isInitialLoading && !initialLoadingError ? (
+        renderInvoiceDetails()
+      ) : (
+        <p className="text-gray-500 mt-4 italic">Loading initial data...</p>
+      )}
     </div>
   );
 };
@@ -5537,43 +6145,61 @@ export default InvoiceSummary;
 // ====== FILE: src\app\components\Admin\ratesManager.tsx ======
 
 "use client";
-import React, { useState } from "react";
-import { useQuery, useMutation, gql, ApolloError } from "@apollo/client";
+
+import React, { useState, useCallback } from "react";
+import { useQuery, useMutation, gql } from "@apollo/client";
+import { toast } from "react-toastify";
 
 interface Team {
   id: string;
   name: string;
+  __typename?: "SimpleTeamDTO";
 }
 
 interface Rate {
   id: number;
   name: string;
-  teamId: string;
   rate: number;
+  teamId?: string;
+  __typename?: "Rate";
+}
+
+interface GetRatesQueryData {
+  rates: Rate[];
+}
+
+interface GetAllTeamsQueryData {
+  getAllSimpleTeams: Team[];
 }
 
 const GET_ALL_SIMPLE_TEAMS = gql`
-  query GetAllSimpleTeams {
+  query GetAllSimpleTeams_RatesManager {
     getAllSimpleTeams {
       id
       name
+      __typename
     }
   }
 `;
 
 const CREATE_RATE = gql`
-  mutation CreateRate($name: String!, $rate: Int!, $teamId: String!) {
+  mutation CreateRate_RatesManager(
+    $name: String!
+    $rate: Int!
+    $teamId: String!
+  ) {
     createRate(rateInputCreate: { name: $name, rate: $rate, teamId: $teamId }) {
       id
       name
       rate
       teamId
+      __typename
     }
   }
 `;
 
 const DELETE_RATE = gql`
-  mutation DeleteRate($rateId: Int!) {
+  mutation DeleteRate_RatesManager($rateId: Int!) {
     deleteRate(rateId: $rateId) {
       id
     }
@@ -5581,11 +6207,12 @@ const DELETE_RATE = gql`
 `;
 
 const GET_RATES = gql`
-  query GetRates($teamId: String!) {
+  query GetRates_RatesManager($teamId: String!) {
     rates(teamId: $teamId) {
       id
       name
       rate
+      __typename
     }
   }
 `;
@@ -5593,128 +6220,344 @@ const GET_RATES = gql`
 const RatesManager = () => {
   const [selectedTeamId, setSelectedTeamId] = useState("");
   const [rateName, setRateName] = useState("");
-  const [rateValue, setRateValue] = useState(0);
+  const [rateValue, setRateValue] = useState<number | string>("");
+  const [formError, setFormError] = useState<string | null>(null);
+  const [processingDeleteId, setProcessingDeleteId] = useState<number | null>(
+    null
+  );
 
-  const [error, setError] = useState<ApolloError | null>(null);
+  const {
+    loading: teamsLoading,
+    error: teamsError,
+    data: teamsData,
+  } = useQuery<GetAllTeamsQueryData>(GET_ALL_SIMPLE_TEAMS);
 
-  const { loading: teamsLoading, data: teamsData } = useQuery(
-    GET_ALL_SIMPLE_TEAMS,
+  const {
+    loading: ratesLoading,
+    error: ratesError,
+    data: ratesData,
+  } = useQuery<GetRatesQueryData>(GET_RATES, {
+    variables: { teamId: selectedTeamId },
+    skip: !selectedTeamId,
+    fetchPolicy: "cache-and-network",
+  });
+
+  const [createRateMutation, { loading: creatingRate }] = useMutation(
+    CREATE_RATE,
     {
-      context: { useLinearApi: false },
+      update(cache, { data: { createRate: newRate } }) {
+        if (!newRate || !selectedTeamId) return;
+        const existingRates = cache.readQuery<GetRatesQueryData>({
+          query: GET_RATES,
+          variables: { teamId: selectedTeamId },
+        });
+        if (existingRates && existingRates.rates) {
+          cache.writeQuery({
+            query: GET_RATES,
+            variables: { teamId: selectedTeamId },
+            data: { rates: [...existingRates.rates, newRate] },
+          });
+        }
+      },
       onError: (error) => {
-        setError(error);
+        console.error("Error creating rate:", error);
+        toast.error(`Failed to create rate: ${error.message}`);
+      },
+      onCompleted: () => {
+        toast.success("Rate created successfully!");
+        setRateName("");
+        setRateValue("");
+        setFormError(null);
       },
     }
   );
 
-  const {
-    loading: ratesLoading,
-    data: ratesData,
-    refetch: refetchRates,
-  } = useQuery(GET_RATES, {
-    variables: { teamId: selectedTeamId },
-    skip: !selectedTeamId,
-  });
-  const [createRate] = useMutation(CREATE_RATE, {
-    onCompleted: () => refetchRates(),
-  });
-  const [deleteRate] = useMutation(DELETE_RATE, {
-    onCompleted: () => refetchRates(),
+  const [deleteRateMutation] = useMutation(DELETE_RATE, {
+    update(cache, { data: { deleteRate: deletedRateData } }) {
+      if (!deletedRateData || !selectedTeamId) return;
+      const deletedId = deletedRateData.id;
+      const existingRates = cache.readQuery<GetRatesQueryData>({
+        query: GET_RATES,
+        variables: { teamId: selectedTeamId },
+      });
+      if (existingRates && existingRates.rates) {
+        const updatedRates = existingRates.rates.filter(
+          (rate) => rate.id !== deletedId
+        );
+        cache.writeQuery({
+          query: GET_RATES,
+          variables: { teamId: selectedTeamId },
+          data: { rates: updatedRates },
+        });
+      }
+    },
     onError: (error) => {
       console.error("Error deleting rate:", error);
+      toast.error(`Failed to delete rate: ${error.message}`);
+      setProcessingDeleteId(null);
+    },
+    onCompleted: (data) => {
+      if (data?.deleteRate?.id) {
+        toast.success(`Rate deleted successfully!`);
+      }
+      setProcessingDeleteId(null);
     },
   });
 
-  const handleCreateRate = () => {
-    if (selectedTeamId) {
-      createRate({
-        variables: { name: rateName, rate: rateValue, teamId: selectedTeamId },
-      });
-      setRateName("");
-      setRateValue(0);
+  const handleRateValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setRateValue(value === "" ? "" : parseInt(value, 10) || 0);
+    if (value !== "" && isNaN(parseInt(value, 10))) {
+      setFormError("Rate value must be a number.");
+    } else {
+      setFormError(null);
     }
   };
 
-  const handleDeleteRate = (rateId: number) => {
-    console.log("Attempting to delete rate with ID:", rateId);
-    deleteRate({ variables: { rateId } }).catch((error) => {
-      setError(error);
+  const handleCreateRate = useCallback(() => {
+    setFormError(null);
+    if (!selectedTeamId) {
+      setFormError("Please select a team.");
+      return;
+    }
+    if (!rateName.trim()) {
+      setFormError("Please enter a rate name.");
+      return;
+    }
+    if (rateValue === "" || isNaN(Number(rateValue)) || Number(rateValue) < 0) {
+      setFormError("Please enter a valid non-negative rate value.");
+      return;
+    }
+    if (formError) return;
+
+    createRateMutation({
+      variables: {
+        name: rateName.trim(),
+        rate: Number(rateValue),
+        teamId: selectedTeamId,
+      },
     });
-  };
-  if (error) return <p>Error: {error.message}</p>;
-  if (teamsLoading || ratesLoading) return <p>Loading...</p>;
-  if (!teamsData || !teamsData.getAllSimpleTeams)
-    return <p>No data available.</p>;
+  }, [createRateMutation, rateName, rateValue, selectedTeamId, formError]);
+
+  const handleDeleteRate = useCallback(
+    (rateId: number) => {
+      if (processingDeleteId) return;
+      setProcessingDeleteId(rateId);
+      deleteRateMutation({ variables: { rateId } });
+    },
+    [deleteRateMutation, processingDeleteId]
+  );
+
+  const isActionLoading = creatingRate || processingDeleteId !== null;
 
   return (
-    <div className="p-6 bg-black shadow-md flex flex-row justify-between items-center">
-      <h3 className="font-bold text-lg text-white">Manage Rates</h3>
-
-      <div>
+    <div className="p-4 bg-gray-50 shadow-md rounded-lg border">
+      <h3 className="font-bold text-lg mb-4 border-b pb-2">Manage Rates</h3>
+      <div className="mb-4">
+        <label
+          htmlFor="teamSelectorRates"
+          className="block text-sm font-medium text-gray-700 mb-1"
+        >
+          Select Team
+        </label>
         <select
-          id="teamSelector"
-          className="w-full p-2 mt-1 border border-gray-300 rounded"
+          id="teamSelectorRates"
+          className="w-full p-2 border border-gray-300 rounded shadow-sm focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-gray-100"
           onChange={(e) => setSelectedTeamId(e.target.value)}
           value={selectedTeamId}
+          disabled={teamsLoading}
         >
-          <option value="">Select a Team</option>
-          {teamsData.getAllSimpleTeams.map((team: Team) => (
+          <option value="">
+            {teamsLoading ? "Loading Teams..." : "-- Select a Team --"}
+          </option>
+          {teamsData?.getAllSimpleTeams.map((team: Team) => (
             <option key={team.id} value={team.id}>
               {team.name}
             </option>
           ))}
         </select>
+        {teamsError && (
+          <p className="text-red-500 text-xs mt-1">{teamsError.message}</p>
+        )}
       </div>
 
-      <div>
-        <input
-          type="text"
-          id="rateName"
-          className="w-full p-2 mt-1 border border-gray-300 rounded"
-          value={rateName}
-          onChange={(e) => setRateName(e.target.value)}
-          placeholder="Rate Name"
-        />
-      </div>
-
-      <div>
-        <input
-          type="number"
-          id="rateValue"
-          className="w-full p-2 mt-1 border border-gray-300 rounded"
-          value={rateValue}
-          onChange={(e) => setRateValue(parseInt(e.target.value) || 0)}
-          placeholder="Amount"
-        />
-      </div>
-
-      <div>
-        <button
-          className="w-full p-2 bg-white text-black rounded hover:bg-blue-600 font-bold"
-          onClick={handleCreateRate}
-        >
-          Create Rate
-        </button>
-      </div>
-
-      <div>
-        {ratesData &&
-          ratesData.rates.map((rate: Rate) => (
-            <div
-              key={rate.id}
-              className="flex justify-between items-center p-1 bg-gray-100 border border-gray-200 rounded m-2"
+      {selectedTeamId && (
+        <div className="mb-4 p-4 border rounded-md bg-white grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+          <div className="md:col-span-2">
+            <label
+              htmlFor="rateName"
+              className="block text-sm font-medium text-gray-700"
             >
-              <span className="font-semibold mr-2">
-                {rate.name} - {rate.rate}
-              </span>
-              <button
-                className="p-1 bg-red-500 text-white rounded hover:bg-red-600"
-                onClick={() => handleDeleteRate(rate.id)}
-              >
-                Delete
-              </button>
-            </div>
-          ))}
+              New Rate Name
+            </label>
+            <input
+              type="text"
+              id="rateName"
+              className="w-full p-2 mt-1 border border-gray-300 rounded disabled:bg-gray-100"
+              value={rateName}
+              onChange={(e) => setRateName(e.target.value)}
+              placeholder="e.g., Standard Rate"
+              disabled={isActionLoading}
+            />
+          </div>
+          <div>
+            <label
+              htmlFor="rateValue"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Rate Value (DKK)
+            </label>
+            <input
+              type="number"
+              id="rateValue"
+              className="w-full p-2 mt-1 border border-gray-300 rounded disabled:bg-gray-100"
+              value={rateValue}
+              onChange={handleRateValueChange}
+              placeholder="e.g., 800"
+              min="0"
+              step="1"
+              disabled={isActionLoading}
+            />
+          </div>
+          <div>
+            <button
+              className="w-full p-2 bg-black text-white rounded hover:bg-gray-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              onClick={handleCreateRate}
+              disabled={isActionLoading || !!formError}
+            >
+              {creatingRate ? (
+                <>
+                  <svg
+                    className="animate-spin h-4 w-4 text-white"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    {" "}
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>{" "}
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>{" "}
+                  </svg>
+                  Creating...
+                </>
+              ) : (
+                "Create Rate"
+              )}
+            </button>
+            {formError && (
+              <p className="text-red-500 text-xs mt-1">{formError}</p>
+            )}
+          </div>
+        </div>
+      )}
+
+      <div className="mt-4">
+        <h4 className="font-semibold mb-2">Existing Rates for Team:</h4>
+        {selectedTeamId ? (
+          <>
+            {ratesLoading && (
+              <p className="text-gray-500 italic">Loading rates...</p>
+            )}
+            {ratesError && (
+              <p className="text-red-500">
+                Error loading rates: {ratesError.message}
+              </p>
+            )}
+            {!ratesLoading &&
+              !ratesError &&
+              ratesData?.rates &&
+              ratesData.rates.length === 0 && (
+                <p className="text-gray-500 italic">
+                  No rates defined for this team yet.
+                </p>
+              )}
+            {!ratesLoading &&
+              !ratesError &&
+              ratesData?.rates &&
+              ratesData.rates.length > 0 && (
+                <div className="border rounded-md max-h-60 overflow-y-auto bg-white">
+                  <ul className="divide-y divide-gray-200">
+                    {ratesData.rates.map((rate: Rate) => {
+                      const isDeletingThisRate = processingDeleteId === rate.id;
+                      return (
+                        <li
+                          key={rate.id}
+                          className="flex justify-between items-center p-3 hover:bg-gray-50"
+                        >
+                          <div>
+                            <span className="font-medium mr-2">
+                              {rate.name}
+                            </span>
+                            <span className="text-gray-600">
+                              ({rate.rate} DKK/h)
+                            </span>
+                          </div>
+                          <button
+                            className={`p-1 px-2 bg-red-600 text-white text-xs rounded hover:bg-red-700 disabled:opacity-50 flex items-center gap-1`}
+                            onClick={() => handleDeleteRate(rate.id)}
+                            disabled={isActionLoading || isDeletingThisRate}
+                          >
+                            {isDeletingThisRate ? (
+                              <svg
+                                className="animate-spin h-3 w-3 text-white"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                              >
+                                {" "}
+                                <circle
+                                  className="opacity-25"
+                                  cx="12"
+                                  cy="12"
+                                  r="10"
+                                  stroke="currentColor"
+                                  strokeWidth="4"
+                                ></circle>{" "}
+                                <path
+                                  className="opacity-75"
+                                  fill="currentColor"
+                                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                ></path>{" "}
+                              </svg>
+                            ) : (
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-3 w-3"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                strokeWidth={2}
+                              >
+                                {" "}
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                />{" "}
+                              </svg>
+                            )}
+                            {isDeletingThisRate ? "Deleting..." : "Delete"}
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              )}
+          </>
+        ) : (
+          <p className="text-gray-500 italic">
+            Select a team to view and manage rates.
+          </p>
+        )}
       </div>
     </div>
   );
@@ -5958,7 +6801,6 @@ export default TotalTimeSpent;
 
 // ====== FILE: src\app\components\Admin\userManagementSection.tsx ======
 
-// src/app/components/Admin/UserManagementSection.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -5967,7 +6809,7 @@ import { useDebounce } from "use-debounce";
 import UserTable from "@/app/components/Admin/UserTable";
 import { User as UserTableRowType } from "@/app/components/Admin/UserRow";
 import { UserRole } from "@/app/components/Admin/UserRoleSelect";
-import { GET_SIMPLE_TEAMS } from "@/app/graphql/adminOperations"; // Keep this for team dropdowns
+import { GET_SIMPLE_TEAMS } from "@/app/graphql/adminOperations";
 import { useAuthStore } from "@/app/lib/authStore";
 
 const GET_MANAGEMENT_USERS = gql`
@@ -5999,7 +6841,6 @@ const GET_USERS_COUNT = gql`
   }
 `;
 
-// --- Interfaces ---
 interface GetUsersQueryData {
   users: Array<{
     id: number;
@@ -6022,18 +6863,14 @@ interface GetUsersCountQueryData {
   usersCount: number;
 }
 
-// --- Component ---
 const UserManagementSection: React.FC = () => {
-  // State for UI controls
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
-  const [roleFilter, setRoleFilter] = useState<UserRole | "">(""); // Use '' for "All Roles" option
+  const [roleFilter, setRoleFilter] = useState<UserRole | "">("");
 
-  // Debounce search term
   const [debouncedSearchTerm] = useDebounce(searchTerm, 500);
 
-  // Other state
   const [users, setUsers] = useState<GetUsersQueryData["users"]>([]);
   const loggedInUser = useAuthStore((state) => state.user);
 
@@ -6044,15 +6881,11 @@ const UserManagementSection: React.FC = () => {
     role: roleFilter || null,
   };
 
-  // Variables for the count query (filters only)
   const countQueryVariables = {
     search: debouncedSearchTerm || undefined,
     role: roleFilter || undefined,
   };
 
-  // --- Queries ---
-
-  // Fetch Paginated/Filtered Users
   const {
     loading: loadingUsers,
     error: errorUsers,
@@ -6061,42 +6894,34 @@ const UserManagementSection: React.FC = () => {
   } = useQuery<GetUsersQueryData>(GET_MANAGEMENT_USERS, {
     variables: userQueryVariables,
     notifyOnNetworkStatusChange: true,
-    // fetchPolicy: "cache-and-network" // Consider this if cache updates aren't reliable enough
+    fetchPolicy: "cache-and-network",
   });
 
-  // Fetch Total User Count (matching filters)
   const { data: countData, error: countError } =
     useQuery<GetUsersCountQueryData>(GET_USERS_COUNT, {
       variables: countQueryVariables,
-      fetchPolicy: "cache-and-network", // Count should reflect current filters
+      fetchPolicy: "cache-and-network",
     });
 
-  // Fetch All Teams (for dropdowns in rows)
   const {
     loading: loadingTeams,
     data: dataTeams,
     error: teamsError,
   } = useQuery<GetSimpleTeamsQueryData>(GET_SIMPLE_TEAMS);
 
-  // Calculate total pages
   const totalUsers = countData?.usersCount ?? 0;
   const totalPages = Math.ceil(totalUsers / pageSize);
 
-  // --- Effects ---
-
-  // Update local users state when data arrives/changes
   useEffect(() => {
     if (dataUsers?.users) {
       setUsers(dataUsers.users);
     }
   }, [dataUsers]);
 
-  // Reset to page 1 when filters or page size change
   useEffect(() => {
     setPage(1);
   }, [debouncedSearchTerm, roleFilter, pageSize]);
 
-  // --- Loading/Error Handling ---
   const isLoading =
     loadingUsers &&
     networkStatus !== NetworkStatus.refetch &&
@@ -6104,12 +6929,12 @@ const UserManagementSection: React.FC = () => {
   const isRefetching =
     networkStatus === NetworkStatus.refetch ||
     networkStatus === NetworkStatus.setVariables;
-  const combinedError = errorUsers || countError || teamsError; // Combine potential errors
+  const combinedError = errorUsers || countError || teamsError;
 
-  if (isLoading || loadingTeams) return <p>Loading User Data...</p>; // Initial load for users or teams
+  if (isLoading || loadingTeams) return <p>Loading User Data...</p>;
 
   if (combinedError) {
-    const error = combinedError as ApolloError; // Cast for accessing details
+    const error = combinedError as ApolloError;
     console.error("Data loading error:", error);
     const graphQLError = error.graphQLErrors?.[0];
     if (graphQLError?.extensions?.code === "FORBIDDEN") {
@@ -6118,20 +6943,15 @@ const UserManagementSection: React.FC = () => {
     return <p>Error loading data: {error.message}</p>;
   }
 
-  // Prepare data for table (casting role string to enum)
   const usersForTable: UserTableRowType[] = users.map((user) => ({
     ...user,
-    role: user.role as UserRole, // Cast role string to enum for UserRow prop type
+    role: user.role as UserRole,
   }));
 
-  // --- Render ---
   return (
     <div className="mb-6 shadow-md p-4 border rounded-lg bg-white">
       {" "}
-      {/* Added bg-white */}
       <h2 className="text-xl font-semibold mb-4">User Management</h2>{" "}
-      {/* Added Title */}
-      {/* Search and Filter Controls */}
       <div className="mb-4 flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-4 items-center">
         <div className="flex-grow w-full sm:w-auto">
           <label htmlFor="userSearch" className="sr-only">
@@ -6164,7 +6984,6 @@ const UserManagementSection: React.FC = () => {
             ))}
           </select>
         </div>
-        {/* Page Size Selector */}
         <div className="text-sm text-gray-700 w-full sm:w-auto sm:ml-auto">
           <label htmlFor="pageSizeSelect" className="mr-1">
             Show:
@@ -6183,11 +7002,8 @@ const UserManagementSection: React.FC = () => {
           <span>entries</span>
         </div>
       </div>
-      {/* Table Area */}
-      {/* Render table only when initial load is complete and no critical errors */}
       {!isLoading && !combinedError && (
         <>
-          {/* Table with Opacity for Refetching state */}
           <div
             className={`transition-opacity duration-300 ${
               isRefetching ? "opacity-50 pointer-events-none" : "opacity-100"
@@ -6200,7 +7016,6 @@ const UserManagementSection: React.FC = () => {
             />
           </div>
 
-          {/* Pagination Controls */}
           <div className="flex flex-col sm:flex-row justify-between items-center mt-4 text-sm text-gray-700">
             <div className="mb-2 sm:mb-0">
               Showing{" "}
@@ -6238,7 +7053,6 @@ const UserManagementSection: React.FC = () => {
           </div>
         </>
       )}
-      {/* Show loading indicator specifically during refetch */}
       {isRefetching && !isLoading && (
         <p className="text-center text-gray-500 mt-4">Updating list...</p>
       )}
@@ -6741,7 +7555,7 @@ export default UserTable;
 "use client";
 import React from "react";
 import { motion } from "framer-motion";
-import { cn } from "../../lib/utils";
+import { cn } from "@/app/lib/utils";
 
 export const BackgroundBeams = React.memo(
   ({ className }: { className?: string }) => {
@@ -6889,7 +7703,7 @@ import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
 
-import { cn } from "@/lib/utils";
+import { cn } from "@/app/lib/utils";
 
 const buttonVariants = cva(
   "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
