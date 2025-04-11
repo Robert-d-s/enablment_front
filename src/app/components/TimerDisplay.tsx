@@ -6,7 +6,7 @@ import {
   formatDateForDisplay,
   formatTimeFromISOString,
 } from "../utils/timeUtils";
-import { formatISO, isToday, isSameDay } from "date-fns";
+import { formatISO, isToday, isSameDay, getMonth } from "date-fns";
 import { Timer, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/app/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
@@ -18,15 +18,35 @@ interface TimerDisplayProps {
   handleDateChange: (date: Date | null) => void;
 }
 
-const getDayClassName = (date: Date, selectedDate: Date | null) => {
+const getDayClassName = (
+  date: Date,
+  selectedDate: Date | null,
+  currentMonthDate: Date
+) => {
   return cn(
     buttonVariants({ variant: "ghost" }),
-    "h-9 w-9 p-0 font-normal aria-selected:opacity-100 rounded-md",
+    "h-8 w-8 p-0 font-normal text-sm", // Slightly smaller days
+    "aria-selected:opacity-100 rounded-md", // Keep rounding
+    !isSameDay(getMonth(date), getMonth(currentMonthDate)) &&
+      "text-muted-foreground opacity-50", // Dim days outside month
     isToday(date) && "bg-accent text-accent-foreground",
     selectedDate &&
       isSameDay(date, selectedDate) &&
-      "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
+      "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground", // Use hover variant
     "focus:outline-none focus:ring-1 focus:ring-ring"
+  );
+};
+
+// Helper for Time class styling
+const getTimeClassName = (time: Date, selected: Date | null) => {
+  const isSelected =
+    selected &&
+    time.getHours() === selected.getHours() &&
+    time.getMinutes() === selected.getMinutes();
+  return cn(
+    "text-sm p-1 mx-1 flex justify-center items-center rounded-md cursor-pointer",
+    "hover:bg-accent hover:text-accent-foreground", // Hover effect
+    isSelected && "bg-primary text-primary-foreground hover:bg-primary/90" // Selected style (might be overridden by CSS)
   );
 };
 
@@ -37,19 +57,26 @@ const TimerDisplay: React.FC<TimerDisplayProps> = ({
   handleDateChange,
 }) => {
   return (
-    <div className="flex flex-col items-center gap-2 w-full">
+    <div className="flex flex-col items-center gap-3 w-full">
+      {" "}
+      {/* Increased gap */}
+      {/* Timer Value */}
       <div className="flex items-center justify-center gap-2 text-foreground mb-1">
         <Timer
           className={`h-5 w-5 ${
             isRunning ? "text-green-500 animate-pulse" : "text-muted-foreground"
           }`}
         />
-        <div className="text-6xl md:text-7xl font-mono font-bold tracking-tighter text-center">
+        <div className="text-6xl md:text-7xl font-mono font-bold tracking-tighter text-center tabular-nums">
+          {" "}
+          {/* Added tabular-nums */}
           {displayTime}
         </div>
       </div>
-
-      <div className="text-sm text-muted-foreground mb-3 text-center">
+      {/* Start Time Display */}
+      <div className="text-xs text-muted-foreground mb-2 text-center">
+        {" "}
+        {/* Smaller text */}
         Started:{" "}
         {initialStartTime ? (
           `${formatDateForDisplay(initialStartTime)} ${formatTimeFromISOString(
@@ -59,8 +86,11 @@ const TimerDisplay: React.FC<TimerDisplayProps> = ({
           <span className="italic">Not Started</span>
         )}
       </div>
-
-      <div className="p-1 border rounded-md bg-card shadow-sm w-full max-w-xs">
+      {/* --- Styled Date Picker --- */}
+      {/* Container mimicking shadcn card/popover */}
+      <div className="p-1 border rounded-md bg-card shadow-sm w-full max-w-[290px]">
+        {" "}
+        {/* Adjusted width slightly */}
         <DatePicker
           inline
           id="startDate"
@@ -70,9 +100,26 @@ const TimerDisplay: React.FC<TimerDisplayProps> = ({
           dateFormat="MMMM d, yyyy h:mm aa"
           timeIntervals={15}
           preventOpenOnFocus
-          calendarClassName="p-2"
-          dayClassName={(date) => getDayClassName(date, initialStartTime)}
+          // --- Styling Props ---
+          calendarClassName="p-1 text-card-foreground text-sm" // Base text styles, padding
+          dayClassName={(date) =>
+            getDayClassName(
+              date,
+              initialStartTime,
+              initialStartTime || new Date()
+            )
+          } // Pass current month reference
           wrapperClassName="w-full"
+          monthClassName={() => "space-y-2 p-1"}
+          weekDayClassName={() =>
+            "text-muted-foreground rounded-md w-8 font-normal text-[0.8rem]"
+          } // Style weekday names
+          timeClassName={(time) => getTimeClassName(time, initialStartTime)} // Use helper for time class
+          timeFormat="h:mm aa"
+          timeCaption="Time"
+          // Adjust time list container - might need CSS for scrollbar
+          timeContainerClassName="border-l pl-1 ml-1 h-[196px] overflow-y-auto" // Approx height match, needs scrollbar styling
+          // --- Custom Header ---
           renderCustomHeader={({
             date,
             decreaseMonth,
@@ -80,20 +127,26 @@ const TimerDisplay: React.FC<TimerDisplayProps> = ({
             prevMonthButtonDisabled,
             nextMonthButtonDisabled,
           }) => (
-            <div className="flex items-center justify-between px-2 py-1">
+            <div className="flex items-center justify-between px-1 py-1.5">
+              {" "}
+              {/* Adjusted padding */}
               <button
                 type="button"
                 onClick={decreaseMonth}
                 disabled={prevMonthButtonDisabled}
                 className={cn(
                   buttonVariants({ variant: "outline", size: "icon" }),
-                  "h-7 w-7 disabled:opacity-50"
-                )}
+                  "h-7 w-7 disabled:opacity-50 border"
+                )} // Ensure border
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
               <span className="text-sm font-medium">
-                {formatISO(date, { representation: "date" }).substring(0, 7)}
+                {/* Display Month Year */}
+                {new Intl.DateTimeFormat("en-US", {
+                  month: "long",
+                  year: "numeric",
+                }).format(date)}
               </span>
               <button
                 type="button"
@@ -101,17 +154,13 @@ const TimerDisplay: React.FC<TimerDisplayProps> = ({
                 disabled={nextMonthButtonDisabled}
                 className={cn(
                   buttonVariants({ variant: "outline", size: "icon" }),
-                  "h-7 w-7 disabled:opacity-50"
-                )}
+                  "h-7 w-7 disabled:opacity-50 border"
+                )} // Ensure border
               >
                 <ChevronRight className="h-4 w-4" />
               </button>
             </div>
           )}
-          timeClassName={() =>
-            "text-sm p-1 hover:bg-accent rounded-md cursor-pointer"
-          }
-          timeFormat="h:mm aa"
         />
       </div>
     </div>

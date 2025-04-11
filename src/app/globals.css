@@ -1,26 +1,5 @@
 @import "tailwindcss";
-/*
-  ---break---
-*/
-@plugin 'tailwindcss-animate';
-/*
-  ---break---
-*/
-@custom-variant dark (&:is(.dark *));
 
-@theme {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-}
-
-/*
-  The default border color has changed to `currentColor` in Tailwind CSS v4,
-  so we've added these compatibility styles to make sure everything still
-  looks the same as it did with Tailwind CSS v3.
-
-  If we ever want to remove these styles, we need to add an explicit border
-  color utility to any element that depends on these defaults.
-*/
 @layer base {
   *,
   ::after,
@@ -31,9 +10,79 @@
   }
 }
 
-/*
-  ---break---
-*/
+.react-datepicker {
+  @apply border-none bg-transparent font-sans text-sm; /* Remove default border/bg, set base font */
+}
+
+.react-datepicker__month-container {
+  @apply w-full; /* Ensure month container takes full width */
+}
+
+.react-datepicker__header {
+  @apply border-b-0 bg-transparent p-0; /* Remove default header bg/border */
+}
+
+.react-datepicker__day-names {
+  @apply mb-1 flex justify-around; /* Spacing for day names */
+}
+.react-datepicker__day-name {
+  @apply text-muted-foreground w-8 font-normal text-[0.8rem]; /* Style day names */
+}
+
+.react-datepicker__week {
+  @apply mb-1 flex justify-around; /* Spacing for weeks */
+}
+
+/* Style selected time (important for matching shadcn primary color) */
+.react-datepicker__time-list-item--selected,
+.react-datepicker__time-list-item--selected:hover {
+  @apply bg-primary text-primary-foreground; /* Use shadcn primary colors */
+}
+
+/* Improve Time List Scrollbar (Tailwind doesn't directly style scrollbars easily) */
+.react-datepicker__time-container
+  .react-datepicker__time
+  .react-datepicker__time-box {
+  width: auto !important; /* Allow time box to size naturally */
+  padding-left: 4px; /* Add some padding */
+  padding-right: 4px;
+}
+
+.react-datepicker__time-list {
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: hsl(var(--border)) hsl(var(--background)); /* Firefox */
+}
+
+/* Webkit (Chrome, Safari, Edge) scrollbar styles */
+.react-datepicker__time-list::-webkit-scrollbar {
+  width: 6px;
+}
+.react-datepicker__time-list::-webkit-scrollbar-track {
+  background: hsl(var(--background));
+  border-radius: 3px;
+}
+.react-datepicker__time-list::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--border));
+  border-radius: 3px;
+  border: 1px solid hsl(var(--background));
+}
+.react-datepicker__time-list::-webkit-scrollbar-thumb:hover {
+  background-color: hsl(var(--muted-foreground));
+}
+
+/* Override default day focus outline if needed, our helper adds ring */
+/* .react-datepicker__day:focus {
+    outline: none;
+} */
+
+/* Ensure primary selected day text is readable */
+.react-datepicker__day--selected {
+  @apply text-primary-foreground;
+}
+.react-datepicker__day--keyboard-selected {
+  @apply bg-accent text-accent-foreground; /* Style keyboard focus like hover */
+}
+
 :root {
   --background: hsl(0 0% 100%);
   --foreground: hsl(0 0% 3.9%);
@@ -90,42 +139,7 @@
   --chart-4: hsl(280 65% 60%);
   --chart-5: hsl(340 75% 55%);
 }
-/*
-  ---break---
-*/
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-destructive-foreground: var(--destructive-foreground);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-}
-/*
-  ---break---
-*/
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
