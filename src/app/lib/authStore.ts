@@ -22,13 +22,10 @@ interface AuthState {
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
-      // Initial state
       user: null,
       accessToken: null,
       isForbidden: false,
       isAuthenticated: false,
-
-      // Actions
       setAuth: (token, user) =>
         set({
           accessToken: token,
@@ -55,10 +52,8 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: "auth-storage",
-      // IMPORTANT: Only persist user info, NOT the access token
       partialize: (state) => ({
         user: state.user,
-        // Do NOT persist accessToken or isAuthenticated - derive on load/refresh
       }),
 
       onRehydrateStorage: () => {
@@ -72,5 +67,4 @@ export const useAuthStore = create<AuthState>()(
   )
 );
 
-// Helper function to get token without subscribing (for Apollo Link)
 export const getAccessToken = () => useAuthStore.getState().accessToken;

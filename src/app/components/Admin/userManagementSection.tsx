@@ -1,4 +1,3 @@
-// src/app/components/Admin/UserManagementSection.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -7,7 +6,7 @@ import { useDebounce } from "use-debounce";
 import UserTable from "@/app/components/Admin/UserTable";
 import { User as UserTableRowType } from "@/app/components/Admin/UserRow";
 import { UserRole } from "@/app/components/Admin/UserRoleSelect";
-import { GET_SIMPLE_TEAMS } from "@/app/graphql/adminOperations"; // Keep this for team dropdowns
+import { GET_SIMPLE_TEAMS } from "@/app/graphql/adminOperations";
 import { useAuthStore } from "@/app/lib/authStore";
 
 const GET_MANAGEMENT_USERS = gql`
@@ -39,7 +38,6 @@ const GET_USERS_COUNT = gql`
   }
 `;
 
-// --- Interfaces ---
 interface GetUsersQueryData {
   users: Array<{
     id: number;
@@ -62,18 +60,14 @@ interface GetUsersCountQueryData {
   usersCount: number;
 }
 
-// --- Component ---
 const UserManagementSection: React.FC = () => {
-  // State for UI controls
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
-  const [roleFilter, setRoleFilter] = useState<UserRole | "">(""); // Use '' for "All Roles" option
+  const [roleFilter, setRoleFilter] = useState<UserRole | "">("");
 
-  // Debounce search term
   const [debouncedSearchTerm] = useDebounce(searchTerm, 500);
 
-  // Other state
   const [users, setUsers] = useState<GetUsersQueryData["users"]>([]);
   const loggedInUser = useAuthStore((state) => state.user);
 
@@ -84,15 +78,11 @@ const UserManagementSection: React.FC = () => {
     role: roleFilter || null,
   };
 
-  // Variables for the count query (filters only)
   const countQueryVariables = {
     search: debouncedSearchTerm || undefined,
     role: roleFilter || undefined,
   };
 
-  // --- Queries ---
-
-  // Fetch Paginated/Filtered Users
   const {
     loading: loadingUsers,
     error: errorUsers,
@@ -101,42 +91,34 @@ const UserManagementSection: React.FC = () => {
   } = useQuery<GetUsersQueryData>(GET_MANAGEMENT_USERS, {
     variables: userQueryVariables,
     notifyOnNetworkStatusChange: true,
-    // fetchPolicy: "cache-and-network" // Consider this if cache updates aren't reliable enough
+    fetchPolicy: "cache-and-network",
   });
 
-  // Fetch Total User Count (matching filters)
   const { data: countData, error: countError } =
     useQuery<GetUsersCountQueryData>(GET_USERS_COUNT, {
       variables: countQueryVariables,
-      fetchPolicy: "cache-and-network", // Count should reflect current filters
+      fetchPolicy: "cache-and-network",
     });
 
-  // Fetch All Teams (for dropdowns in rows)
   const {
     loading: loadingTeams,
     data: dataTeams,
     error: teamsError,
   } = useQuery<GetSimpleTeamsQueryData>(GET_SIMPLE_TEAMS);
 
-  // Calculate total pages
   const totalUsers = countData?.usersCount ?? 0;
   const totalPages = Math.ceil(totalUsers / pageSize);
 
-  // --- Effects ---
-
-  // Update local users state when data arrives/changes
   useEffect(() => {
     if (dataUsers?.users) {
       setUsers(dataUsers.users);
     }
   }, [dataUsers]);
 
-  // Reset to page 1 when filters or page size change
   useEffect(() => {
     setPage(1);
   }, [debouncedSearchTerm, roleFilter, pageSize]);
 
-  // --- Loading/Error Handling ---
   const isLoading =
     loadingUsers &&
     networkStatus !== NetworkStatus.refetch &&
@@ -144,12 +126,12 @@ const UserManagementSection: React.FC = () => {
   const isRefetching =
     networkStatus === NetworkStatus.refetch ||
     networkStatus === NetworkStatus.setVariables;
-  const combinedError = errorUsers || countError || teamsError; // Combine potential errors
+  const combinedError = errorUsers || countError || teamsError;
 
-  if (isLoading || loadingTeams) return <p>Loading User Data...</p>; // Initial load for users or teams
+  if (isLoading || loadingTeams) return <p>Loading User Data...</p>;
 
   if (combinedError) {
-    const error = combinedError as ApolloError; // Cast for accessing details
+    const error = combinedError as ApolloError;
     console.error("Data loading error:", error);
     const graphQLError = error.graphQLErrors?.[0];
     if (graphQLError?.extensions?.code === "FORBIDDEN") {
@@ -158,20 +140,15 @@ const UserManagementSection: React.FC = () => {
     return <p>Error loading data: {error.message}</p>;
   }
 
-  // Prepare data for table (casting role string to enum)
   const usersForTable: UserTableRowType[] = users.map((user) => ({
     ...user,
-    role: user.role as UserRole, // Cast role string to enum for UserRow prop type
+    role: user.role as UserRole,
   }));
 
-  // --- Render ---
   return (
     <div className="mb-6 shadow-md p-4 border rounded-lg bg-white">
       {" "}
-      {/* Added bg-white */}
       <h2 className="text-xl font-semibold mb-4">User Management</h2>{" "}
-      {/* Added Title */}
-      {/* Search and Filter Controls */}
       <div className="mb-4 flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-4 items-center">
         <div className="flex-grow w-full sm:w-auto">
           <label htmlFor="userSearch" className="sr-only">
@@ -204,7 +181,6 @@ const UserManagementSection: React.FC = () => {
             ))}
           </select>
         </div>
-        {/* Page Size Selector */}
         <div className="text-sm text-gray-700 w-full sm:w-auto sm:ml-auto">
           <label htmlFor="pageSizeSelect" className="mr-1">
             Show:
@@ -223,11 +199,8 @@ const UserManagementSection: React.FC = () => {
           <span>entries</span>
         </div>
       </div>
-      {/* Table Area */}
-      {/* Render table only when initial load is complete and no critical errors */}
       {!isLoading && !combinedError && (
         <>
-          {/* Table with Opacity for Refetching state */}
           <div
             className={`transition-opacity duration-300 ${
               isRefetching ? "opacity-50 pointer-events-none" : "opacity-100"
@@ -240,7 +213,6 @@ const UserManagementSection: React.FC = () => {
             />
           </div>
 
-          {/* Pagination Controls */}
           <div className="flex flex-col sm:flex-row justify-between items-center mt-4 text-sm text-gray-700">
             <div className="mb-2 sm:mb-0">
               Showing{" "}
@@ -278,7 +250,6 @@ const UserManagementSection: React.FC = () => {
           </div>
         </>
       )}
-      {/* Show loading indicator specifically during refetch */}
       {isRefetching && !isLoading && (
         <p className="text-center text-gray-500 mt-4">Updating list...</p>
       )}
