@@ -88,7 +88,7 @@ const TimerDisplay: React.FC<TimerDisplayProps> = ({
       </div>
       {/* --- Styled Date Picker --- */}
       {/* Container mimicking shadcn card/popover */}
-      <div className="p-1 border rounded-md bg-card shadow-sm w-full max-w-[290px]">
+      <div className="p-1 border rounded-md bg-card shadow-sm w-full">
         {" "}
         {/* Adjusted width slightly */}
         <DatePicker
@@ -101,20 +101,15 @@ const TimerDisplay: React.FC<TimerDisplayProps> = ({
           timeIntervals={15}
           preventOpenOnFocus
           // --- Styling Props ---
-          calendarClassName="p-1 text-card-foreground text-sm" // Base text styles, padding
+          calendarClassName="datepicker-calendar"
           dayClassName={(date) =>
             getDayClassName(
               date,
               initialStartTime,
               initialStartTime || new Date()
             )
-          } // Pass current month reference
-          wrapperClassName="w-full"
-          monthClassName={() => "space-y-2 p-1"}
-          weekDayClassName={() =>
-            "text-muted-foreground rounded-md w-8 font-normal text-[0.8rem]"
-          } // Style weekday names
-          timeClassName={(time) => getTimeClassName(time, initialStartTime)} // Use helper for time class
+          }
+          timeClassName={(time) => getTimeClassName(time, initialStartTime)}
           timeFormat="h:mm aa"
           timeCaption="Time"
           // --- Custom Header ---
@@ -126,8 +121,6 @@ const TimerDisplay: React.FC<TimerDisplayProps> = ({
             nextMonthButtonDisabled,
           }) => (
             <div className="flex items-center justify-between px-1 py-1.5">
-              {" "}
-              {/* Adjusted padding */}
               <button
                 type="button"
                 onClick={decreaseMonth}
@@ -135,7 +128,7 @@ const TimerDisplay: React.FC<TimerDisplayProps> = ({
                 className={cn(
                   buttonVariants({ variant: "outline", size: "icon" }),
                   "h-7 w-7 disabled:opacity-50 border"
-                )} // Ensure border
+                )}
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
@@ -153,7 +146,7 @@ const TimerDisplay: React.FC<TimerDisplayProps> = ({
                 className={cn(
                   buttonVariants({ variant: "outline", size: "icon" }),
                   "h-7 w-7 disabled:opacity-50 border"
-                )} // Ensure border
+                )}
               >
                 <ChevronRight className="h-4 w-4" />
               </button>

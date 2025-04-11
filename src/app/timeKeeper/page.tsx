@@ -9,7 +9,6 @@ import { useTimeKeeperQueries } from "@/app/hooks/useTimekeeperQueries";
 import { useTimeKeeperHandlers } from "@/app/hooks/useTimekeeperHandlers";
 import useTimeKeeperData from "@/app/hooks/useTimeKeeperData";
 import NavigationBar from "@/app/components/NavigationBar";
-// import FeedbackMessages from "@/app/components/FeedbackMessages";
 import TimerDisplay from "@/app/components/TimerDisplay";
 import TimerControls from "@/app/components/TimerControls";
 import ProjectRateSelectors from "@/app/components/ProjectRateSelectors";
