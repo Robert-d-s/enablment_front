@@ -1,3 +1,4 @@
+// src/app/components/Admin/invoiceSummary.tsx
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
@@ -17,45 +18,43 @@ interface QueryRateDetail {
 interface InvoiceData {
   projectId: string;
   projectName: string;
+  teamId: string;
+  teamName: string;
   totalHours: number;
   totalCost: number;
   rates: QueryRateDetail[];
   __typename?: string;
 }
 
-interface Team {
-  id: string;
-  name: string;
-}
-
 interface ProjectForSelector {
   id: string;
   name: string;
-  teamId: string;
-  teamName: string;
+  teamName?: string;
 }
 
 interface RawProject {
   id: string;
   name: string;
   teamId: string;
+  teamName?: string;
+  __typename?: string;
 }
 
-const GET_PROJECTS = gql`
-  query GetRawProjects {
+interface GetProjectsData {
+  projects: RawProject[];
+}
+
+interface GetInvoiceData {
+  invoiceForProject: InvoiceData | null;
+}
+
+const GET_PROJECTS_FOR_SELECTOR = gql`
+  query GetProjectsForInvoiceSelector {
     projects {
       id
       name
-      teamId
-    }
-  }
-`;
-
-const GET_ALL_TEAMS = gql`
-  query GetAllSimpleTeams {
-    getAllSimpleTeams {
-      id
-      name
+      teamName
+      __typename
     }
   }
 `;
@@ -65,6 +64,8 @@ const GET_INVOICE_FOR_PROJECT = gql`
     invoiceForProject(input: $input) {
       projectId
       projectName
+      teamId
+      teamName
       totalHours
       totalCost
       rates {
@@ -73,22 +74,12 @@ const GET_INVOICE_FOR_PROJECT = gql`
         hours
         cost
         ratePerHour
+        __typename
       }
+      __typename
     }
   }
 `;
-
-interface GetRawProjectsData {
-  projects: RawProject[];
-}
-
-interface GetAllTeamsData {
-  getAllSimpleTeams: Team[];
-}
-
-interface GetInvoiceData {
-  invoiceForProject: InvoiceData | null;
-}
 
 const InvoiceSummary: React.FC = () => {
   const [selectedProject, setSelectedProject] = useState<string>("");
@@ -96,8 +87,11 @@ const InvoiceSummary: React.FC = () => {
   const [endDate, setEndDate] = useState<string>("");
   const [invoiceData, setInvoiceData] = useState<InvoiceData | null>(null);
 
-  const { data: projectsData } = useQuery<GetRawProjectsData>(GET_PROJECTS);
-  const { data: teamsData } = useQuery<GetAllTeamsData>(GET_ALL_TEAMS);
+  const {
+    loading: projectsLoading,
+    data: projectsData,
+    error: projectsError,
+  } = useQuery<GetProjectsData>(GET_PROJECTS_FOR_SELECTOR);
 
   const { loading: loadingInvoice, error: errorInvoice } =
     useQuery<GetInvoiceData>(GET_INVOICE_FOR_PROJECT, {
@@ -113,7 +107,6 @@ const InvoiceSummary: React.FC = () => {
       notifyOnNetworkStatusChange: true,
       onCompleted: (data) => {
         setInvoiceData(data?.invoiceForProject ?? null);
-        console.log("Invoice data received:", data?.invoiceForProject);
       },
       onError: (error) => {
         console.error("Error fetching invoice:", error);
@@ -121,32 +114,14 @@ const InvoiceSummary: React.FC = () => {
       },
     });
 
-  const teamIdToNameMap = useMemo(() => {
-    if (!teamsData?.getAllSimpleTeams) return {};
-    return teamsData.getAllSimpleTeams.reduce(
-      (acc: Record<string, string>, team) => {
-        acc[team.id] = team.name;
-        return acc;
-      },
-      {}
-    );
-  }, [teamsData]);
-
-  const projectsWithTeamNames = useMemo<ProjectForSelector[]>(() => {
-    if (!projectsData?.projects || Object.keys(teamIdToNameMap).length === 0)
-      return [];
+  const projectsForSelector = useMemo<ProjectForSelector[]>(() => {
+    if (!projectsData?.projects) return [];
     return projectsData.projects.map((project) => ({
-      ...project,
-      teamName: teamIdToNameMap[project.teamId] || "Unknown Team",
+      id: project.id,
+      name: project.name,
+      teamName: project.teamName || "Unknown Team",
     }));
-  }, [projectsData, teamIdToNameMap]);
-
-  const projectTeamId = useMemo<string | undefined>(() => {
-    if (!invoiceData || !projectsData?.projects) return undefined;
-    return projectsData.projects.find(
-      (project) => project.id === invoiceData.projectId
-    )?.teamId;
-  }, [projectsData, invoiceData]);
+  }, [projectsData]);
 
   useEffect(() => {
     console.log("Invoice State Update:", {
@@ -167,9 +142,13 @@ const InvoiceSummary: React.FC = () => {
   ]);
 
   const formatCurrency = (value: number | null | undefined): string => {
-    if (value === null || value === undefined) return "-";
-    if (isNaN(value)) return "Invalid";
-
+    if (
+      value === null ||
+      value === undefined ||
+      typeof value !== "number" ||
+      isNaN(value)
+    )
+      return "-";
     try {
       return new Intl.NumberFormat("da-DK", {
         style: "currency",
@@ -182,6 +161,9 @@ const InvoiceSummary: React.FC = () => {
       return String(value);
     }
   };
+
+  const isInitialLoading = projectsLoading;
+  const initialLoadingError = projectsError;
 
   const renderInvoiceDetails = () => {
     if (loadingInvoice) {
@@ -199,16 +181,12 @@ const InvoiceSummary: React.FC = () => {
       return (
         <div className="mt-4 p-6 bg-white shadow-md rounded-lg">
           <h4 className="text-md font-bold bg-slate-200 p-2 rounded-t-lg">
-            {" "}
             Project: {invoiceData.projectName} - Team:{" "}
-            {teamIdToNameMap && projectTeamId
-              ? teamIdToNameMap[projectTeamId] || "N/A"
-              : "..."}
+            {invoiceData.teamName ?? "N/A"}
           </h4>
           <div className="p-2 space-y-1">
-            {" "}
             <p className="border-b border-gray-200 pb-1">
-              Total Hours: {invoiceData.totalHours?.toFixed(2) ?? "N/A"}{" "}
+              Total Hours: {invoiceData.totalHours?.toFixed(2) ?? "N/A"}
             </p>
             <p className="border-b border-gray-200 pb-1">
               Total Cost: {formatCurrency(invoiceData.totalCost)}
@@ -217,7 +195,6 @@ const InvoiceSummary: React.FC = () => {
               <h5 className="font-semibold bg-slate-200 p-1">Rates Applied:</h5>
               {invoiceData.rates && invoiceData.rates.length > 0 ? (
                 <ul className="list-disc list-inside pl-4 pt-1">
-                  {" "}
                   {invoiceData.rates.map((rate: QueryRateDetail) => (
                     <li
                       className="border-b border-gray-100 py-1 text-sm"
@@ -246,7 +223,6 @@ const InvoiceSummary: React.FC = () => {
         </p>
       );
     }
-
     return (
       <p className="text-gray-500 mt-4">
         Please select a project and date range.
@@ -259,11 +235,26 @@ const InvoiceSummary: React.FC = () => {
       <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0 md:space-x-4 mb-4">
         <h3 className="text-lg font-bold text-white">Invoice Summary</h3>
         <div className="flex-grow">
-          <ProjectSelector
-            projects={projectsWithTeamNames}
-            selectedProject={selectedProject}
-            onProjectChange={setSelectedProject}
-          />
+          {isInitialLoading && (
+            <select
+              className="w-full p-2 bg-gray-200 border border-gray-300 rounded-md text-gray-500 cursor-not-allowed"
+              disabled
+            >
+              <option>Loading Projects...</option>
+            </select>
+          )}
+          {initialLoadingError && (
+            <div className="p-2 bg-red-100 text-red-700 border border-red-300 rounded">
+              Error loading projects/teams.
+            </div>
+          )}
+          {!isInitialLoading && !initialLoadingError && (
+            <ProjectSelector
+              projects={projectsForSelector}
+              selectedProject={selectedProject}
+              onProjectChange={setSelectedProject}
+            />
+          )}
         </div>
         <div className="flex-grow flex flex-col md:flex-row gap-2 md:gap-4">
           <input
@@ -272,6 +263,7 @@ const InvoiceSummary: React.FC = () => {
             onChange={(e) => setStartDate(e.target.value)}
             className="w-full p-2 bg-white text-black border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
             aria-label="Start Date"
+            disabled={isInitialLoading}
           />
           <input
             type="date"
@@ -279,10 +271,16 @@ const InvoiceSummary: React.FC = () => {
             onChange={(e) => setEndDate(e.target.value)}
             className="w-full p-2 bg-white text-black border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
             aria-label="End Date"
+            disabled={isInitialLoading}
+            min={startDate}
           />
         </div>
       </div>
-      {renderInvoiceDetails()}
+      {!isInitialLoading && !initialLoadingError ? (
+        renderInvoiceDetails()
+      ) : (
+        <p className="text-gray-500 mt-4 italic">Loading initial data...</p>
+      )}
     </div>
   );
 };
