@@ -1,4 +1,3 @@
-// src/app/components/ProjectRateSelectors.tsx
 "use client";
 
 import React from "react";
