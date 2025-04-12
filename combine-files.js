@@ -11,6 +11,8 @@ const INCLUDE_EXTENSIONS = new Set([
   ".tsx",
   ".css",
   ".json",
+  ".cjs",
+  ".mjs",
 ]);
 const EXCLUDE_DIRS = new Set([
   "node_modules",
