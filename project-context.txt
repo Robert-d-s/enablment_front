@@ -348,12 +348,11 @@ export default function ApolloWrapper({ children }: ApolloWrapperProps) {
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
-    /* font-feature-settings: "rlig" 1, "calt" 1; */
   }
 }
 
 @layer components {
-  .react-datepicker {
+  /* .react-datepicker {
     border: none;
     background-color: transparent;
     font-family: var(
@@ -366,57 +365,57 @@ export default function ApolloWrapper({ children }: ApolloWrapperProps) {
       "Segoe UI Symbol",
       "Noto Color Emoji"
     );
-    font-size: 0.875rem; /* text-sm */
-    line-height: 1.25rem; /* text-sm */
-  }
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  } */
 
   .react-datepicker__month-container {
     width: 100%;
   }
 
-  .react-datepicker__header {
+  /* .react-datepicker__header {
     border-bottom-width: 0px;
     background-color: transparent;
     padding: 0;
-  }
-  .react-datepicker__day-names {
-    margin-bottom: 0.25rem; /* mb-1 */
+  } */
+  /* .react-datepicker__day-names {
+    margin-bottom: 0.25rem;
     display: flex;
     justify-content: space-around;
-  }
-  .react-datepicker__day-name {
+  } */
+  /* .react-datepicker__day-name {
     color: hsl(var(--muted-foreground));
-    width: 2rem; /* w-8 */
-    font-weight: 400; /* font-normal */
+    width: 2rem;
+    font-weight: 400;
     font-size: 0.8rem;
-  }
+  } */
   .react-datepicker__week {
-    margin-bottom: 0.25rem; /* mb-1 */
+    margin-bottom: 0.25rem;
     display: flex;
     justify-content: space-around;
   }
-  .react-datepicker__time-list-item--selected,
+  /* .react-datepicker__time-list-item--selected,
   .react-datepicker__time-list-item--selected:hover {
     background-color: hsl(var(--primary));
     color: hsl(var(--primary-foreground));
-  }
-  /* Note: Background for selected day might be handled internally or need more specific selectors */
-  .react-datepicker__day--selected {
+  } */
+
+  /* .react-datepicker__day--selected {
     color: hsl(var(--primary-foreground));
-    /* background-color: hsl(var(--primary)); */ /* Add if needed */
-  }
-  .react-datepicker__day--keyboard-selected {
+    background-color: hsl(var(--primary));
+  } */
+  /* .react-datepicker__day--keyboard-selected {
     background-color: hsl(var(--accent));
     color: hsl(var(--accent-foreground));
-  }
+  } */
 
-  .bg-black select,
+  /* .bg-black select,
   .bg-black input,
   .bg-black textarea {
     color: black;
     background-color: white;
     border-color: hsl(var(--border));
-  }
+  } */
 }
 
 .react-datepicker__time-container
@@ -426,10 +425,10 @@ export default function ApolloWrapper({ children }: ApolloWrapperProps) {
   padding-left: 4px;
   padding-right: 4px;
 }
-.react-datepicker__time-list {
+/* .react-datepicker__time-list {
   scrollbar-width: thin;
   scrollbar-color: hsl(var(--border)) hsl(var(--background));
-}
+} */
 .react-datepicker__time-list::-webkit-scrollbar {
   width: 6px;
 }
@@ -446,91 +445,80 @@ export default function ApolloWrapper({ children }: ApolloWrapperProps) {
   background-color: hsl(var(--muted-foreground));
 }
 
-div[data-radix-popper-content-wrapper] {
+/* div[data-radix-popper-content-wrapper] {
   background-color: white !important;
   color: black !important;
-}
+} */
 
-/* Ensure the dropdown stays above other content */
-div[data-radix-popper-content-wrapper] {
+/* div[data-radix-popper-content-wrapper] {
   z-index: 50 !important;
-}
+} */
 
 /* Improve hover effects */
-[data-slot="select-item"]:hover {
+/* [data-slot="select-item"]:hover {
   background-color: #f1f5f9 !important;
   color: black !important;
-}
+} */
 
-/* DatePicker Custom Styles - Add to globals.css */
-
-/* Make the datepicker container wider to accommodate time and calendar side by side */
 .react-datepicker {
   display: flex !important;
   width: auto !important;
   font-family: var(--font-geist-sans);
 }
 
-/* Ensure the calendar has some minimum width */
-.react-datepicker__month-container {
+/* .react-datepicker__month-container {
   min-width: 280px;
-}
+} */
 
-/* Improve time container styling */
-.react-datepicker__time-container {
+/* .react-datepicker__time-container {
   border-left: 1px solid hsl(var(--border));
   width: 100px;
-}
+} */
 
-/* Make time list items more readable and add hover effect */
 .react-datepicker__time-list-item {
   padding: 5px 10px !important;
   height: auto !important;
-  line-height: 1.5 !important;
+  line-height: 1.2 !important;
   display: flex;
   justify-content: center;
 }
 
-.react-datepicker__time-list-item:hover:not(
+/* .react-datepicker__time-list-item:hover:not(
     .react-datepicker__time-list-item--selected
   ) {
   background-color: hsl(var(--accent));
   color: hsl(var(--accent-foreground));
-}
+} */
 
-/* Make the selected time more visible */
 .react-datepicker__time-list-item--selected {
   background-color: hsl(var(--primary)) !important;
   color: hsl(var(--primary-foreground)) !important;
   font-weight: bold;
 }
 
-/* Improve day styling */
-.react-datepicker__day {
+/* .react-datepicker__day {
   margin: 0.2rem;
   width: 2rem;
   line-height: 2rem;
   border-radius: var(--radius);
-}
+} */
 
-.react-datepicker__day:hover:not(.react-datepicker__day--selected) {
+/* .react-datepicker__day:hover:not(.react-datepicker__day--selected) {
   background-color: hsl(var(--accent));
   color: hsl(var(--accent-foreground));
-}
+} */
 
 .react-datepicker__day--selected {
   background-color: hsl(var(--primary)) !important;
   color: hsl(var(--primary-foreground)) !important;
 }
 
-/* Fix day names row */
 .react-datepicker__day-names {
   display: flex;
   justify-content: space-around;
   margin-bottom: 0.5rem;
 }
 
-/* Added responsive fixes for mobile */
 @media (max-width: 640px) {
   .react-datepicker {
     flex-direction: column;
@@ -1826,7 +1814,6 @@ export default PeopleSection;
 
 // ====== FILE: src\app\components\ProjectRateSelectors.tsx ======
 
-// src/app/components/ProjectRateSelectors.tsx
 "use client";
 
 import React from "react";
@@ -1910,7 +1897,7 @@ const ProjectRateSelectors: React.FC<ProjectRateSelectorsProps> = ({
         {/* Project Selector */}
         <div className="space-y-2">
           <Label htmlFor="project-select">Project</Label>
-          <Select
+          {/* <Select
             value={selectedProject ?? ""}
             onValueChange={setSelectedProject}
             disabled={userProjects.length === 0}
@@ -1941,6 +1928,32 @@ const ProjectRateSelectors: React.FC<ProjectRateSelectorsProps> = ({
                 ))
               ) : (
                 <div className="p-2 text-sm text-gray-500">
+                  No projects found.
+                </div>
+              )}
+            </SelectContent>
+          </Select> */}
+          <Select
+            value={selectedProject ?? ""}
+            onValueChange={setSelectedProject}
+            disabled={userProjects.length === 0}
+          >
+            {/* Use default trigger styles, add w-full for layout */}
+            <SelectTrigger id="project-select" className="w-full">
+              <SelectValue placeholder="Select a project..." />
+            </SelectTrigger>
+            {/* Use default content styles */}
+            <SelectContent position="popper">
+              {userProjects.length > 0 ? (
+                userProjects.map((project) => (
+                  // Use default item styles
+                  <SelectItem key={project.id} value={project.id}>
+                    {project.name}{" "}
+                    {project.teamName ? `(${project.teamName})` : ""}
+                  </SelectItem>
+                ))
+              ) : (
+                <div className="p-2 text-sm text-muted-foreground">
                   No projects found.
                 </div>
               )}
@@ -2560,7 +2573,7 @@ const TimerDisplay: React.FC<TimerDisplayProps> = ({
       </div>
       {/* --- Styled Date Picker --- */}
       {/* Container mimicking shadcn card/popover */}
-      <div className="p-1 border rounded-md bg-card shadow-sm w-full">
+      <div className="p-1 border rounded-md bg-card shadow-sm w-full max-height-[300px] overflow-hidden">
         {" "}
         {/* Adjusted width slightly */}
         <DatePicker

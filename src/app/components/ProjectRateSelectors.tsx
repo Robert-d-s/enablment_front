@@ -44,20 +44,6 @@ interface ProjectRateSelectorsProps {
   totalTime: number;
 }
 
-const selectDropdownStyle = {
-  backgroundColor: "white",
-  color: "black",
-  border: "1px solid #e2e8f0",
-  boxShadow:
-    "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-};
-
-const selectItemStyle = {
-  backgroundColor: "white",
-  color: "black",
-  cursor: "pointer",
-};
-
 const ProjectRateSelectors: React.FC<ProjectRateSelectorsProps> = ({
   userProjects,
   selectedProject,
@@ -81,42 +67,6 @@ const ProjectRateSelectors: React.FC<ProjectRateSelectorsProps> = ({
         {/* Project Selector */}
         <div className="space-y-2">
           <Label htmlFor="project-select">Project</Label>
-          {/* <Select
-            value={selectedProject ?? ""}
-            onValueChange={setSelectedProject}
-            disabled={userProjects.length === 0}
-          >
-            <SelectTrigger
-              id="project-select"
-              className="w-full border-input"
-              style={{ backgroundColor: "white", color: "black" }}
-            >
-              <SelectValue placeholder="Select a project..." />
-            </SelectTrigger>
-            <SelectContent
-              style={selectDropdownStyle}
-              className="border border-slate-200 rounded"
-              position="popper"
-            >
-              {userProjects.length > 0 ? (
-                userProjects.map((project) => (
-                  <SelectItem
-                    key={project.id}
-                    value={project.id}
-                    style={selectItemStyle}
-                    className="hover:bg-slate-100 rounded"
-                  >
-                    {project.name}{" "}
-                    {project.teamName ? `(${project.teamName})` : ""}
-                  </SelectItem>
-                ))
-              ) : (
-                <div className="p-2 text-sm text-gray-500">
-                  No projects found.
-                </div>
-              )}
-            </SelectContent>
-          </Select> */}
           <Select
             value={selectedProject ?? ""}
             onValueChange={setSelectedProject}
@@ -153,31 +103,18 @@ const ProjectRateSelectors: React.FC<ProjectRateSelectorsProps> = ({
             onValueChange={setSelectedRate}
             disabled={!selectedProject || rates.length === 0}
           >
-            <SelectTrigger
-              id="rate-select"
-              className="w-full border-input"
-              style={{ backgroundColor: "white", color: "black" }}
-            >
+            <SelectTrigger id="rate-select" className="w-full border-input">
               <SelectValue placeholder="Select a rate..." />
             </SelectTrigger>
-            <SelectContent
-              style={selectDropdownStyle}
-              className="border border-slate-200 rounded"
-              position="popper"
-            >
+            <SelectContent position="popper">
               {rates.length > 0 ? (
                 rates.map((rate) => (
-                  <SelectItem
-                    key={rate.id}
-                    value={rate.id}
-                    style={selectItemStyle}
-                    className="hover:bg-slate-100 rounded"
-                  >
+                  <SelectItem key={rate.id} value={rate.id}>
                     {rate.name} ({rate.rate} DKK/h)
                   </SelectItem>
                 ))
               ) : (
-                <div className="p-2 text-sm text-gray-500">
+                <div className="p-2 text-sm text-muted-foreground">
                   {selectedProject
                     ? "No rates for this project."
                     : "Select a project first."}
