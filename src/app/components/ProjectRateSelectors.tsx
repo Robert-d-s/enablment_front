@@ -81,7 +81,7 @@ const ProjectRateSelectors: React.FC<ProjectRateSelectorsProps> = ({
         {/* Project Selector */}
         <div className="space-y-2">
           <Label htmlFor="project-select">Project</Label>
-          <Select
+          {/* <Select
             value={selectedProject ?? ""}
             onValueChange={setSelectedProject}
             disabled={userProjects.length === 0}
@@ -112,6 +112,32 @@ const ProjectRateSelectors: React.FC<ProjectRateSelectorsProps> = ({
                 ))
               ) : (
                 <div className="p-2 text-sm text-gray-500">
+                  No projects found.
+                </div>
+              )}
+            </SelectContent>
+          </Select> */}
+          <Select
+            value={selectedProject ?? ""}
+            onValueChange={setSelectedProject}
+            disabled={userProjects.length === 0}
+          >
+            {/* Use default trigger styles, add w-full for layout */}
+            <SelectTrigger id="project-select" className="w-full">
+              <SelectValue placeholder="Select a project..." />
+            </SelectTrigger>
+            {/* Use default content styles */}
+            <SelectContent position="popper">
+              {userProjects.length > 0 ? (
+                userProjects.map((project) => (
+                  // Use default item styles
+                  <SelectItem key={project.id} value={project.id}>
+                    {project.name}{" "}
+                    {project.teamName ? `(${project.teamName})` : ""}
+                  </SelectItem>
+                ))
+              ) : (
+                <div className="p-2 text-sm text-muted-foreground">
                   No projects found.
                 </div>
               )}

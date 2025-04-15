@@ -88,7 +88,7 @@ const TimerDisplay: React.FC<TimerDisplayProps> = ({
       </div>
       {/* --- Styled Date Picker --- */}
       {/* Container mimicking shadcn card/popover */}
-      <div className="p-1 border rounded-md bg-card shadow-sm w-full">
+      <div className="p-1 border rounded-md bg-card shadow-sm w-full max-height-[300px] overflow-hidden">
         {" "}
         {/* Adjusted width slightly */}
         <DatePicker
