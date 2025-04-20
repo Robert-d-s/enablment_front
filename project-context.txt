@@ -139,7 +139,7 @@ const config = {
 
 export default config;
 
-// ====== FILE: tailwind.config.cjs ======
+// ====== FILE: tailwind.config.js ======
 
 /** @type {import('tailwindcss').Config} */
 module.exports = {
@@ -160,46 +160,46 @@ module.exports = {
     },
     extend: {
       colors: {
-        border: "hsl(0 0% 89.8%)",
-        input: "hsl(0 0% 89.8%)",
-        ring: "hsl(0 0% 3.9%)",
-        background: "hsl(0 0% 100%)",
-        foreground: "hsl(0 0% 3.9%)",
-        primary: {
-          DEFAULT: "hsl(0 0% 9%)",
-          foreground: "hsl(0 0% 98%)",
-        },
-        secondary: {
-          DEFAULT: "hsl(0 0% 96.1%)",
-          foreground: "hsl(0 0% 9%)",
-        },
-        destructive: {
-          DEFAULT: "hsl(0 84.2% 60.2%)",
-          foreground: "hsl(0 0% 98%)",
-        },
-        muted: {
-          DEFAULT: "hsl(0 0% 96.1%)",
-          foreground: "hsl(0 0% 45.1%)",
-        },
-        accent: {
-          DEFAULT: "hsl(0 0% 96.1%)",
-          foreground: "hsl(0 0% 9%)",
-        },
-        popover: {
-          DEFAULT: "hsl(0 0% 100%)",
-          foreground: "hsl(0 0% 3.9%)",
-        },
-        card: {
-          DEFAULT: "hsl(0 0% 100%)",
-          foreground: "hsl(0 0% 3.9%)",
-        },
-        chart: {
-          1: "hsl(12 76% 61%)",
-          2: "hsl(173 58% 39%)",
-          3: "hsl(197 37% 24%)",
-          4: "hsl(43 74% 66%)",
-          5: "hsl(27 87% 67%)",
-        },
+        // border: "hsl(0 0% 89.8%)",
+        // input: "hsl(0 0% 89.8%)",
+        // ring: "hsl(0 0% 3.9%)",
+        // background: "hsl(0 0% 100%)",
+        // foreground: "hsl(0 0% 3.9%)",
+        // primary: {
+        //   DEFAULT: "hsl(0 0% 9%)",
+        //   foreground: "hsl(0 0% 98%)",
+        // },
+        // secondary: {
+        //   DEFAULT: "hsl(0 0% 96.1%)",
+        //   foreground: "hsl(0 0% 9%)",
+        // },
+        // destructive: {
+        //   DEFAULT: "hsl(0 84.2% 60.2%)",
+        //   foreground: "hsl(0 0% 98%)",
+        // },
+        // muted: {
+        //   DEFAULT: "hsl(0 0% 96.1%)",
+        //   foreground: "hsl(0 0% 45.1%)",
+        // },
+        // accent: {
+        //   DEFAULT: "hsl(0 0% 96.1%)",
+        //   foreground: "hsl(0 0% 9%)",
+        // },
+        // popover: {
+        //   DEFAULT: "hsl(0 0% 100%)",
+        //   foreground: "hsl(0 0% 3.9%)",
+        // },
+        // card: {
+        //   DEFAULT: "hsl(0 0% 100%)",
+        //   foreground: "hsl(0 0% 3.9%)",
+        // },
+        // chart: {
+        //   1: "hsl(12 76% 61%)",
+        //   2: "hsl(173 58% 39%)",
+        //   3: "hsl(197 37% 24%)",
+        //   4: "hsl(43 74% 66%)",
+        //   5: "hsl(27 87% 67%)",
+        // },
       },
       borderRadius: {
         lg: "0.6rem",
@@ -351,188 +351,10 @@ export default function ApolloWrapper({ children }: ApolloWrapperProps) {
   }
 }
 
-@layer components {
-  /* .react-datepicker {
-    border: none;
-    background-color: transparent;
-    font-family: var(
-      --font-sans,
-      ui-sans-serif,
-      system-ui,
-      sans-serif,
-      "Apple Color Emoji",
-      "Segoe UI Emoji",
-      "Segoe UI Symbol",
-      "Noto Color Emoji"
-    );
-    font-size: 0.875rem;
-    line-height: 1.25rem;
-  } */
-
-  .react-datepicker__month-container {
-    width: 100%;
-  }
-
-  /* .react-datepicker__header {
-    border-bottom-width: 0px;
-    background-color: transparent;
-    padding: 0;
-  } */
-  /* .react-datepicker__day-names {
-    margin-bottom: 0.25rem;
-    display: flex;
-    justify-content: space-around;
-  } */
-  /* .react-datepicker__day-name {
-    color: hsl(var(--muted-foreground));
-    width: 2rem;
-    font-weight: 400;
-    font-size: 0.8rem;
-  } */
-  .react-datepicker__week {
-    margin-bottom: 0.25rem;
-    display: flex;
-    justify-content: space-around;
-  }
-  /* .react-datepicker__time-list-item--selected,
-  .react-datepicker__time-list-item--selected:hover {
-    background-color: hsl(var(--primary));
-    color: hsl(var(--primary-foreground));
-  } */
-
-  /* .react-datepicker__day--selected {
-    color: hsl(var(--primary-foreground));
-    background-color: hsl(var(--primary));
-  } */
-  /* .react-datepicker__day--keyboard-selected {
-    background-color: hsl(var(--accent));
-    color: hsl(var(--accent-foreground));
-  } */
-
-  /* .bg-black select,
-  .bg-black input,
-  .bg-black textarea {
-    color: black;
-    background-color: white;
-    border-color: hsl(var(--border));
-  } */
-}
-
-.react-datepicker__time-container
-  .react-datepicker__time
-  .react-datepicker__time-box {
-  width: auto !important;
-  padding-left: 4px;
-  padding-right: 4px;
-}
-/* .react-datepicker__time-list {
-  scrollbar-width: thin;
-  scrollbar-color: hsl(var(--border)) hsl(var(--background));
-} */
-.react-datepicker__time-list::-webkit-scrollbar {
-  width: 6px;
-}
-.react-datepicker__time-list::-webkit-scrollbar-track {
-  background: hsl(var(--background));
-  border-radius: 3px;
-}
-.react-datepicker__time-list::-webkit-scrollbar-thumb {
-  background-color: hsl(var(--border));
-  border-radius: 3px;
-  border: 1px solid hsl(var(--background));
-}
-.react-datepicker__time-list::-webkit-scrollbar-thumb:hover {
-  background-color: hsl(var(--muted-foreground));
-}
-
-/* div[data-radix-popper-content-wrapper] {
-  background-color: white !important;
-  color: black !important;
-} */
-
-/* div[data-radix-popper-content-wrapper] {
-  z-index: 50 !important;
-} */
-
-/* Improve hover effects */
-/* [data-slot="select-item"]:hover {
-  background-color: #f1f5f9 !important;
-  color: black !important;
-} */
-
-.react-datepicker {
-  display: flex !important;
-  width: auto !important;
-  font-family: var(--font-geist-sans);
-}
-
-/* .react-datepicker__month-container {
-  min-width: 280px;
-} */
-
-/* .react-datepicker__time-container {
-  border-left: 1px solid hsl(var(--border));
-  width: 100px;
-} */
-
-.react-datepicker__time-list-item {
-  padding: 5px 10px !important;
-  height: auto !important;
-  line-height: 1.2 !important;
-  display: flex;
-  justify-content: center;
-}
-
-/* .react-datepicker__time-list-item:hover:not(
-    .react-datepicker__time-list-item--selected
-  ) {
-  background-color: hsl(var(--accent));
-  color: hsl(var(--accent-foreground));
-} */
-
-.react-datepicker__time-list-item--selected {
-  background-color: hsl(var(--primary)) !important;
-  color: hsl(var(--primary-foreground)) !important;
-  font-weight: bold;
-}
-
-/* .react-datepicker__day {
-  margin: 0.2rem;
-  width: 2rem;
-  line-height: 2rem;
-  border-radius: var(--radius);
-} */
-
-/* .react-datepicker__day:hover:not(.react-datepicker__day--selected) {
-  background-color: hsl(var(--accent));
-  color: hsl(var(--accent-foreground));
-} */
-
-.react-datepicker__day--selected {
-  background-color: hsl(var(--primary)) !important;
-  color: hsl(var(--primary-foreground)) !important;
-}
-
-.react-datepicker__day-names {
-  display: flex;
-  justify-content: space-around;
-  margin-bottom: 0.5rem;
-}
-
-@media (max-width: 640px) {
-  .react-datepicker {
-    flex-direction: column;
-  }
-
-  .react-datepicker__time-container {
-    border-left: none;
-    border-top: 1px solid hsl(var(--border));
-    width: 100%;
-  }
-
-  .react-datepicker__time {
-    height: 200px;
-  }
+[data-radix-popper-content-wrapper] > [data-slot="select-content"] {
+  background-color: hsl(
+    var(--popover)
+  ); /* Direct variable, NO !important yet */
 }
 
 // ====== FILE: src\app\layout.tsx ======
@@ -1860,20 +1682,6 @@ interface ProjectRateSelectorsProps {
   totalTime: number;
 }
 
-const selectDropdownStyle = {
-  backgroundColor: "white",
-  color: "black",
-  border: "1px solid #e2e8f0",
-  boxShadow:
-    "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-};
-
-const selectItemStyle = {
-  backgroundColor: "white",
-  color: "black",
-  cursor: "pointer",
-};
-
 const ProjectRateSelectors: React.FC<ProjectRateSelectorsProps> = ({
   userProjects,
   selectedProject,
@@ -1897,42 +1705,6 @@ const ProjectRateSelectors: React.FC<ProjectRateSelectorsProps> = ({
         {/* Project Selector */}
         <div className="space-y-2">
           <Label htmlFor="project-select">Project</Label>
-          {/* <Select
-            value={selectedProject ?? ""}
-            onValueChange={setSelectedProject}
-            disabled={userProjects.length === 0}
-          >
-            <SelectTrigger
-              id="project-select"
-              className="w-full border-input"
-              style={{ backgroundColor: "white", color: "black" }}
-            >
-              <SelectValue placeholder="Select a project..." />
-            </SelectTrigger>
-            <SelectContent
-              style={selectDropdownStyle}
-              className="border border-slate-200 rounded"
-              position="popper"
-            >
-              {userProjects.length > 0 ? (
-                userProjects.map((project) => (
-                  <SelectItem
-                    key={project.id}
-                    value={project.id}
-                    style={selectItemStyle}
-                    className="hover:bg-slate-100 rounded"
-                  >
-                    {project.name}{" "}
-                    {project.teamName ? `(${project.teamName})` : ""}
-                  </SelectItem>
-                ))
-              ) : (
-                <div className="p-2 text-sm text-gray-500">
-                  No projects found.
-                </div>
-              )}
-            </SelectContent>
-          </Select> */}
           <Select
             value={selectedProject ?? ""}
             onValueChange={setSelectedProject}
@@ -1969,31 +1741,18 @@ const ProjectRateSelectors: React.FC<ProjectRateSelectorsProps> = ({
             onValueChange={setSelectedRate}
             disabled={!selectedProject || rates.length === 0}
           >
-            <SelectTrigger
-              id="rate-select"
-              className="w-full border-input"
-              style={{ backgroundColor: "white", color: "black" }}
-            >
+            <SelectTrigger id="rate-select" className="w-full border-input">
               <SelectValue placeholder="Select a rate..." />
             </SelectTrigger>
-            <SelectContent
-              style={selectDropdownStyle}
-              className="border border-slate-200 rounded"
-              position="popper"
-            >
+            <SelectContent position="popper">
               {rates.length > 0 ? (
                 rates.map((rate) => (
-                  <SelectItem
-                    key={rate.id}
-                    value={rate.id}
-                    style={selectItemStyle}
-                    className="hover:bg-slate-100 rounded"
-                  >
+                  <SelectItem key={rate.id} value={rate.id}>
                     {rate.name} ({rate.rate} DKK/h)
                   </SelectItem>
                 ))
               ) : (
-                <div className="p-2 text-sm text-gray-500">
+                <div className="p-2 text-sm text-muted-foreground">
                   {selectedProject
                     ? "No rates for this project."
                     : "Select a project first."}
