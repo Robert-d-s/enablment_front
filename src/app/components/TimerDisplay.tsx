@@ -59,8 +59,6 @@ const TimerDisplay: React.FC<TimerDisplayProps> = ({
   return (
     <div className="flex flex-col items-center gap-3 w-full">
       {" "}
-      {/* Increased gap */}
-      {/* Timer Value */}
       <div className="flex items-center justify-center gap-2 text-foreground mb-1">
         <Timer
           className={`h-5 w-5 ${
@@ -69,14 +67,11 @@ const TimerDisplay: React.FC<TimerDisplayProps> = ({
         />
         <div className="text-6xl md:text-7xl font-mono font-bold tracking-tighter text-center tabular-nums">
           {" "}
-          {/* Added tabular-nums */}
           {displayTime}
         </div>
       </div>
-      {/* Start Time Display */}
       <div className="text-xs text-muted-foreground mb-2 text-center">
         {" "}
-        {/* Smaller text */}
         Started:{" "}
         {initialStartTime ? (
           `${formatDateForDisplay(initialStartTime)} ${formatTimeFromISOString(
@@ -86,11 +81,7 @@ const TimerDisplay: React.FC<TimerDisplayProps> = ({
           <span className="italic">Not Started</span>
         )}
       </div>
-      {/* --- Styled Date Picker --- */}
-      {/* Container mimicking shadcn card/popover */}
-      <div className="p-1 border rounded-md bg-card shadow-sm w-full max-height-[300px] overflow-hidden">
-        {" "}
-        {/* Adjusted width slightly */}
+      <div className="p-1 border rounded-md bg-card shadow-sm w-full max-w-xl overflow-hidden">
         <DatePicker
           inline
           id="startDate"
@@ -101,7 +92,7 @@ const TimerDisplay: React.FC<TimerDisplayProps> = ({
           timeIntervals={15}
           preventOpenOnFocus
           // --- Styling Props ---
-          calendarClassName="datepicker-calendar"
+          calendarClassName="bg-card rounded-lg shadow-lg border p-2"
           dayClassName={(date) =>
             getDayClassName(
               date,
