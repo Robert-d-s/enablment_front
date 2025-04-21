@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import NavigationBar from "../components/NavigationBar";
+import NavigationBar from "@/app/components/Admin/NavigationBar";
 import UserManagementSection from "@/app/components/Admin/userManagementSection";
 import TotalTimeSpent from "@/app/components/Admin/totalTimeSpent";
 import RatesManager from "@/app/components/Admin/ratesManager";

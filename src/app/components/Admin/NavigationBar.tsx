@@ -4,7 +4,7 @@ import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { clientLogout } from "@/app/lib/apolloClient";
-import { useAuthStore } from "../lib/authStore";
+import { useAuthStore } from "@/app/lib/authStore";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,

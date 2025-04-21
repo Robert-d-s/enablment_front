@@ -5,7 +5,7 @@ import "@/app/globals.css";
 import {
   formatDateForDisplay,
   formatTimeFromISOString,
-} from "../utils/timeUtils";
+} from "@/app/utils/timeUtils";
 import { formatISO, isToday, isSameDay, getMonth } from "date-fns";
 import { Timer, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/app/lib/utils";

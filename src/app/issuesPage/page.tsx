@@ -7,7 +7,7 @@ import React, {
   useCallback,
 } from "react";
 import { gql, useQuery, useApolloClient } from "@apollo/client";
-import NavigationBar from "../components/NavigationBar";
+import NavigationBar from "@/app/components/Admin/NavigationBar";
 import { io, Socket } from "socket.io-client";
 
 type Label = {

@@ -2,7 +2,7 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import SectionWrapper from "@/app/components/sectionWrapper";
+import SectionWrapper from "@/app/components/landingPage/sectionWrapper";
 
 interface SectionAnimationProps {
   section: string;

@@ -1,9 +1,9 @@
 "use client";
 
 import React from "react";
-import PeopleSection from "@/app/components/peopleSection";
-import AboutSection from "@/app/components/aboutSection";
-import ServicesSection from "@/app/components/servicesSection";
+import PeopleSection from "@/app/components/landingPage/peopleSection";
+import AboutSection from "@/app/components/landingPage/aboutSection";
+import ServicesSection from "@/app/components/landingPage/servicesSection";
 
 interface SectionProps {
   id: string;

@@ -86,15 +86,17 @@ export default nextConfig;
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
   },
   "dependencies": {
     "@apollo/client": "^3.12.9",
+    "@radix-ui/react-dialog": "^1.1.10",
+    "@radix-ui/react-dropdown-menu": "^2.1.11",
     "@radix-ui/react-label": "^2.1.3",
-    "@radix-ui/react-select": "^2.1.7",
+    "@radix-ui/react-select": "^2.2.2",
     "@radix-ui/react-slot": "^1.2.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -114,15 +116,14 @@ export default nextConfig;
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
-    "@tailwindcss/postcss": "^4.1.3",
     "@types/node": "^20",
     "@types/react": "^19.0.8",
     "@types/react-dom": "^19.0.3",
     "autoprefixer": "^10.4.21",
     "eslint": "^9",
     "eslint-config-next": "15.1.6",
-    "postcss": "^8.5.2",
-    "tailwindcss": "^4.0.0",
+    "postcss": "^8.5.3",
+    "tailwindcss": "^3.4.17",
     "typescript": "^5"
   }
 }
@@ -132,7 +133,7 @@ export default nextConfig;
 /** @type {import('postcss-load-config').Config} */
 const config = {
   plugins: {
-    "@tailwindcss/postcss": {},
+    tailwindcss: {},
     autoprefixer: {},
   },
 };
@@ -141,8 +142,10 @@ export default config;
 
 // ====== FILE: tailwind.config.js ======
 
+import animate from "tailwindcss-animate";
+
 /** @type {import('tailwindcss').Config} */
-module.exports = {
+const config = {
   darkMode: ["class"],
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
@@ -160,46 +163,46 @@ module.exports = {
     },
     extend: {
       colors: {
-        // border: "hsl(0 0% 89.8%)",
-        // input: "hsl(0 0% 89.8%)",
-        // ring: "hsl(0 0% 3.9%)",
-        // background: "hsl(0 0% 100%)",
-        // foreground: "hsl(0 0% 3.9%)",
-        // primary: {
-        //   DEFAULT: "hsl(0 0% 9%)",
-        //   foreground: "hsl(0 0% 98%)",
-        // },
-        // secondary: {
-        //   DEFAULT: "hsl(0 0% 96.1%)",
-        //   foreground: "hsl(0 0% 9%)",
-        // },
-        // destructive: {
-        //   DEFAULT: "hsl(0 84.2% 60.2%)",
-        //   foreground: "hsl(0 0% 98%)",
-        // },
-        // muted: {
-        //   DEFAULT: "hsl(0 0% 96.1%)",
-        //   foreground: "hsl(0 0% 45.1%)",
-        // },
-        // accent: {
-        //   DEFAULT: "hsl(0 0% 96.1%)",
-        //   foreground: "hsl(0 0% 9%)",
-        // },
-        // popover: {
-        //   DEFAULT: "hsl(0 0% 100%)",
-        //   foreground: "hsl(0 0% 3.9%)",
-        // },
-        // card: {
-        //   DEFAULT: "hsl(0 0% 100%)",
-        //   foreground: "hsl(0 0% 3.9%)",
-        // },
-        // chart: {
-        //   1: "hsl(12 76% 61%)",
-        //   2: "hsl(173 58% 39%)",
-        //   3: "hsl(197 37% 24%)",
-        //   4: "hsl(43 74% 66%)",
-        //   5: "hsl(27 87% 67%)",
-        // },
+        border: "hsl(0 0% 89.8%)",
+        input: "hsl(0 0% 89.8%)",
+        ring: "hsl(0 0% 3.9%)",
+        background: "hsl(0 0% 100%)",
+        foreground: "hsl(0 0% 3.9%)",
+        primary: {
+          DEFAULT: "hsl(0 0% 9%)",
+          foreground: "hsl(0 0% 98%)",
+        },
+        secondary: {
+          DEFAULT: "hsl(0 0% 96.1%)",
+          foreground: "hsl(0 0% 9%)",
+        },
+        destructive: {
+          DEFAULT: "hsl(0 84.2% 60.2%)",
+          foreground: "hsl(0 0% 98%)",
+        },
+        muted: {
+          DEFAULT: "hsl(0 0% 96.1%)",
+          foreground: "hsl(0 0% 45.1%)",
+        },
+        accent: {
+          DEFAULT: "hsl(0 0% 96.1%)",
+          foreground: "hsl(0 0% 9%)",
+        },
+        popover: {
+          DEFAULT: "hsl(0 0% 100%)",
+          foreground: "hsl(0 0% 3.9%)",
+        },
+        card: {
+          DEFAULT: "hsl(0 0% 100%)",
+          foreground: "hsl(0 0% 3.9%)",
+        },
+        chart: {
+          1: "hsl(12 76% 61%)",
+          2: "hsl(173 58% 39%)",
+          3: "hsl(197 37% 24%)",
+          4: "hsl(43 74% 66%)",
+          5: "hsl(27 87% 67%)",
+        },
       },
       borderRadius: {
         lg: "0.6rem",
@@ -229,8 +232,10 @@ module.exports = {
       },
     },
   },
-  plugins: [await import("tailwindcss-animate")],
+  plugins: [animate],
 };
+
+export default config;
 
 // ====== FILE: tsconfig.json ======
 
@@ -281,7 +286,9 @@ export default function ApolloWrapper({ children }: ApolloWrapperProps) {
 
 // ====== FILE: src\app\globals.css ======
 
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 @layer base {
   :root {
@@ -351,10 +358,73 @@ export default function ApolloWrapper({ children }: ApolloWrapperProps) {
   }
 }
 
-[data-radix-popper-content-wrapper] > [data-slot="select-content"] {
-  background-color: hsl(
-    var(--popover)
-  ); /* Direct variable, NO !important yet */
+.react-datepicker {
+  display: flex;
+  width: 100%;
+}
+
+.react-datepicker__month-container {
+  flex: 0 0 75%;
+}
+
+.react-datepicker__time-container {
+  flex: 0 0 25%;
+  border-left: 1px solid hsl(var(--border));
+}
+
+.react-datepicker__time-list {
+  max-height: 300px;
+}
+
+.react-datepicker__month {
+  margin: 0.5rem 0;
+}
+
+.react-datepicker__week {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 0.25rem;
+}
+
+.react-datepicker__day-names {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 0.5rem;
+  color: hsl(var(--muted-foreground));
+  font-size: 0.8rem;
+}
+
+.react-datepicker__day--outside-month {
+  color: hsl(var(--muted-foreground));
+  opacity: 0.5;
+}
+
+.react-datepicker__time-list::-webkit-scrollbar {
+  width: 6px;
+}
+.react-datepicker__time-list::-webkit-scrollbar-track {
+  background: hsl(var(--background));
+  border-radius: 3px;
+}
+.react-datepicker__time-list::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--border));
+  border-radius: 3px;
+  border: 1px solid hsl(var(--background));
+}
+.react-datepicker__time-list::-webkit-scrollbar-thumb:hover {
+  background-color: hsl(var(--muted-foreground));
+}
+
+@media (max-width: 768px) {
+  .react-datepicker {
+    flex-direction: column;
+  }
+
+  .react-datepicker__month-container,
+  .react-datepicker__time-container {
+    flex-basis: auto;
+    width: 100%;
+  }
 }
 
 // ====== FILE: src\app\layout.tsx ======
@@ -1410,59 +1480,120 @@ import Image from "next/image";
 import Link from "next/link";
 import { clientLogout } from "@/app/lib/apolloClient";
 import { useAuthStore } from "../lib/authStore";
-import useCurrentUser from "../hooks/useCurrentUser";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Menu, LogOut, User as UserIcon } from "lucide-react";
 
 const NavigationBar: React.FC = () => {
-  const { isLoading } = useCurrentUser();
   const user = useAuthStore((state) => state.user);
 
-  const handleLogout = () => {
-    clientLogout();
+  const handleLogout = async () => {
+    await clientLogout();
   };
 
   return (
-    <nav className="flex items-center justify-between p-4 bg-white shadow font-roboto-condensed uppercase">
-      <Link href="/">
+    <nav className="flex items-center justify-between p-4 bg-card border-b font-roboto-condensed shadow-sm">
+      <Link href="/" className="flex-shrink-0">
         <Image
           src="/logo.svg"
           alt="Enablment-tt Logo"
-          width={200}
-          height={40}
-          style={{ cursor: "pointer" }}
+          width={180}
+          height={36}
+          priority
+          className="h-[36px] w-auto max-w-[100px] sm:max-w-[180px] transition-all duration-200 ease-in-out"
         />
       </Link>
-      <div className="flex-grow font-semibold text-lg mx-4 flex items-center justify-center">
-        <Link href="/issuesPage" className="mr-4">
+
+      <div className="hidden md:flex flex-grow items-center justify-center gap-6 font-medium text-sm uppercase">
+        <Link
+          href="/issuesPage"
+          className="text-muted-foreground hover:text-foreground transition-colors"
+        >
           Issues
         </Link>
-        <Link href="/adminPage" className="mr-4">
+        <Link
+          href="/adminPage"
+          className="text-muted-foreground hover:text-foreground transition-colors"
+        >
           Admin
         </Link>
-        <Link href="/timeKeeper">Timekeeper</Link>
-      </div>
-      <div>
-        <div>
-          <div
-            className={
-              user
-                ? "bg-gray-800 text-white px-4 m-1 rounded"
-                : "text-md text-gray-500"
-            }
-          >
-            {user
-              ? user.email
-              : isLoading
-              ? "Loading user data..."
-              : "Not logged in"}
-          </div>
-        </div>
-        <button
-          className="bg-black text-white rounded hover:bg-gray-800 font-bold py-1 px-4 float-right font-roboto-condensed uppercase"
-          style={{ fontSize: "12px" }}
-          onClick={handleLogout}
+        <Link
+          href="/timeKeeper"
+          className="text-muted-foreground hover:text-foreground transition-colors"
         >
-          Logout
-        </button>
+          Timekeeper
+        </Link>
+      </div>
+
+      <div className="flex items-center gap-4">
+        <div className="hidden md:flex items-center gap-3">
+          {user ? (
+            <span className="text-sm text-muted-foreground">{user.email}</span>
+          ) : (
+            <span className="text-sm text-muted-foreground italic">
+              Loading...
+            </span>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleLogout}
+            aria-label="Logout"
+          >
+            <LogOut className="h-4 w-4" />
+          </Button>
+        </div>
+
+        {/* Mobile Menu Dropdown */}
+        <div className="md:hidden">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon" aria-label="Open menu">
+                <Menu className="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              {/* Optional User Info Label */}
+              {user && (
+                <>
+                  <DropdownMenuLabel className="flex items-center gap-2 font-normal">
+                    <UserIcon className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground truncate">
+                      {user.email}
+                    </span>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                </>
+              )}
+              {/* Navigation Items */}
+              <DropdownMenuItem asChild>
+                <Link href="/issuesPage">Issues</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/adminPage">Admin</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/timeKeeper">Timekeeper</Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              {/* Logout Item */}
+              <DropdownMenuItem
+                onClick={handleLogout}
+                className="text-destructive focus:text-destructive focus:bg-destructive/10"
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Logout</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
     </nav>
   );
@@ -2303,8 +2434,6 @@ const TimerDisplay: React.FC<TimerDisplayProps> = ({
   return (
     <div className="flex flex-col items-center gap-3 w-full">
       {" "}
-      {/* Increased gap */}
-      {/* Timer Value */}
       <div className="flex items-center justify-center gap-2 text-foreground mb-1">
         <Timer
           className={`h-5 w-5 ${
@@ -2313,14 +2442,11 @@ const TimerDisplay: React.FC<TimerDisplayProps> = ({
         />
         <div className="text-6xl md:text-7xl font-mono font-bold tracking-tighter text-center tabular-nums">
           {" "}
-          {/* Added tabular-nums */}
           {displayTime}
         </div>
       </div>
-      {/* Start Time Display */}
       <div className="text-xs text-muted-foreground mb-2 text-center">
         {" "}
-        {/* Smaller text */}
         Started:{" "}
         {initialStartTime ? (
           `${formatDateForDisplay(initialStartTime)} ${formatTimeFromISOString(
@@ -2330,11 +2456,7 @@ const TimerDisplay: React.FC<TimerDisplayProps> = ({
           <span className="italic">Not Started</span>
         )}
       </div>
-      {/* --- Styled Date Picker --- */}
-      {/* Container mimicking shadcn card/popover */}
-      <div className="p-1 border rounded-md bg-card shadow-sm w-full max-height-[300px] overflow-hidden">
-        {" "}
-        {/* Adjusted width slightly */}
+      <div className="p-1 border rounded-md bg-card shadow-sm w-full max-w-xl overflow-hidden">
         <DatePicker
           inline
           id="startDate"
@@ -2345,7 +2467,7 @@ const TimerDisplay: React.FC<TimerDisplayProps> = ({
           timeIntervals={15}
           preventOpenOnFocus
           // --- Styling Props ---
-          calendarClassName="datepicker-calendar"
+          calendarClassName="bg-card rounded-lg shadow-lg border p-2"
           dayClassName={(date) =>
             getDayClassName(
               date,
@@ -5680,6 +5802,266 @@ export {
   CardContent,
 };
 
+// ====== FILE: src\components\ui\dropdown-menu.tsx ======
+
+"use client";
+
+import * as React from "react";
+import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
+import { CheckIcon, ChevronRightIcon, CircleIcon } from "lucide-react";
+
+import { cn } from "@/app/lib/utils";
+
+function DropdownMenu({
+  ...props
+}: React.ComponentProps<typeof DropdownMenuPrimitive.Root>) {
+  return <DropdownMenuPrimitive.Root data-slot="dropdown-menu" {...props} />;
+}
+
+function DropdownMenuPortal({
+  ...props
+}: React.ComponentProps<typeof DropdownMenuPrimitive.Portal>) {
+  return (
+    <DropdownMenuPrimitive.Portal data-slot="dropdown-menu-portal" {...props} />
+  );
+}
+
+function DropdownMenuTrigger({
+  ...props
+}: React.ComponentProps<typeof DropdownMenuPrimitive.Trigger>) {
+  return (
+    <DropdownMenuPrimitive.Trigger
+      data-slot="dropdown-menu-trigger"
+      {...props}
+    />
+  );
+}
+
+function DropdownMenuContent({
+  className,
+  sideOffset = 4,
+  ...props
+}: React.ComponentProps<typeof DropdownMenuPrimitive.Content>) {
+  return (
+    <DropdownMenuPrimitive.Portal>
+      <DropdownMenuPrimitive.Content
+        data-slot="dropdown-menu-content"
+        sideOffset={sideOffset}
+        className={cn(
+          "bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 max-h-(--radix-dropdown-menu-content-available-height) min-w-[8rem] origin-(--radix-dropdown-menu-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-md border p-1 shadow-md",
+          className
+        )}
+        {...props}
+      />
+    </DropdownMenuPrimitive.Portal>
+  );
+}
+
+function DropdownMenuGroup({
+  ...props
+}: React.ComponentProps<typeof DropdownMenuPrimitive.Group>) {
+  return (
+    <DropdownMenuPrimitive.Group data-slot="dropdown-menu-group" {...props} />
+  );
+}
+
+function DropdownMenuItem({
+  className,
+  inset,
+  variant = "default",
+  ...props
+}: React.ComponentProps<typeof DropdownMenuPrimitive.Item> & {
+  inset?: boolean;
+  variant?: "default" | "destructive";
+}) {
+  return (
+    <DropdownMenuPrimitive.Item
+      data-slot="dropdown-menu-item"
+      data-inset={inset}
+      data-variant={variant}
+      className={cn(
+        "focus:bg-accent focus:text-accent-foreground data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 dark:data-[variant=destructive]:focus:bg-destructive/20 data-[variant=destructive]:focus:text-destructive data-[variant=destructive]:*:[svg]:!text-destructive [&_svg:not([class*='text-'])]:text-muted-foreground relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[inset]:pl-8 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        className
+      )}
+      {...props}
+    />
+  );
+}
+
+function DropdownMenuCheckboxItem({
+  className,
+  children,
+  checked,
+  ...props
+}: React.ComponentProps<typeof DropdownMenuPrimitive.CheckboxItem>) {
+  return (
+    <DropdownMenuPrimitive.CheckboxItem
+      data-slot="dropdown-menu-checkbox-item"
+      className={cn(
+        "focus:bg-accent focus:text-accent-foreground relative flex cursor-default items-center gap-2 rounded-sm py-1.5 pr-2 pl-8 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        className
+      )}
+      checked={checked}
+      {...props}
+    >
+      <span className="pointer-events-none absolute left-2 flex size-3.5 items-center justify-center">
+        <DropdownMenuPrimitive.ItemIndicator>
+          <CheckIcon className="size-4" />
+        </DropdownMenuPrimitive.ItemIndicator>
+      </span>
+      {children}
+    </DropdownMenuPrimitive.CheckboxItem>
+  );
+}
+
+function DropdownMenuRadioGroup({
+  ...props
+}: React.ComponentProps<typeof DropdownMenuPrimitive.RadioGroup>) {
+  return (
+    <DropdownMenuPrimitive.RadioGroup
+      data-slot="dropdown-menu-radio-group"
+      {...props}
+    />
+  );
+}
+
+function DropdownMenuRadioItem({
+  className,
+  children,
+  ...props
+}: React.ComponentProps<typeof DropdownMenuPrimitive.RadioItem>) {
+  return (
+    <DropdownMenuPrimitive.RadioItem
+      data-slot="dropdown-menu-radio-item"
+      className={cn(
+        "focus:bg-accent focus:text-accent-foreground relative flex cursor-default items-center gap-2 rounded-sm py-1.5 pr-2 pl-8 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        className
+      )}
+      {...props}
+    >
+      <span className="pointer-events-none absolute left-2 flex size-3.5 items-center justify-center">
+        <DropdownMenuPrimitive.ItemIndicator>
+          <CircleIcon className="size-2 fill-current" />
+        </DropdownMenuPrimitive.ItemIndicator>
+      </span>
+      {children}
+    </DropdownMenuPrimitive.RadioItem>
+  );
+}
+
+function DropdownMenuLabel({
+  className,
+  inset,
+  ...props
+}: React.ComponentProps<typeof DropdownMenuPrimitive.Label> & {
+  inset?: boolean;
+}) {
+  return (
+    <DropdownMenuPrimitive.Label
+      data-slot="dropdown-menu-label"
+      data-inset={inset}
+      className={cn(
+        "px-2 py-1.5 text-sm font-medium data-[inset]:pl-8",
+        className
+      )}
+      {...props}
+    />
+  );
+}
+
+function DropdownMenuSeparator({
+  className,
+  ...props
+}: React.ComponentProps<typeof DropdownMenuPrimitive.Separator>) {
+  return (
+    <DropdownMenuPrimitive.Separator
+      data-slot="dropdown-menu-separator"
+      className={cn("bg-border -mx-1 my-1 h-px", className)}
+      {...props}
+    />
+  );
+}
+
+function DropdownMenuShortcut({
+  className,
+  ...props
+}: React.ComponentProps<"span">) {
+  return (
+    <span
+      data-slot="dropdown-menu-shortcut"
+      className={cn(
+        "text-muted-foreground ml-auto text-xs tracking-widest",
+        className
+      )}
+      {...props}
+    />
+  );
+}
+
+function DropdownMenuSub({
+  ...props
+}: React.ComponentProps<typeof DropdownMenuPrimitive.Sub>) {
+  return <DropdownMenuPrimitive.Sub data-slot="dropdown-menu-sub" {...props} />;
+}
+
+function DropdownMenuSubTrigger({
+  className,
+  inset,
+  children,
+  ...props
+}: React.ComponentProps<typeof DropdownMenuPrimitive.SubTrigger> & {
+  inset?: boolean;
+}) {
+  return (
+    <DropdownMenuPrimitive.SubTrigger
+      data-slot="dropdown-menu-sub-trigger"
+      data-inset={inset}
+      className={cn(
+        "focus:bg-accent focus:text-accent-foreground data-[state=open]:bg-accent data-[state=open]:text-accent-foreground flex cursor-default items-center rounded-sm px-2 py-1.5 text-sm outline-hidden select-none data-[inset]:pl-8",
+        className
+      )}
+      {...props}
+    >
+      {children}
+      <ChevronRightIcon className="ml-auto size-4" />
+    </DropdownMenuPrimitive.SubTrigger>
+  );
+}
+
+function DropdownMenuSubContent({
+  className,
+  ...props
+}: React.ComponentProps<typeof DropdownMenuPrimitive.SubContent>) {
+  return (
+    <DropdownMenuPrimitive.SubContent
+      data-slot="dropdown-menu-sub-content"
+      className={cn(
+        "bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 min-w-[8rem] origin-(--radix-dropdown-menu-content-transform-origin) overflow-hidden rounded-md border p-1 shadow-lg",
+        className
+      )}
+      {...props}
+    />
+  );
+}
+
+export {
+  DropdownMenu,
+  DropdownMenuPortal,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuLabel,
+  DropdownMenuItem,
+  DropdownMenuCheckboxItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuShortcut,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
+};
+
 // ====== FILE: src\components\ui\label.tsx ======
 
 "use client";
@@ -5748,7 +6130,7 @@ function SelectTrigger({
       data-slot="select-trigger"
       data-size={size}
       className={cn(
-        "flex w-fit items-center justify-between gap-2 whitespace-nowrap rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs transition-[color,box-shadow] outline-none data-[placeholder]:text-muted-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:border-ring disabled:cursor-not-allowed disabled:opacity-50 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 data-[size=default]:h-9 data-[size=sm]:h-8 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:hover:bg-input/50 dark:aria-invalid:ring-destructive/40",
+        "border-input data-[placeholder]:text-muted-foreground [&_svg:not([class*='text-'])]:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:bg-input/30 dark:hover:bg-input/50 flex w-fit items-center justify-between gap-2 rounded-md border bg-transparent px-3 py-2 text-sm whitespace-nowrap shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         className
       )}
       {...props}
@@ -5893,6 +6275,148 @@ export {
   SelectSeparator,
   SelectTrigger,
   SelectValue,
+};
+
+// ====== FILE: src\components\ui\sheet.tsx ======
+
+"use client";
+
+import * as React from "react";
+import * as SheetPrimitive from "@radix-ui/react-dialog";
+import { XIcon } from "lucide-react";
+
+import { cn } from "@/app/lib/utils";
+
+function Sheet({ ...props }: React.ComponentProps<typeof SheetPrimitive.Root>) {
+  return <SheetPrimitive.Root data-slot="sheet" {...props} />;
+}
+
+function SheetTrigger({
+  ...props
+}: React.ComponentProps<typeof SheetPrimitive.Trigger>) {
+  return <SheetPrimitive.Trigger data-slot="sheet-trigger" {...props} />;
+}
+
+function SheetClose({
+  ...props
+}: React.ComponentProps<typeof SheetPrimitive.Close>) {
+  return <SheetPrimitive.Close data-slot="sheet-close" {...props} />;
+}
+
+function SheetPortal({
+  ...props
+}: React.ComponentProps<typeof SheetPrimitive.Portal>) {
+  return <SheetPrimitive.Portal data-slot="sheet-portal" {...props} />;
+}
+
+function SheetOverlay({
+  className,
+  ...props
+}: React.ComponentProps<typeof SheetPrimitive.Overlay>) {
+  return (
+    <SheetPrimitive.Overlay
+      data-slot="sheet-overlay"
+      className={cn(
+        "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/50",
+        className
+      )}
+      {...props}
+    />
+  );
+}
+
+function SheetContent({
+  className,
+  children,
+  side = "right",
+  ...props
+}: React.ComponentProps<typeof SheetPrimitive.Content> & {
+  side?: "top" | "right" | "bottom" | "left";
+}) {
+  return (
+    <SheetPortal>
+      <SheetOverlay />
+      <SheetPrimitive.Content
+        data-slot="sheet-content"
+        className={cn(
+          "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out fixed z-50 flex flex-col gap-4 shadow-lg transition ease-in-out data-[state=closed]:duration-300 data-[state=open]:duration-500",
+          side === "right" &&
+            "data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right inset-y-0 right-0 h-full w-3/4 border-l sm:max-w-sm",
+          side === "left" &&
+            "data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left inset-y-0 left-0 h-full w-3/4 border-r sm:max-w-sm",
+          side === "top" &&
+            "data-[state=closed]:slide-out-to-top data-[state=open]:slide-in-from-top inset-x-0 top-0 h-auto border-b",
+          side === "bottom" &&
+            "data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom inset-x-0 bottom-0 h-auto border-t",
+          className
+        )}
+        {...props}
+      >
+        {children}
+        <SheetPrimitive.Close className="ring-offset-background focus:ring-ring data-[state=open]:bg-secondary absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none">
+          <XIcon className="size-4" />
+          <span className="sr-only">Close</span>
+        </SheetPrimitive.Close>
+      </SheetPrimitive.Content>
+    </SheetPortal>
+  );
+}
+
+function SheetHeader({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="sheet-header"
+      className={cn("flex flex-col gap-1.5 p-4", className)}
+      {...props}
+    />
+  );
+}
+
+function SheetFooter({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="sheet-footer"
+      className={cn("mt-auto flex flex-col gap-2 p-4", className)}
+      {...props}
+    />
+  );
+}
+
+function SheetTitle({
+  className,
+  ...props
+}: React.ComponentProps<typeof SheetPrimitive.Title>) {
+  return (
+    <SheetPrimitive.Title
+      data-slot="sheet-title"
+      className={cn("text-foreground font-semibold", className)}
+      {...props}
+    />
+  );
+}
+
+function SheetDescription({
+  className,
+  ...props
+}: React.ComponentProps<typeof SheetPrimitive.Description>) {
+  return (
+    <SheetPrimitive.Description
+      data-slot="sheet-description"
+      className={cn("text-muted-foreground text-sm", className)}
+      {...props}
+    />
+  );
+}
+
+export {
+  Sheet,
+  SheetTrigger,
+  SheetClose,
+  SheetContent,
+  SheetHeader,
+  SheetFooter,
+  SheetTitle,
+  SheetDescription,
 };
 
 // ====== FILE: src\app\components\Admin\invoiceSummary.tsx ======

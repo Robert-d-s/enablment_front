@@ -5,11 +5,11 @@ import { AnimatePresence, motion } from "framer-motion";
 import type { NextPage } from "next";
 import { useState } from "react";
 import NavBar from "@/app/components/navBar";
-import { BackgroundBeams } from "@/app/components/ui/background-beams";
-import ContactForm from "@/app/components/contactForm";
-import ClientColab from "@/app/components/clientColab";
+import { BackgroundBeams } from "@/components/ui/background-beams";
+import ContactForm from "@/app/components/landingPage/contactForm";
+import ClientColab from "@/app/components/landingPage/clientColab";
 import Footer from "@/app/components/footer";
-import SectionAnimation from "@/app/components/sectionAnimation";
+import SectionAnimation from "@/app/components/landingPage/sectionAnimation";
 
 const Home: NextPage = () => {
   const sections = [

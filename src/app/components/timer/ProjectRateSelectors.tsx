@@ -2,7 +2,7 @@
 
 import React from "react";
 import { ApolloError } from "@apollo/client";
-import { formatTimeFromMilliseconds } from "../utils/timeUtils";
+import { formatTimeFromMilliseconds } from "@/app/utils/timeUtils";
 import {
   Select,
   SelectContent,
