@@ -100,8 +100,10 @@ export default nextConfig;
     "@radix-ui/react-slot": "^1.2.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
     "framer-motion": "^12.3.1",
     "graphql": "^16.10.0",
+    "graphql-tag": "^2.12.6",
     "lucide-react": "^0.475.0",
     "next": "15.1.6",
     "react": "^19.0.0",
@@ -505,11 +507,11 @@ import { AnimatePresence, motion } from "framer-motion";
 import type { NextPage } from "next";
 import { useState } from "react";
 import NavBar from "@/app/components/navBar";
-import { BackgroundBeams } from "@/app/components/ui/background-beams";
-import ContactForm from "@/app/components/contactForm";
-import ClientColab from "@/app/components/clientColab";
+import { BackgroundBeams } from "@/components/ui/background-beams";
+import ContactForm from "@/app/components/landingPage/contactForm";
+import ClientColab from "@/app/components/landingPage/clientColab";
 import Footer from "@/app/components/footer";
-import SectionAnimation from "@/app/components/sectionAnimation";
+import SectionAnimation from "@/app/components/landingPage/sectionAnimation";
 
 const Home: NextPage = () => {
   const sections = [
@@ -679,7 +681,7 @@ export interface TimerState {
 "use client";
 
 import React from "react";
-import NavigationBar from "../components/NavigationBar";
+import NavigationBar from "@/app/components/Admin/NavigationBar";
 import UserManagementSection from "@/app/components/Admin/userManagementSection";
 import TotalTimeSpent from "@/app/components/Admin/totalTimeSpent";
 import RatesManager from "@/app/components/Admin/ratesManager";
@@ -725,515 +727,6 @@ const AdminPage: React.FC = () => {
 };
 
 export default AdminPage;
-
-// ====== FILE: src\app\components\aboutSection.tsx ======
-
-import React from "react";
-
-interface IDefinition {
-  term: string;
-  description: string;
-}
-
-interface IAboutContent {
-  definitions: IDefinition[];
-  transparency: string[];
-  organization: string[];
-}
-
-const aboutContent: IAboutContent = {
-  definitions: [
-    {
-      term: "Collaborator",
-      description:
-        "Is a client company, who is subject to a collaboration with Enablment.",
-    },
-    {
-      term: "Enabler",
-      description:
-        "Conventionally known as a consultant, but we enable Collaborators. We exist because we are Enablers who love to devise and create delightful technical solutions with Collaborators.",
-    },
-  ],
-  transparency: [
-    "We demystify the conventional consultancy-client relationship.",
-    "We want transparency. In the sense that we have structurally implemented it in our professional relationship with Collaborators.",
-    "We want to communicate openly with Collaborators whether an Enabler is experienced in the given tech or needs to learn new components.",
-    "Consequently, we deploy varied rates for varied tasks, supported by a decision tree and a detailed invoice report.",
-  ],
-  organization: [
-    "We place decision-making where it is due.",
-    "Enablment is expanding on the idea of a flat hierarchy and is transitioning towards an organization with distributed leadership.",
-    "We have a passion for rethinking and refining processes, why we deploy slim and execution-oriented project teams. That means we have redefined the project manager as a role that is shared by Collaborators and Enablers, but it is structured by a system landscape.",
-    "We have added what we call work groups. These are diverse groups of Enablers which only exist to support each other in their decision-making.",
-    "At Enablement, everyone is passionate about digitization and capable to execute on it.",
-  ],
-};
-
-const AboutSection: React.FC = () => {
-  return (
-    <div className="space-y-8 p-6">
-      <h2 className="text-3xl mb-4 font-pt-sans-bold-900">About Enablment</h2>
-      <div style={{ maxHeight: "calc(100vh - 300px)", overflowY: "auto" }}>
-        <section className="pb-4">
-          <h3 className="text-2xl font-semibold mb-2">Definitions</h3>
-          {aboutContent.definitions.map((def, index) => (
-            <div key={index} className="mb-3">
-              <p style={{ lineHeight: "1.4" }} className="text-lg">
-                <span className="font-bold">{def.term}:</span> {def.description}
-              </p>
-            </div>
-          ))}
-        </section>
-
-        <section className="flex flex-col md:flex-row space-y-4 gap-4">
-          <div className="md:w-1/2">
-            <h3 className="text-2xl font-semibold mb-2">Transparency</h3>
-            {aboutContent.transparency.map((item, index) => (
-              <div key={index} className="mb-3">
-                <p
-                  style={{ lineHeight: "1.4" }}
-                  className="text-lg font-roboto"
-                >
-                  {item}
-                </p>
-              </div>
-            ))}
-          </div>
-          <div className="md:w-1/2 flex justify-center shadow-md">
-            <video
-              className="rounded-lg lazy h-full w-full object-cover"
-              autoPlay
-              loop
-              muted
-              playsInline
-              preload="metadata"
-            >
-              <source src="/video/transparancy.mp4" type="video/mp4" />
-              Your browser does not support the video tag.
-            </video>
-          </div>
-        </section>
-
-        <section className="flex flex-col md:flex-row-reverse mt-6 gap-4">
-          <div className="md:w-1/2 mt-6">
-            <h3 className="text-2xl font-semibold mb-2">Organization</h3>
-            {aboutContent.organization.map((item, index) => (
-              <div key={index} className="mb-3">
-                <p
-                  style={{ lineHeight: "1.4" }}
-                  className="text-lg font-roboto"
-                >
-                  {item}
-                </p>
-              </div>
-            ))}
-          </div>
-          <div className="md:w-1/2 flex justify-center">
-            <video
-              className="rounded-lg lazy h-full w-full object-cover"
-              autoPlay
-              loop
-              muted
-              playsInline
-              preload="metadata"
-            >
-              <source src="/video/meeting.mp4" type="video/mp4" />
-              Your browser does not support the video tag.
-            </video>
-          </div>
-        </section>
-      </div>
-    </div>
-  );
-};
-
-export default AboutSection;
-
-// ====== FILE: src\app\components\clientColab.tsx ======
-
-"use client";
-
-import React from "react";
-
-// Define the TypeScript type for the table data
-type ClientServiceData = {
-  client: string;
-  year: number;
-  services: string;
-};
-interface ServiceTableProps {
-  onContactClick: () => void;
-}
-
-// Sample data array
-const tableData: ClientServiceData[] = [
-  {
-    client: "Modstrøm",
-    year: 2023,
-    services: "Climate Footprint Reporting: Scope 1 and 2",
-  },
-  { client: "Junkfood", year: 2023, services: "Climate Footprint Reporting" },
-  { client: "Confidential", year: 2023, services: "Cloud, User Platform" },
-  { client: "Shipping Company", year: 2023, services: "Cloud, User Platform" },
-  { client: "B93", year: 2023, services: "Website, UI & UX" },
-  {
-    client: "B:A:M",
-    year: 2024,
-    services: "Video Streaming Platform and Mobil App",
-  },
-  { client: "H5", year: 2024, services: "Website" },
-];
-
-const ClientColab: React.FC<ServiceTableProps> = ({ onContactClick }) => {
-  return (
-    <div className="flex flex-col mx-2 z-10">
-      <p className="text-3xl font-semibold mb-2 text-center bg-white shadow rounded-lg sm:text-2xl">
-        Our Happy Collaborators
-      </p>
-      {tableData.map((item, index) => (
-        <div key={index} className="w-full pb-2">
-          <div className="bg-white shadow rounded-lg sm:p-1 sm:text-sm">
-            <h3 className="text-lg sm:text-md font-semibold">{item.client}</h3>
-            <p className="text-gray-900 font-roboto">Year: {item.year}</p>
-            <p className="text-gray-900 font-roboto">
-              Services: {item.services}
-            </p>
-          </div>
-        </div>
-      ))}
-      <div className="flex mt-2">
-        <button
-          className="bg-green-700 hover:bg-green-500 text-white font-bold py-2 px-4 rounded-full transition-colors duration-300 "
-          onClick={onContactClick}
-        >
-          Shall we collaborate ?
-        </button>
-      </div>
-    </div>
-  );
-};
-
-export default ClientColab;
-
-// ====== FILE: src\app\components\contactForm.tsx ======
-
-"use client";
-
-import React, { useState } from "react";
-import Image from "next/image";
-import { motion } from "framer-motion";
-
-interface ContactFormProps {
-  onSubmit: (data: { name: string; email: string; message: string }) => void;
-  onClose: () => void;
-  className?: string;
-  isOverlay?: boolean;
-}
-
-const ContactForm: React.FC<ContactFormProps> = ({
-  onSubmit,
-  onClose,
-  className = "",
-  isOverlay = true,
-}) => {
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    message: "",
-  });
-
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSubmit(formData);
-  };
-
-  const formContent = (
-    <div className="bg-white flex gap-4 rounded-lg shadow-lg p-8 m-4 lg:w-10/12 max-h-full overflow-y-auto contact-form-container">
-      <div>
-        <video
-          width="100%"
-          height="auto"
-          className="rounded-lg lazy"
-          autoPlay
-          loop
-          muted
-          playsInline
-          preload="metadata"
-        >
-          <source src="/video/email.mp4" type="video/mp4" />
-          Your browser does not support the video tag.
-        </video>
-        <div className="flex justify-between ">
-          <div className="text-sm mt-4 w-1/2">
-            <p>Øster Allé 56 6. sal</p>
-            <p>2100 København Ø</p>
-            <p>CVR: 42309648</p>
-            <div className="lg:mt-6 flex flex-col space-y-2 lg:flex-row sm:mt-2 sm:space-y-0 lg:space-x-2 CandP">
-              <a href="#" className="text-blue-700 hover:underline">
-                Cookie policy
-              </a>
-              <span className="hidden lg:inline">•</span>
-              <a href="#" className="text-blue-700 hover:underline">
-                Privacy policy
-              </a>
-            </div>
-          </div>
-          <div className="flex flex-col items-end gap-2">
-            <div className="flex mt-4">
-              <span className="mr-3">
-                <Image
-                  src="/icons/instagram.svg"
-                  alt="instagram"
-                  width={24}
-                  height={24}
-                />
-              </span>
-              <span className="mr-3">
-                <Image
-                  src="/icons/facebook.svg"
-                  alt="facebook"
-                  width={24}
-                  height={24}
-                />
-              </span>
-              <span className="mr-4">
-                <Image
-                  src="/icons/linkedin.svg"
-                  alt="linkedin"
-                  width={24}
-                  height={24}
-                />
-              </span>
-              <span>
-                <Image
-                  src="/icons/twitter.svg"
-                  alt="twitter"
-                  width={24}
-                  height={24}
-                />
-              </span>
-            </div>
-            <div className="flex gap-1 items-center mt-4">
-              <span className="text-green-700">(+45) 22 92 67 80</span>
-              <Image
-                src="/icons/phone.svg"
-                alt="call"
-                width={24}
-                height={24}
-                className="align-middle"
-              />
-            </div>
-            <div className="flex gap-1 items-center ">
-              <span className="text-green-700 mb-1">gd@enablment.com</span>
-              <Image
-                src="/icons/mail.svg"
-                alt="email"
-                width={24}
-                height={24}
-                className="align-middle"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-      <div>
-        <div className="flex flex-col justify-between h-full">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg text-gray-900">
-              To: <span className="text-green-600 font-bold">Enablment</span>
-            </h2>
-            <button
-              className="flex-none w-12 h-12 bg-black text-xl text-white rounded-full hover:bg-red-500 hover:scale-105 transition transform duration-200 ease-in-out"
-              onClick={onClose}
-            >
-              ✕
-            </button>
-          </div>
-          <form onSubmit={handleSubmit} className="flex flex-col flex-grow">
-            <div className="flex-grow">
-              <input
-                type="text"
-                name="name"
-                placeholder="Name"
-                className="w-full mb-4 p-2 border border-gray-500 rounded"
-                onChange={handleChange}
-                required
-              />
-              <input
-                type="email"
-                name="email"
-                placeholder="E-mail"
-                className="w-full mb-4 p-2 border border-gray-500 rounded"
-                onChange={handleChange}
-                required
-              />
-              <textarea
-                name="message"
-                placeholder="Your message"
-                className="w-full mb-4 p-2 border border-gray-500 rounded"
-                onChange={handleChange}
-                required
-              />
-            </div>
-            <div className="flex items-center mt-4 sm:mt-0">
-              <div className="text-xs text-gray-500 flex-grow">
-                This site is protected by reCAPTCHA and the Google
-                <a href="#" className="text-blue-700 hover:underline">
-                  {" "}
-                  Privacy Policy
-                </a>{" "}
-                and
-                <a href="#" className="text-blue-700 hover:underline">
-                  {" "}
-                  Terms of Service
-                </a>{" "}
-                apply.
-              </div>
-              <button
-                type="submit"
-                className="flex-none flex items-center justify-center w-12 h-12 bg-black text-white p-2 rounded-full hover:bg-green-500 hover:scale-105 transition transform duration-200 ease-in-out"
-                aria-label="Send"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  className="w-6 h-6 text-white"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M14 5l7 7m0 0l-7 7m7-7H3"
-                  />
-                </svg>
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-  );
-
-  // If not used as an overlay, just return the form content
-  if (!isOverlay) {
-    return formContent;
-  }
-
-  // Use as a modal overlay with animation
-  return (
-    <motion.div
-      className={`fixed inset-0 flex justify-center items-center z-40 ${className}`}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.3 }}
-    >
-      <div
-        className="absolute inset-0 bg-black bg-opacity-50"
-        onClick={onClose}
-      ></div>
-      <div className="z-50">{formContent}</div>
-    </motion.div>
-  );
-};
-
-export default ContactForm;
-
-// ====== FILE: src\app\components\contentWrapper.tsx ======
-
-"use client";
-
-import { motion, useAnimation } from "framer-motion";
-import React, { useEffect, PropsWithChildren } from "react";
-
-interface ContentWrapperProps {
-  isActive: boolean;
-}
-
-export const ContentWrapper: React.FC<
-  PropsWithChildren<ContentWrapperProps>
-> = ({ isActive, children }) => {
-  const controls = useAnimation();
-
-  useEffect(() => {
-    controls.start(isActive ? "visible" : "hidden");
-  }, [isActive, controls]);
-
-  const contentVariants = {
-    visible: {
-      opacity: 1,
-      maxHeight: "1000px",
-      overflow: "hidden",
-      transition: { duration: 0.5 },
-    },
-    hidden: {
-      opacity: 0,
-      maxHeight: 0, // Collapse content area when hidden
-      overflow: "hidden",
-      transition: { duration: 0.5 },
-    },
-  };
-
-  return (
-    <motion.div variants={contentVariants} animate={controls} initial="hidden">
-      {children}
-    </motion.div>
-  );
-};
-
-// ====== FILE: src\app\components\FeedbackMessages.tsx ======
-
-"use client";
-import React from "react";
-
-interface FeedbackMessagesProps {
-  submissionSuccess: boolean;
-  submissionError: string;
-  resetMessage: boolean;
-  dateAlertMessage: string | null;
-}
-
-const FeedbackMessages: React.FC<FeedbackMessagesProps> = ({
-  submissionSuccess,
-  submissionError,
-  resetMessage,
-  dateAlertMessage,
-}) => {
-  return (
-    <div className="absolute top-5 right-5 z-50 flex flex-col items-end space-y-2">
-      {submissionSuccess && (
-        <div className="bg-green-100 text-green-800 text-sm font-semibold px-4 py-2 rounded-lg shadow-lg transition ease-out duration-300">
-          Time entry saved!
-        </div>
-      )}
-      {submissionError && (
-        <div className="bg-red-100 text-red-800 text-sm font-semibold px-4 py-2 rounded-lg shadow-lg transition ease-out duration-300">
-          {submissionError}
-        </div>
-      )}
-      {resetMessage && (
-        <div className="bg-yellow-500 text-blue-800 text-sm font-semibold px-4 py-2 rounded-lg shadow-lg transition ease-out duration-300">
-          Timer reset!
-        </div>
-      )}
-      {dateAlertMessage && (
-        <div className="bg-red-100 text-red-800 text-sm font-semibold px-4 py-2 rounded-lg shadow-lg transition ease-out duration-300">
-          {dateAlertMessage}
-        </div>
-      )}
-    </div>
-  );
-};
-
-export default FeedbackMessages;
 
 // ====== FILE: src\app\components\footer.tsx ======
 
@@ -1471,458 +964,6 @@ const NavBar: React.FC<NavbarProps> = ({
 
 export default NavBar;
 
-// ====== FILE: src\app\components\NavigationBar.tsx ======
-
-"use client";
-
-import React from "react";
-import Image from "next/image";
-import Link from "next/link";
-import { clientLogout } from "@/app/lib/apolloClient";
-import { useAuthStore } from "../lib/authStore";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Menu, LogOut, User as UserIcon } from "lucide-react";
-
-const NavigationBar: React.FC = () => {
-  const user = useAuthStore((state) => state.user);
-
-  const handleLogout = async () => {
-    await clientLogout();
-  };
-
-  return (
-    <nav className="flex items-center justify-between p-4 bg-card border-b font-roboto-condensed shadow-sm">
-      <Link href="/" className="flex-shrink-0">
-        <Image
-          src="/logo.svg"
-          alt="Enablment-tt Logo"
-          width={180}
-          height={36}
-          priority
-          className="h-[36px] w-auto max-w-[100px] sm:max-w-[180px] transition-all duration-200 ease-in-out"
-        />
-      </Link>
-
-      <div className="hidden md:flex flex-grow items-center justify-center gap-6 font-medium text-sm uppercase">
-        <Link
-          href="/issuesPage"
-          className="text-muted-foreground hover:text-foreground transition-colors"
-        >
-          Issues
-        </Link>
-        <Link
-          href="/adminPage"
-          className="text-muted-foreground hover:text-foreground transition-colors"
-        >
-          Admin
-        </Link>
-        <Link
-          href="/timeKeeper"
-          className="text-muted-foreground hover:text-foreground transition-colors"
-        >
-          Timekeeper
-        </Link>
-      </div>
-
-      <div className="flex items-center gap-4">
-        <div className="hidden md:flex items-center gap-3">
-          {user ? (
-            <span className="text-sm text-muted-foreground">{user.email}</span>
-          ) : (
-            <span className="text-sm text-muted-foreground italic">
-              Loading...
-            </span>
-          )}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleLogout}
-            aria-label="Logout"
-          >
-            <LogOut className="h-4 w-4" />
-          </Button>
-        </div>
-
-        {/* Mobile Menu Dropdown */}
-        <div className="md:hidden">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="icon" aria-label="Open menu">
-                <Menu className="h-5 w-5" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              {/* Optional User Info Label */}
-              {user && (
-                <>
-                  <DropdownMenuLabel className="flex items-center gap-2 font-normal">
-                    <UserIcon className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground truncate">
-                      {user.email}
-                    </span>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                </>
-              )}
-              {/* Navigation Items */}
-              <DropdownMenuItem asChild>
-                <Link href="/issuesPage">Issues</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/adminPage">Admin</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/timeKeeper">Timekeeper</Link>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              {/* Logout Item */}
-              <DropdownMenuItem
-                onClick={handleLogout}
-                className="text-destructive focus:text-destructive focus:bg-destructive/10"
-              >
-                <LogOut className="mr-2 h-4 w-4" />
-                <span>Logout</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
-    </nav>
-  );
-};
-
-export default NavigationBar;
-
-// ====== FILE: src\app\components\peopleSection.tsx ======
-
-"use client";
-
-import React from "react";
-import Image from "next/image";
-
-interface Person {
-  name: string;
-  roles: string[];
-  images: [string, string];
-}
-
-const peopleData: Person[] = [
-  {
-    name: "Gustav Duus",
-    images: ["/members/ceo_1.jpg", "/members/ceo_2.jpg"],
-    roles: ["CEO", "Co-Founder"],
-  },
-  {
-    name: "Joakim Larsen",
-    images: ["/members/m_1.jpg", "/members/m_2.jpg"],
-    roles: ["Co-Founder"],
-  },
-  {
-    name: "George Aftincai",
-    images: ["/members/gerorge_1.jpg", "/members/gerorge_2.jpg"],
-    roles: ["Front-end"],
-  },
-  {
-    name: "Riccardo Conti",
-    images: ["/members/ricardo_1.jpg", "/members/ricardo_2.jpg"],
-    roles: ["Front-end", "Mobile"],
-  },
-  {
-    name: "Sam Hakimane",
-    images: ["/members/sam_1.jpg", "/members/sam_2.jpg"],
-    roles: ["Back-end"],
-  },
-  {
-    name: "Jedrzej Lagodzinski",
-    images: ["/members/j_1.jpg", "/members/j_2.jpg"],
-    roles: ["Front-end"],
-  },
-  {
-    name: "David Lin",
-    images: ["/members/david_1.jpg", "/members/david_2.jpg"],
-    roles: ["Front-end", "Design"],
-  },
-];
-
-interface PeopleSectionProps {
-  isActive: boolean;
-}
-
-const PeopleSection: React.FC<PeopleSectionProps> = ({ isActive }) => {
-  if (!isActive) return null;
-  return (
-    <div className="p-4">
-      <h2 className="text-3xl font-pt-sans-bold-900 mb-4 mx-4">People</h2>
-      <div className="people-section grid grid-cols-1 sm:grid-cols-3 gap-4 p-4">
-        {peopleData.map((person, index) => (
-          <PersonCard key={index} person={person} />
-        ))}
-      </div>
-    </div>
-  );
-};
-
-interface PersonCardProps {
-  person: Person;
-}
-
-type RoleIconMappingType = {
-  [roleName: string]: string;
-};
-
-const roleIconMapping: RoleIconMappingType = {
-  CEO: "ceo.svg",
-  "Co-Founder": "founder.svg",
-  "Front-end": "front.svg",
-  Mobile: "mobile.svg",
-  "Back-end": "back.svg",
-  Design: "design.svg",
-};
-
-const getIconPath = (role: string): string => {
-  return `/icons/${roleIconMapping[role] || "default-icon.svg"}`;
-};
-
-const PersonCard: React.FC<PersonCardProps> = ({ person }) => {
-  const [isHovered, setIsHovered] = React.useState(false);
-  return (
-    <div
-      className="person-card cursor-pointer overflow-hidden relative w-full h-auto shadow-lg"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      <div
-        className="relative w-full md:w-auto lg:w-full aspect-w-1 aspect-h-1"
-        style={{ paddingTop: "calc(512 / 342 * 100%)" }}
-      >
-        <div
-          className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
-            isHovered ? "opacity-0" : "opacity-100"
-          }`}
-          style={{ paddingTop: "calc(512 / 342 * 100%)" }}
-        >
-          <Image
-            src={person.images[0]}
-            alt={`${person.name} - Base`}
-            fill
-            sizes="(max-width: 768px) 100vw, 50vw"
-            className="rounded-lg"
-          />
-        </div>
-        <div
-          className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
-            isHovered ? "opacity-100" : "opacity-0"
-          }`}
-          style={{ paddingTop: "calc(512 / 342 * 100%)" }}
-        >
-          <Image
-            src={person.images[1]}
-            alt={`${person.name} - Hover`}
-            fill
-            sizes="(max-width: 768px) 100vw, 50vw"
-            className="rounded-lg"
-          />
-        </div>
-      </div>
-      <div className="absolute inset-0 flex flex-col justify-end p-4 rounded-lg">
-        <div
-          style={{ width: "fit-content" }}
-          className="bg-black bg-opacity-40 lg:p-2 sm:p-1"
-        >
-          <h3 className="text-white lg:text-xl md:text-sm font-bold">
-            {person.name}
-          </h3>
-        </div>
-        {person.roles.map((role, index) => (
-          <div key={index} style={{ width: "fit-content" }}>
-            <div className="bg-black bg-opacity-40 flex items-center">
-              <div className="relative mr-1 flex justify-center items-center w-8 h-8 sm:w-[3vw] sm:h-[3vw] lg:w-[2vw] lg:h-[2vw] md:w-[3vw] md:h-[3vw]">
-                <Image
-                  src={getIconPath(role)}
-                  alt={`${role} icon`}
-                  fill
-                  className="filter invert"
-                />
-              </div>
-              <span className="text-white lg:text-lg md:text-sm mr-2">
-                {role}
-              </span>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
-
-export default PeopleSection;
-
-// ====== FILE: src\app\components\ProjectRateSelectors.tsx ======
-
-"use client";
-
-import React from "react";
-import { ApolloError } from "@apollo/client";
-import { formatTimeFromMilliseconds } from "../utils/timeUtils";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
-import { Hourglass, Loader2 } from "lucide-react";
-
-interface Project {
-  id: string;
-  name: string;
-  teamName?: string;
-}
-
-interface Rate {
-  id: string;
-  name: string;
-  rate: number;
-}
-
-interface ProjectRateSelectorsProps {
-  userProjects: Project[];
-  selectedProject: string | null;
-  setSelectedProject: (projectId: string) => void;
-  rates: Rate[];
-  selectedRate: string | null;
-  setSelectedRate: (rateId: string) => void;
-  totalTimeLoading: boolean;
-  totalTimeError: ApolloError | undefined;
-  totalTime: number;
-}
-
-const ProjectRateSelectors: React.FC<ProjectRateSelectorsProps> = ({
-  userProjects,
-  selectedProject,
-  setSelectedProject,
-  rates,
-  selectedRate,
-  setSelectedRate,
-  totalTimeLoading,
-  totalTimeError,
-  totalTime,
-}) => {
-  return (
-    <Card className="overflow-visible">
-      <CardHeader>
-        <CardTitle>Project & Rate</CardTitle>
-        <CardDescription>
-          Select the project and rate for this time entry.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Project Selector */}
-        <div className="space-y-2">
-          <Label htmlFor="project-select">Project</Label>
-          <Select
-            value={selectedProject ?? ""}
-            onValueChange={setSelectedProject}
-            disabled={userProjects.length === 0}
-          >
-            {/* Use default trigger styles, add w-full for layout */}
-            <SelectTrigger id="project-select" className="w-full">
-              <SelectValue placeholder="Select a project..." />
-            </SelectTrigger>
-            {/* Use default content styles */}
-            <SelectContent position="popper">
-              {userProjects.length > 0 ? (
-                userProjects.map((project) => (
-                  // Use default item styles
-                  <SelectItem key={project.id} value={project.id}>
-                    {project.name}{" "}
-                    {project.teamName ? `(${project.teamName})` : ""}
-                  </SelectItem>
-                ))
-              ) : (
-                <div className="p-2 text-sm text-muted-foreground">
-                  No projects found.
-                </div>
-              )}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Rate Selector */}
-        <div className="space-y-2">
-          <Label htmlFor="rate-select">Rate</Label>
-          <Select
-            value={selectedRate ?? ""}
-            onValueChange={setSelectedRate}
-            disabled={!selectedProject || rates.length === 0}
-          >
-            <SelectTrigger id="rate-select" className="w-full border-input">
-              <SelectValue placeholder="Select a rate..." />
-            </SelectTrigger>
-            <SelectContent position="popper">
-              {rates.length > 0 ? (
-                rates.map((rate) => (
-                  <SelectItem key={rate.id} value={rate.id}>
-                    {rate.name} ({rate.rate} DKK/h)
-                  </SelectItem>
-                ))
-              ) : (
-                <div className="p-2 text-sm text-muted-foreground">
-                  {selectedProject
-                    ? "No rates for this project."
-                    : "Select a project first."}
-                </div>
-              )}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Total Time Display */}
-        <div className="border-t pt-4 mt-4">
-          <Label className="text-sm font-medium">Total Time on Project</Label>
-          <div className="flex items-center gap-2 mt-1">
-            <Hourglass className="h-5 w-5 text-muted-foreground" />
-            {totalTimeLoading ? (
-              <span className="flex items-center gap-1 text-muted-foreground italic">
-                <Loader2 className="h-4 w-4 animate-spin" /> Loading...
-              </span>
-            ) : totalTimeError ? (
-              <span className="text-sm text-red-600">Error loading time</span>
-            ) : (
-              <span className="text-lg font-semibold font-mono">
-                {formatTimeFromMilliseconds(totalTime)}
-              </span>
-            )}
-          </div>
-          {totalTimeError && (
-            <p className="text-xs text-red-500 mt-1">
-              {totalTimeError.message}
-            </p>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
-
-export default ProjectRateSelectors;
-
 // ====== FILE: src\app\components\ProjectSelector.tsx ======
 
 "use client";
@@ -1960,599 +1001,6 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
 };
 
 export default ProjectSelector;
-
-// ====== FILE: src\app\components\RateSelector.tsx ======
-
-"use client";
-
-import React from "react";
-
-type RateSelectorProps = {
-  rates: { id: string; name: string; rate: number }[];
-  selectedRate: string;
-  onRateChange: (rateId: string) => void;
-};
-
-const RateSelector: React.FC<RateSelectorProps> = ({
-  rates,
-  selectedRate,
-  onRateChange,
-}) => {
-  return (
-    <select
-      value={selectedRate}
-      onChange={(e) => onRateChange(e.target.value)}
-      className="form-input block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-    >
-      <option value="" disabled>
-        Select a rate
-      </option>
-      {rates.map((rate) => (
-        <option key={rate.id} value={rate.id}>
-          {rate.name} ({rate.rate})
-        </option>
-      ))}
-    </select>
-  );
-};
-
-export default RateSelector;
-
-// ====== FILE: src\app\components\sectionAnimation.tsx ======
-
-"use client";
-
-import React from "react";
-import { motion } from "framer-motion";
-import SectionWrapper from "@/app/components/sectionWrapper";
-
-interface SectionAnimationProps {
-  section: string;
-  navigationDirection: "forward" | "backward";
-  videoSrc?: string;
-}
-
-const SectionAnimation: React.FC<SectionAnimationProps> = ({
-  section,
-  navigationDirection,
-  videoSrc,
-}) => {
-  return (
-    <motion.div
-      key={section}
-      className="w-full"
-      initial={{
-        opacity: 0,
-        x: navigationDirection === "forward" ? 100 : -100,
-      }}
-      animate={{
-        opacity: 1,
-        x: 0,
-      }}
-      exit={{
-        opacity: 0,
-        x: navigationDirection === "forward" ? -100 : 100,
-      }}
-      transition={{
-        type: "spring",
-        stiffness: 80,
-        damping: 15,
-        mass: 1,
-      }}
-    >
-      <SectionWrapper
-        id={section}
-        content={section}
-        color={"bg-gray-200"}
-        videoSrc={videoSrc}
-      />
-    </motion.div>
-  );
-};
-
-export default SectionAnimation;
-
-// ====== FILE: src\app\components\sectionWrapper.tsx ======
-
-"use client";
-
-import React from "react";
-import PeopleSection from "@/app/components/peopleSection";
-import AboutSection from "@/app/components/aboutSection";
-import ServicesSection from "@/app/components/servicesSection";
-
-interface SectionProps {
-  id: string;
-  content: string;
-  color: string;
-  videoSrc?: string;
-}
-
-const SectionWrapper: React.FC<SectionProps> = ({
-  id,
-  content,
-  color,
-  videoSrc,
-}) => {
-  return (
-    <div
-      className={`section border-2 border-green-600 rounded-tl-3xl rounded-tr-3xl shadow-lg ${color} responsive-section`}
-      style={{
-        width: "100%",
-        boxSizing: "border-box",
-      }}
-    >
-      {id === "People" ? (
-        <div
-          className="overflow-y-auto"
-          style={{ maxHeight: "calc(100vh - 200px)" }}
-        >
-          <PeopleSection isActive={true} />
-        </div>
-      ) : id === "About" ? (
-        <AboutSection />
-      ) : id === "Services" ? (
-        <ServicesSection />
-      ) : videoSrc ? (
-        <div className="w-full h-full">
-          <video
-            className="video w-full h-full overflow-hidden rounded-tl-3xl rounded-tr-3xl object-cover"
-            autoPlay
-            loop
-            muted
-            playsInline
-          >
-            <source src={videoSrc} type="video/mp4" />
-            Your browser does not support the video tag.
-          </video>
-          <div className="flex overlay-text lg:bottom-48 p-4 lg:relative md:flex ">
-            <h2 className="lg:text-4xl font-bold text-white p-4 bg-black bg-opacity-50 rounded-lg sm:text-lg">
-              We enable Collaborators
-              <br /> to create delightful technical solutions
-            </h2>
-          </div>
-        </div>
-      ) : (
-        <>
-          <h2 className="text-2xl font-bold mb-4">{content}</h2>
-          <p className="text-gray-700">
-            Placeholder content for the {content} section.
-          </p>
-        </>
-      )}
-    </div>
-  );
-};
-
-export default SectionWrapper;
-
-// ====== FILE: src\app\components\servicesSection.tsx ======
-
-"use client";
-
-import React from "react";
-import Image from "next/image";
-
-interface IFeature {
-  name: string;
-  icon: string;
-}
-
-interface IService {
-  title: string;
-  description: string[];
-  icon: string;
-  features?: IFeature[];
-  imageUrl: string;
-}
-
-const servicesData: IService[] = [
-  {
-    title: "Digital Product Development",
-    description: [
-      "Do you know the feeling of navigating a website or a mobile application and it is either hideous or you are getting lost in the pages all the time?",
-      "UI and UX is the art of creating beautiful applications that offer a smooth user experience whether it is a web or mobile application.",
-      "Both are essential for creating a successful application. UI design ensures that the application looks visually appealing and attractive to users, while UX design ensures that the application is intuitive and easy to use.",
-      "Let us enable you to balance both.",
-    ],
-    icon: "/icons/digital.svg",
-    imageUrl: "/images/dpd.jpg",
-    features: [
-      {
-        name: "E-commerce & Websites",
-        icon: "/icons/e-commerce.svg",
-      },
-      {
-        name: "Mobile apps & Web applications",
-        icon: "/icons/mobile.svg",
-      },
-      {
-        name: "Digital Solutions & Platforms",
-        icon: "/icons/platforms.svg",
-      },
-    ],
-  },
-  {
-    title: "Climate Reporting",
-    description: [
-      "Searching for the right data? Preparing to report scope 1, 2 or 3? Or are you looking for internal tracking to make data-driven decisions to lower your climate footprint?",
-      "At Enablment, we have the technical skills to integrate with the correct data sources and align that data for trustworthy reporting. We can set up automated reporting flows from multiple data sources for internal tracking.",
-    ],
-    icon: "/icons/climate.svg",
-    imageUrl: "/images/climate.jpg",
-  },
-  {
-    title: "Insights through Data",
-    description: [
-      "On the journey of digitalization, automating and optimizing processes and data collection create the best fundamentals for an effective digital solution.",
-      "Luckily, we are more than stoked to help you with following.",
-    ],
-    icon: "/icons/data.svg",
-    imageUrl: "/images/data.jpg",
-  },
-  {
-    title: "Data Consolidation (Cloud)",
-    description: [
-      "Is it difficult, and time consuming gathering data, and structuring it for data analytics/insight?",
-      "This is the first step within data analytics and all companies will inevitably go through this transformation at some point. Once implemented there will be a consistent and reliable data foundation for all data analysis. Plus a setup like this is fully automated.",
-    ],
-    icon: "/icons/cloud.svg",
-    imageUrl: "/images/cloud.jpg",
-  },
-  {
-    title: "Business Intelligence (BI)",
-    description: [
-      "Do you have a database that is automatically sourcing the data for you? And is your data then, consequently, consolidated in one place and might even be structured? Now you want insight from your data?",
-      "This is Business Intelligence. We conduct a data analysis and transform your data, then we create dashboards to visualize the insight.",
-    ],
-    icon: "/icons/bi.svg",
-    imageUrl: "/images/bi.jpg",
-  },
-  {
-    title: "Machine Learning & Artificial Intelligence (ML & AI)",
-    description: [
-      "Is your decision-making process supplemented with insight and a descriptive data analysis through BI? Are you ready to let a data model offer you suggestions?",
-      "Certain trends and causalities that might not be visible to the human eye or the data input is simply too big. This is when you move from the descriptive to the prescriptive data analysis. A machine learning model can highlight causalities and forecast development.",
-    ],
-    icon: "/icons/ai.svg",
-    imageUrl: "/images/AI-ML.jpg",
-  },
-];
-
-const ServicesSection: React.FC = () => {
-  return (
-    <div className="space-y-8 p-4 sm:p-6">
-      <h2 className="text-3xl font-pt-sans-bold-900 mb-4">Services</h2>
-      <div
-        style={{
-          maxHeight: "calc(100vh - 300px)",
-          overflowY: "auto",
-        }}
-      >
-        {servicesData.map((service, index) => (
-          <div key={index} className="mb-6">
-            <div className="flex flex-wrap items-stretch shadow-lg rounded-lg overflow-hidden lg:justify-start sm:justify-center lg:flex-nowrap space-x-4">
-              <div className="relative w-full flex-grow tablet:flex-grow-0 md:w-1/2  services-image-container">
-                <Image
-                  src={service.imageUrl}
-                  alt={`${service.title}`}
-                  layout="fill"
-                  objectFit="cover"
-                  sizes="(min-width: 768px) 50vw, 100vw"
-                />
-              </div>
-              <div className="text-container lg:w-1/2 sm:mt-4">
-                <div className="flex items-center space-x-2">
-                  <Image
-                    src={service.icon}
-                    alt={`${service.title} Icon`}
-                    width={24}
-                    height={24}
-                  />
-                  <h3 className="text-2xl font-semibold mb-2">
-                    {service.title}
-                  </h3>
-                </div>
-                {service.description.map((paragraph, pIndex) => (
-                  <p
-                    key={pIndex}
-                    style={{ lineHeight: "1.4" }}
-                    className="text-lg mb-3"
-                  >
-                    {paragraph}
-                  </p>
-                ))}
-                {service.features && (
-                  <div className="flex flex-col space-y-2 mt-4">
-                    {service.features.map((feature, fIndex) => (
-                      <div
-                        key={fIndex}
-                        className="flex items-center space-x-2 "
-                      >
-                        <Image
-                          src={feature.icon}
-                          alt={`${feature.name} Icon`}
-                          width={20}
-                          height={20}
-                        />
-                        <span style={{ lineHeight: "1.4" }} className="text-lg">
-                          {feature.name}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
-
-export default ServicesSection;
-
-// ====== FILE: src\app\components\TimerControls.tsx ======
-
-"use client";
-import React from "react";
-import { Button } from "@/components/ui/button";
-import { Play, Pause, RotateCcw, Send } from "lucide-react";
-
-interface TimerControlsProps {
-  isRunning: boolean;
-  handleStartStop: () => void;
-  handleReset: () => void;
-  handleSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
-  disabledStartPause: boolean;
-  disabledReset: boolean;
-  disabledSubmit: boolean;
-}
-
-const TimerControls: React.FC<TimerControlsProps> = ({
-  isRunning,
-  handleStartStop,
-  handleReset,
-  handleSubmit,
-  disabledStartPause,
-  disabledReset,
-  disabledSubmit,
-}) => {
-  return (
-    <form onSubmit={handleSubmit} className="w-full">
-      <div className="flex justify-center items-center gap-4 mt-4 w-full">
-        <Button
-          type="button"
-          variant={isRunning ? "destructive" : "default"}
-          size="lg"
-          onClick={handleStartStop}
-          disabled={disabledStartPause}
-          className={`flex items-center gap-2 ${
-            isRunning
-              ? "bg-red-600 hover:bg-red-700"
-              : "bg-green-600 hover:bg-green-700"
-          }`}
-        >
-          {isRunning ? (
-            <Pause className="h-5 w-5" />
-          ) : (
-            <Play className="h-5 w-5" />
-          )}
-          {isRunning ? "Pause" : "Start"}
-        </Button>
-
-        <Button
-          type="button"
-          variant="outline"
-          size="lg"
-          onClick={handleReset}
-          disabled={disabledReset}
-          className="flex items-center gap-2"
-        >
-          <RotateCcw className="h-5 w-5" />
-          Reset
-        </Button>
-
-        <Button
-          type="submit"
-          variant="default"
-          size="lg"
-          disabled={disabledSubmit}
-          className="flex items-center gap-2"
-        >
-          <Send className="h-5 w-5" />
-          Submit
-        </Button>
-      </div>
-    </form>
-  );
-};
-
-export default TimerControls;
-
-// ====== FILE: src\app\components\TimerDisplay.tsx ======
-
-import React from "react";
-import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
-import "@/app/globals.css";
-import {
-  formatDateForDisplay,
-  formatTimeFromISOString,
-} from "../utils/timeUtils";
-import { formatISO, isToday, isSameDay, getMonth } from "date-fns";
-import { Timer, ChevronLeft, ChevronRight } from "lucide-react";
-import { cn } from "@/app/lib/utils";
-import { buttonVariants } from "@/components/ui/button";
-
-interface TimerDisplayProps {
-  isRunning: boolean;
-  displayTime: string;
-  initialStartTime: Date | null;
-  handleDateChange: (date: Date | null) => void;
-}
-
-const getDayClassName = (
-  date: Date,
-  selectedDate: Date | null,
-  currentMonthDate: Date
-) => {
-  return cn(
-    buttonVariants({ variant: "ghost" }),
-    "h-8 w-8 p-0 font-normal text-sm", // Slightly smaller days
-    "aria-selected:opacity-100 rounded-md", // Keep rounding
-    !isSameDay(getMonth(date), getMonth(currentMonthDate)) &&
-      "text-muted-foreground opacity-50", // Dim days outside month
-    isToday(date) && "bg-accent text-accent-foreground",
-    selectedDate &&
-      isSameDay(date, selectedDate) &&
-      "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground", // Use hover variant
-    "focus:outline-none focus:ring-1 focus:ring-ring"
-  );
-};
-
-// Helper for Time class styling
-const getTimeClassName = (time: Date, selected: Date | null) => {
-  const isSelected =
-    selected &&
-    time.getHours() === selected.getHours() &&
-    time.getMinutes() === selected.getMinutes();
-  return cn(
-    "text-sm p-1 mx-1 flex justify-center items-center rounded-md cursor-pointer",
-    "hover:bg-accent hover:text-accent-foreground", // Hover effect
-    isSelected && "bg-primary text-primary-foreground hover:bg-primary/90" // Selected style (might be overridden by CSS)
-  );
-};
-
-const TimerDisplay: React.FC<TimerDisplayProps> = ({
-  isRunning,
-  displayTime,
-  initialStartTime,
-  handleDateChange,
-}) => {
-  return (
-    <div className="flex flex-col items-center gap-3 w-full">
-      {" "}
-      <div className="flex items-center justify-center gap-2 text-foreground mb-1">
-        <Timer
-          className={`h-5 w-5 ${
-            isRunning ? "text-green-500 animate-pulse" : "text-muted-foreground"
-          }`}
-        />
-        <div className="text-6xl md:text-7xl font-mono font-bold tracking-tighter text-center tabular-nums">
-          {" "}
-          {displayTime}
-        </div>
-      </div>
-      <div className="text-xs text-muted-foreground mb-2 text-center">
-        {" "}
-        Started:{" "}
-        {initialStartTime ? (
-          `${formatDateForDisplay(initialStartTime)} ${formatTimeFromISOString(
-            formatISO(initialStartTime)
-          )}`
-        ) : (
-          <span className="italic">Not Started</span>
-        )}
-      </div>
-      <div className="p-1 border rounded-md bg-card shadow-sm w-full max-w-xl overflow-hidden">
-        <DatePicker
-          inline
-          id="startDate"
-          selected={initialStartTime}
-          onChange={handleDateChange}
-          showTimeSelect
-          dateFormat="MMMM d, yyyy h:mm aa"
-          timeIntervals={15}
-          preventOpenOnFocus
-          // --- Styling Props ---
-          calendarClassName="bg-card rounded-lg shadow-lg border p-2"
-          dayClassName={(date) =>
-            getDayClassName(
-              date,
-              initialStartTime,
-              initialStartTime || new Date()
-            )
-          }
-          timeClassName={(time) => getTimeClassName(time, initialStartTime)}
-          timeFormat="h:mm aa"
-          timeCaption="Time"
-          // --- Custom Header ---
-          renderCustomHeader={({
-            date,
-            decreaseMonth,
-            increaseMonth,
-            prevMonthButtonDisabled,
-            nextMonthButtonDisabled,
-          }) => (
-            <div className="flex items-center justify-between px-1 py-1.5">
-              <button
-                type="button"
-                onClick={decreaseMonth}
-                disabled={prevMonthButtonDisabled}
-                className={cn(
-                  buttonVariants({ variant: "outline", size: "icon" }),
-                  "h-7 w-7 disabled:opacity-50 border"
-                )}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              <span className="text-sm font-medium">
-                {/* Display Month Year */}
-                {new Intl.DateTimeFormat("en-US", {
-                  month: "long",
-                  year: "numeric",
-                }).format(date)}
-              </span>
-              <button
-                type="button"
-                onClick={increaseMonth}
-                disabled={nextMonthButtonDisabled}
-                className={cn(
-                  buttonVariants({ variant: "outline", size: "icon" }),
-                  "h-7 w-7 disabled:opacity-50 border"
-                )}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
-          )}
-        />
-      </div>
-    </div>
-  );
-};
-
-export default TimerDisplay;
-
-// ====== FILE: src\app\components\UserSelector.tsx ======
-
-"use client";
-
-const UserSelector: React.FC<{
-  users: { id: string; email: string }[];
-  selectedUser: string;
-  onUserChange: (userId: string) => void;
-}> = ({ users, selectedUser, onUserChange }) => {
-  return (
-    <select
-      value={selectedUser}
-      onChange={(e) => onUserChange(e.target.value)}
-      className="form-input block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-    >
-      <option value="" disabled>
-        Select a user
-      </option>
-      {users.map((user) => (
-        <option key={user.id} value={user.id}>
-          {user.email}
-        </option>
-      ))}
-    </select>
-  );
-};
-export default UserSelector;
 
 // ====== FILE: src\app\dbSynch\page.tsx ======
 
@@ -4154,7 +2602,7 @@ import React, {
   useCallback,
 } from "react";
 import { gql, useQuery, useApolloClient } from "@apollo/client";
-import NavigationBar from "../components/NavigationBar";
+import NavigationBar from "@/app/components/Admin/NavigationBar";
 import { io, Socket } from "socket.io-client";
 
 type Label = {
@@ -5417,10 +3865,10 @@ import { useFeedbackState } from "@/app/hooks/useFeedbackState";
 import { useTimeKeeperQueries } from "@/app/hooks/useTimekeeperQueries";
 import { useTimeKeeperHandlers } from "@/app/hooks/useTimekeeperHandlers";
 import useTimeKeeperData from "@/app/hooks/useTimeKeeperData";
-import NavigationBar from "@/app/components/NavigationBar";
-import TimerDisplay from "@/app/components/TimerDisplay";
-import TimerControls from "@/app/components/TimerControls";
-import ProjectRateSelectors from "@/app/components/ProjectRateSelectors";
+import NavigationBar from "@/app/components/Admin/NavigationBar";
+import TimerDisplay from "@/app/components/timer/TimerDisplay";
+import TimerControls from "@/app/components/timer/TimerControls";
+import ProjectRateSelectors from "@/app/components/timer/ProjectRateSelectors";
 import { useTimerStore } from "@/app/lib/timerStore";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -5644,6 +4092,151 @@ export function formatTimeFromMilliseconds(ms: number): string {
     .toString()
     .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
 }
+
+// ====== FILE: src\components\ui\background-beams.tsx ======
+
+"use client";
+import React from "react";
+import { motion } from "framer-motion";
+import { cn } from "@/app/lib/utils";
+
+export const BackgroundBeams = React.memo(
+  ({ className }: { className?: string }) => {
+    const paths = [
+      "M-380 -189C-380 -189 -312 216 152 343C616 470 684 875 684 875",
+      "M-373 -197C-373 -197 -305 208 159 335C623 462 691 867 691 867",
+      "M-366 -205C-366 -205 -298 200 166 327C630 454 698 859 698 859",
+      "M-359 -213C-359 -213 -291 192 173 319C637 446 705 851 705 851",
+      "M-352 -221C-352 -221 -284 184 180 311C644 438 712 843 712 843",
+      "M-345 -229C-345 -229 -277 176 187 303C651 430 719 835 719 835",
+      "M-338 -237C-338 -237 -270 168 194 295C658 422 726 827 726 827",
+      "M-331 -245C-331 -245 -263 160 201 287C665 414 733 819 733 819",
+      "M-324 -253C-324 -253 -256 152 208 279C672 406 740 811 740 811",
+      "M-317 -261C-317 -261 -249 144 215 271C679 398 747 803 747 803",
+      "M-310 -269C-310 -269 -242 136 222 263C686 390 754 795 754 795",
+      "M-303 -277C-303 -277 -235 128 229 255C693 382 761 787 761 787",
+      "M-296 -285C-296 -285 -228 120 236 247C700 374 768 779 768 779",
+      "M-289 -293C-289 -293 -221 112 243 239C707 366 775 771 775 771",
+      "M-282 -301C-282 -301 -214 104 250 231C714 358 782 763 782 763",
+      "M-275 -309C-275 -309 -207 96 257 223C721 350 789 755 789 755",
+      "M-268 -317C-268 -317 -200 88 264 215C728 342 796 747 796 747",
+      "M-261 -325C-261 -325 -193 80 271 207C735 334 803 739 803 739",
+      "M-254 -333C-254 -333 -186 72 278 199C742 326 810 731 810 731",
+      "M-247 -341C-247 -341 -179 64 285 191C749 318 817 723 817 723",
+      "M-240 -349C-240 -349 -172 56 292 183C756 310 824 715 824 715",
+      "M-233 -357C-233 -357 -165 48 299 175C763 302 831 707 831 707",
+      "M-226 -365C-226 -365 -158 40 306 167C770 294 838 699 838 699",
+      "M-219 -373C-219 -373 -151 32 313 159C777 286 845 691 845 691",
+      "M-212 -381C-212 -381 -144 24 320 151C784 278 852 683 852 683",
+      "M-205 -389C-205 -389 -137 16 327 143C791 270 859 675 859 675",
+      "M-198 -397C-198 -397 -130 8 334 135C798 262 866 667 866 667",
+      "M-191 -405C-191 -405 -123 0 341 127C805 254 873 659 873 659",
+      "M-184 -413C-184 -413 -116 -8 348 119C812 246 880 651 880 651",
+      "M-177 -421C-177 -421 -109 -16 355 111C819 238 887 643 887 643",
+      "M-170 -429C-170 -429 -102 -24 362 103C826 230 894 635 894 635",
+      "M-163 -437C-163 -437 -95 -32 369 95C833 222 901 627 901 627",
+      "M-156 -445C-156 -445 -88 -40 376 87C840 214 908 619 908 619",
+      "M-149 -453C-149 -453 -81 -48 383 79C847 206 915 611 915 611",
+      "M-142 -461C-142 -461 -74 -56 390 71C854 198 922 603 922 603",
+      "M-135 -469C-135 -469 -67 -64 397 63C861 190 929 595 929 595",
+      "M-128 -477C-128 -477 -60 -72 404 55C868 182 936 587 936 587",
+      "M-121 -485C-121 -485 -53 -80 411 47C875 174 943 579 943 579",
+      "M-114 -493C-114 -493 -46 -88 418 39C882 166 950 571 950 571",
+      "M-107 -501C-107 -501 -39 -96 425 31C889 158 957 563 957 563",
+      "M-100 -509C-100 -509 -32 -104 432 23C896 150 964 555 964 555",
+      "M-93 -517C-93 -517 -25 -112 439 15C903 142 971 547 971 547",
+      "M-86 -525C-86 -525 -18 -120 446 7C910 134 978 539 978 539",
+      "M-79 -533C-79 -533 -11 -128 453 -1C917 126 985 531 985 531",
+      "M-72 -541C-72 -541 -4 -136 460 -9C924 118 992 523 992 523",
+      "M-65 -549C-65 -549 3 -144 467 -17C931 110 999 515 999 515",
+      "M-58 -557C-58 -557 10 -152 474 -25C938 102 1006 507 1006 507",
+      "M-51 -565C-51 -565 17 -160 481 -33C945 94 1013 499 1013 499",
+      "M-44 -573C-44 -573 24 -168 488 -41C952 86 1020 491 1020 491",
+      "M-37 -581C-37 -581 31 -176 495 -49C959 78 1027 483 1027 483",
+    ];
+    return (
+      <div
+        className={cn(
+          "absolute  h-full w-full inset-0  [mask-size:40px] [mask-repeat:no-repeat] flex items-center justify-center bg-slate-100",
+          className
+        )}
+      >
+        <svg
+          className=" z-0 h-full w-full pointer-events-none absolute "
+          width="100%"
+          height="100%"
+          viewBox="0 0 696 316"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M-380 -189C-380 -189 -312 216 152 343C616 470 684 875 684 875M-373 -197C-373 -197 -305 208 159 335C623 462 691 867 691 867M-366 -205C-366 -205 -298 200 166 327C630 454 698 859 698 859M-359 -213C-359 -213 -291 192 173 319C637 446 705 851 705 851M-352 -221C-352 -221 -284 184 180 311C644 438 712 843 712 843M-345 -229C-345 -229 -277 176 187 303C651 430 719 835 719 835M-338 -237C-338 -237 -270 168 194 295C658 422 726 827 726 827M-331 -245C-331 -245 -263 160 201 287C665 414 733 819 733 819M-324 -253C-324 -253 -256 152 208 279C672 406 740 811 740 811M-317 -261C-317 -261 -249 144 215 271C679 398 747 803 747 803M-310 -269C-310 -269 -242 136 222 263C686 390 754 795 754 795M-303 -277C-303 -277 -235 128 229 255C693 382 761 787 761 787M-296 -285C-296 -285 -228 120 236 247C700 374 768 779 768 779M-289 -293C-289 -293 -221 112 243 239C707 366 775 771 775 771M-282 -301C-282 -301 -214 104 250 231C714 358 782 763 782 763M-275 -309C-275 -309 -207 96 257 223C721 350 789 755 789 755M-268 -317C-268 -317 -200 88 264 215C728 342 796 747 796 747M-261 -325C-261 -325 -193 80 271 207C735 334 803 739 803 739M-254 -333C-254 -333 -186 72 278 199C742 326 810 731 810 731M-247 -341C-247 -341 -179 64 285 191C749 318 817 723 817 723M-240 -349C-240 -349 -172 56 292 183C756 310 824 715 824 715M-233 -357C-233 -357 -165 48 299 175C763 302 831 707 831 707M-226 -365C-226 -365 -158 40 306 167C770 294 838 699 838 699M-219 -373C-219 -373 -151 32 313 159C777 286 845 691 845 691M-212 -381C-212 -381 -144 24 320 151C784 278 852 683 852 683M-205 -389C-205 -389 -137 16 327 143C791 270 859 675 859 675M-198 -397C-198 -397 -130 8 334 135C798 262 866 667 866 667M-191 -405C-191 -405 -123 0 341 127C805 254 873 659 873 659M-184 -413C-184 -413 -116 -8 348 119C812 246 880 651 880 651M-177 -421C-177 -421 -109 -16 355 111C819 238 887 643 887 643M-170 -429C-170 -429 -102 -24 362 103C826 230 894 635 894 635M-163 -437C-163 -437 -95 -32 369 95C833 222 901 627 901 627M-156 -445C-156 -445 -88 -40 376 87C840 214 908 619 908 619M-149 -453C-149 -453 -81 -48 383 79C847 206 915 611 915 611M-142 -461C-142 -461 -74 -56 390 71C854 198 922 603 922 603M-135 -469C-135 -469 -67 -64 397 63C861 190 929 595 929 595M-128 -477C-128 -477 -60 -72 404 55C868 182 936 587 936 587M-121 -485C-121 -485 -53 -80 411 47C875 174 943 579 943 579M-114 -493C-114 -493 -46 -88 418 39C882 166 950 571 950 571M-107 -501C-107 -501 -39 -96 425 31C889 158 957 563 957 563M-100 -509C-100 -509 -32 -104 432 23C896 150 964 555 964 555M-93 -517C-93 -517 -25 -112 439 15C903 142 971 547 971 547M-86 -525C-86 -525 -18 -120 446 7C910 134 978 539 978 539M-79 -533C-79 -533 -11 -128 453 -1C917 126 985 531 985 531M-72 -541C-72 -541 -4 -136 460 -9C924 118 992 523 992 523M-65 -549C-65 -549 3 -144 467 -17C931 110 999 515 999 515M-58 -557C-58 -557 10 -152 474 -25C938 102 1006 507 1006 507M-51 -565C-51 -565 17 -160 481 -33C945 94 1013 499 1013 499M-44 -573C-44 -573 24 -168 488 -41C952 86 1020 491 1020 491M-37 -581C-37 -581 31 -176 495 -49C959 78 1027 483 1027 483M-30 -589C-30 -589 38 -184 502 -57C966 70 1034 475 1034 475M-23 -597C-23 -597 45 -192 509 -65C973 62 1041 467 1041 467M-16 -605C-16 -605 52 -200 516 -73C980 54 1048 459 1048 459M-9 -613C-9 -613 59 -208 523 -81C987 46 1055 451 1055 451M-2 -621C-2 -621 66 -216 530 -89C994 38 1062 443 1062 443M5 -629C5 -629 73 -224 537 -97C1001 30 1069 435 1069 435M12 -637C12 -637 80 -232 544 -105C1008 22 1076 427 1076 427M19 -645C19 -645 87 -240 551 -113C1015 14 1083 419 1083 419"
+            stroke="url(#paint0_radial_242_278)"
+            strokeOpacity="0.05"
+            strokeWidth="0.5"
+          ></path>
+
+          {paths.map((path, index) => (
+            <motion.path
+              key={index}
+              d={path}
+              stroke={`url(#linearGradient-${index})`}
+              strokeOpacity="0.6"
+              strokeWidth="1"
+            ></motion.path>
+          ))}
+          <defs>
+            {paths.map((path, index) => (
+              <motion.linearGradient
+                id={`linearGradient-${index}`}
+                x1="100%"
+                x2="100%"
+                y1="100%"
+                y2="100%"
+                key={`gradient-${index}`}
+                animate={{
+                  x1: ["0%", "100%"],
+                  x2: ["0%", "95%"],
+                  y1: ["0%", "100%"],
+                  // y2: ["0%", `${93 + Math.random() * 8}%`],
+                  y2: [
+                    "0%",
+                    `${Math.max(1, Math.min(100, 93 + Math.random() * 8))}%`,
+                  ],
+                }}
+                transition={{
+                  duration: Math.random() * 10 + 10,
+                  ease: "easeInOut",
+                  repeat: Infinity,
+                  delay: Math.random() * 10,
+                }}
+              >
+                <stop stopColor="#18CCFC" stopOpacity="0"></stop>
+                <stop stopColor="#18CCFC"></stop>
+                <stop offset="32.5%" stopColor="#6344F5"></stop>
+                <stop offset="100%" stopColor="#AE48FF" stopOpacity="0"></stop>
+              </motion.linearGradient>
+            ))}
+
+            <radialGradient
+              id="paint0_radial_242_278"
+              cx="0"
+              cy="0"
+              r="1"
+              gradientUnits="userSpaceOnUse"
+              gradientTransform="translate(352 34) rotate(90) scale(555 1560.62)"
+            >
+              <stop offset="0.0666667" stopColor="var(--neutral-300)"></stop>
+              <stop offset="0.243243" stopColor="var(--neutral-300)"></stop>
+              <stop offset="0.43594" stopColor="white" stopOpacity="0"></stop>
+            </radialGradient>
+          </defs>
+        </svg>
+      </div>
+    );
+  }
+);
+BackgroundBeams.displayName = "BackgroundBeams";
 
 // ====== FILE: src\components\ui\button.tsx ======
 
@@ -6709,6 +5302,136 @@ const InvoiceSummary: React.FC = () => {
 };
 
 export default InvoiceSummary;
+
+// ====== FILE: src\app\components\Admin\NavigationBar.tsx ======
+
+"use client";
+
+import React from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { clientLogout } from "@/app/lib/apolloClient";
+import { useAuthStore } from "@/app/lib/authStore";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Menu, LogOut, User as UserIcon } from "lucide-react";
+
+const NavigationBar: React.FC = () => {
+  const user = useAuthStore((state) => state.user);
+
+  const handleLogout = async () => {
+    await clientLogout();
+  };
+
+  return (
+    <nav className="flex items-center justify-between p-4 bg-card border-b font-roboto-condensed shadow-sm">
+      <Link href="/" className="flex-shrink-0">
+        <Image
+          src="/logo.svg"
+          alt="Enablment-tt Logo"
+          width={180}
+          height={36}
+          priority
+          className="h-[36px] w-auto max-w-[100px] sm:max-w-[180px] transition-all duration-200 ease-in-out"
+        />
+      </Link>
+
+      <div className="hidden md:flex flex-grow items-center justify-center gap-6 font-medium text-sm uppercase">
+        <Link
+          href="/issuesPage"
+          className="text-muted-foreground hover:text-foreground transition-colors"
+        >
+          Issues
+        </Link>
+        <Link
+          href="/adminPage"
+          className="text-muted-foreground hover:text-foreground transition-colors"
+        >
+          Admin
+        </Link>
+        <Link
+          href="/timeKeeper"
+          className="text-muted-foreground hover:text-foreground transition-colors"
+        >
+          Timekeeper
+        </Link>
+      </div>
+
+      <div className="flex items-center gap-4">
+        <div className="hidden md:flex items-center gap-3">
+          {user ? (
+            <span className="text-sm text-muted-foreground">{user.email}</span>
+          ) : (
+            <span className="text-sm text-muted-foreground italic">
+              Loading...
+            </span>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleLogout}
+            aria-label="Logout"
+          >
+            <LogOut className="h-4 w-4" />
+          </Button>
+        </div>
+
+        {/* Mobile Menu Dropdown */}
+        <div className="md:hidden">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon" aria-label="Open menu">
+                <Menu className="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              {/* Optional User Info Label */}
+              {user && (
+                <>
+                  <DropdownMenuLabel className="flex items-center gap-2 font-normal">
+                    <UserIcon className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground truncate">
+                      {user.email}
+                    </span>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                </>
+              )}
+              {/* Navigation Items */}
+              <DropdownMenuItem asChild>
+                <Link href="/issuesPage">Issues</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/adminPage">Admin</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/timeKeeper">Timekeeper</Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              {/* Logout Item */}
+              <DropdownMenuItem
+                onClick={handleLogout}
+                className="text-destructive focus:text-destructive focus:bg-destructive/10"
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Logout</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+    </nav>
+  );
+};
+
+export default NavigationBar;
 
 // ====== FILE: src\app\components\Admin\ratesManager.tsx ======
 
@@ -8118,208 +6841,1315 @@ const UserTable: React.FC<UserTableProps> = ({
 
 export default UserTable;
 
-// ====== FILE: src\app\components\ui\background-beams.tsx ======
+// ====== FILE: src\app\components\landingPage\aboutSection.tsx ======
+
+import React from "react";
+
+interface IDefinition {
+  term: string;
+  description: string;
+}
+
+interface IAboutContent {
+  definitions: IDefinition[];
+  transparency: string[];
+  organization: string[];
+}
+
+const aboutContent: IAboutContent = {
+  definitions: [
+    {
+      term: "Collaborator",
+      description:
+        "Is a client company, who is subject to a collaboration with Enablment.",
+    },
+    {
+      term: "Enabler",
+      description:
+        "Conventionally known as a consultant, but we enable Collaborators. We exist because we are Enablers who love to devise and create delightful technical solutions with Collaborators.",
+    },
+  ],
+  transparency: [
+    "We demystify the conventional consultancy-client relationship.",
+    "We want transparency. In the sense that we have structurally implemented it in our professional relationship with Collaborators.",
+    "We want to communicate openly with Collaborators whether an Enabler is experienced in the given tech or needs to learn new components.",
+    "Consequently, we deploy varied rates for varied tasks, supported by a decision tree and a detailed invoice report.",
+  ],
+  organization: [
+    "We place decision-making where it is due.",
+    "Enablment is expanding on the idea of a flat hierarchy and is transitioning towards an organization with distributed leadership.",
+    "We have a passion for rethinking and refining processes, why we deploy slim and execution-oriented project teams. That means we have redefined the project manager as a role that is shared by Collaborators and Enablers, but it is structured by a system landscape.",
+    "We have added what we call work groups. These are diverse groups of Enablers which only exist to support each other in their decision-making.",
+    "At Enablement, everyone is passionate about digitization and capable to execute on it.",
+  ],
+};
+
+const AboutSection: React.FC = () => {
+  return (
+    <div className="space-y-8 p-6">
+      <h2 className="text-3xl mb-4 font-pt-sans-bold-900">About Enablment</h2>
+      <div style={{ maxHeight: "calc(100vh - 300px)", overflowY: "auto" }}>
+        <section className="pb-4">
+          <h3 className="text-2xl font-semibold mb-2">Definitions</h3>
+          {aboutContent.definitions.map((def, index) => (
+            <div key={index} className="mb-3">
+              <p style={{ lineHeight: "1.4" }} className="text-lg">
+                <span className="font-bold">{def.term}:</span> {def.description}
+              </p>
+            </div>
+          ))}
+        </section>
+
+        <section className="flex flex-col md:flex-row space-y-4 gap-4">
+          <div className="md:w-1/2">
+            <h3 className="text-2xl font-semibold mb-2">Transparency</h3>
+            {aboutContent.transparency.map((item, index) => (
+              <div key={index} className="mb-3">
+                <p
+                  style={{ lineHeight: "1.4" }}
+                  className="text-lg font-roboto"
+                >
+                  {item}
+                </p>
+              </div>
+            ))}
+          </div>
+          <div className="md:w-1/2 flex justify-center shadow-md">
+            <video
+              className="rounded-lg lazy h-full w-full object-cover"
+              autoPlay
+              loop
+              muted
+              playsInline
+              preload="metadata"
+            >
+              <source src="/video/transparancy.mp4" type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
+          </div>
+        </section>
+
+        <section className="flex flex-col md:flex-row-reverse mt-6 gap-4">
+          <div className="md:w-1/2 mt-6">
+            <h3 className="text-2xl font-semibold mb-2">Organization</h3>
+            {aboutContent.organization.map((item, index) => (
+              <div key={index} className="mb-3">
+                <p
+                  style={{ lineHeight: "1.4" }}
+                  className="text-lg font-roboto"
+                >
+                  {item}
+                </p>
+              </div>
+            ))}
+          </div>
+          <div className="md:w-1/2 flex justify-center">
+            <video
+              className="rounded-lg lazy h-full w-full object-cover"
+              autoPlay
+              loop
+              muted
+              playsInline
+              preload="metadata"
+            >
+              <source src="/video/meeting.mp4" type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+};
+
+export default AboutSection;
+
+// ====== FILE: src\app\components\landingPage\clientColab.tsx ======
+
+"use client";
+
+import React from "react";
+
+// Define the TypeScript type for the table data
+type ClientServiceData = {
+  client: string;
+  year: number;
+  services: string;
+};
+interface ServiceTableProps {
+  onContactClick: () => void;
+}
+
+// Sample data array
+const tableData: ClientServiceData[] = [
+  {
+    client: "Modstrøm",
+    year: 2023,
+    services: "Climate Footprint Reporting: Scope 1 and 2",
+  },
+  { client: "Junkfood", year: 2023, services: "Climate Footprint Reporting" },
+  { client: "Confidential", year: 2023, services: "Cloud, User Platform" },
+  { client: "Shipping Company", year: 2023, services: "Cloud, User Platform" },
+  { client: "B93", year: 2023, services: "Website, UI & UX" },
+  {
+    client: "B:A:M",
+    year: 2024,
+    services: "Video Streaming Platform and Mobil App",
+  },
+  { client: "H5", year: 2024, services: "Website" },
+];
+
+const ClientColab: React.FC<ServiceTableProps> = ({ onContactClick }) => {
+  return (
+    <div className="flex flex-col mx-2 z-10">
+      <p className="text-3xl font-semibold mb-2 text-center bg-white shadow rounded-lg sm:text-2xl">
+        Our Happy Collaborators
+      </p>
+      {tableData.map((item, index) => (
+        <div key={index} className="w-full pb-2">
+          <div className="bg-white shadow rounded-lg sm:p-1 sm:text-sm">
+            <h3 className="text-lg sm:text-md font-semibold">{item.client}</h3>
+            <p className="text-gray-900 font-roboto">Year: {item.year}</p>
+            <p className="text-gray-900 font-roboto">
+              Services: {item.services}
+            </p>
+          </div>
+        </div>
+      ))}
+      <div className="flex mt-2">
+        <button
+          className="bg-green-700 hover:bg-green-500 text-white font-bold py-2 px-4 rounded-full transition-colors duration-300 "
+          onClick={onContactClick}
+        >
+          Shall we collaborate ?
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default ClientColab;
+
+// ====== FILE: src\app\components\landingPage\contactForm.tsx ======
+
+"use client";
+
+import React, { useState } from "react";
+import Image from "next/image";
+import { motion } from "framer-motion";
+
+interface ContactFormProps {
+  onSubmit: (data: { name: string; email: string; message: string }) => void;
+  onClose: () => void;
+  className?: string;
+  isOverlay?: boolean;
+}
+
+const ContactForm: React.FC<ContactFormProps> = ({
+  onSubmit,
+  onClose,
+  className = "",
+  isOverlay = true,
+}) => {
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    message: "",
+  });
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit(formData);
+  };
+
+  const formContent = (
+    <div className="bg-white flex gap-4 rounded-lg shadow-lg p-8 m-4 lg:w-10/12 max-h-full overflow-y-auto contact-form-container">
+      <div>
+        <video
+          width="100%"
+          height="auto"
+          className="rounded-lg lazy"
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="metadata"
+        >
+          <source src="/video/email.mp4" type="video/mp4" />
+          Your browser does not support the video tag.
+        </video>
+        <div className="flex justify-between ">
+          <div className="text-sm mt-4 w-1/2">
+            <p>Øster Allé 56 6. sal</p>
+            <p>2100 København Ø</p>
+            <p>CVR: 42309648</p>
+            <div className="lg:mt-6 flex flex-col space-y-2 lg:flex-row sm:mt-2 sm:space-y-0 lg:space-x-2 CandP">
+              <a href="#" className="text-blue-700 hover:underline">
+                Cookie policy
+              </a>
+              <span className="hidden lg:inline">•</span>
+              <a href="#" className="text-blue-700 hover:underline">
+                Privacy policy
+              </a>
+            </div>
+          </div>
+          <div className="flex flex-col items-end gap-2">
+            <div className="flex mt-4">
+              <span className="mr-3">
+                <Image
+                  src="/icons/instagram.svg"
+                  alt="instagram"
+                  width={24}
+                  height={24}
+                />
+              </span>
+              <span className="mr-3">
+                <Image
+                  src="/icons/facebook.svg"
+                  alt="facebook"
+                  width={24}
+                  height={24}
+                />
+              </span>
+              <span className="mr-4">
+                <Image
+                  src="/icons/linkedin.svg"
+                  alt="linkedin"
+                  width={24}
+                  height={24}
+                />
+              </span>
+              <span>
+                <Image
+                  src="/icons/twitter.svg"
+                  alt="twitter"
+                  width={24}
+                  height={24}
+                />
+              </span>
+            </div>
+            <div className="flex gap-1 items-center mt-4">
+              <span className="text-green-700">(+45) 22 92 67 80</span>
+              <Image
+                src="/icons/phone.svg"
+                alt="call"
+                width={24}
+                height={24}
+                className="align-middle"
+              />
+            </div>
+            <div className="flex gap-1 items-center ">
+              <span className="text-green-700 mb-1">gd@enablment.com</span>
+              <Image
+                src="/icons/mail.svg"
+                alt="email"
+                width={24}
+                height={24}
+                className="align-middle"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div className="flex flex-col justify-between h-full">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg text-gray-900">
+              To: <span className="text-green-600 font-bold">Enablment</span>
+            </h2>
+            <button
+              className="flex-none w-12 h-12 bg-black text-xl text-white rounded-full hover:bg-red-500 hover:scale-105 transition transform duration-200 ease-in-out"
+              onClick={onClose}
+            >
+              ✕
+            </button>
+          </div>
+          <form onSubmit={handleSubmit} className="flex flex-col flex-grow">
+            <div className="flex-grow">
+              <input
+                type="text"
+                name="name"
+                placeholder="Name"
+                className="w-full mb-4 p-2 border border-gray-500 rounded"
+                onChange={handleChange}
+                required
+              />
+              <input
+                type="email"
+                name="email"
+                placeholder="E-mail"
+                className="w-full mb-4 p-2 border border-gray-500 rounded"
+                onChange={handleChange}
+                required
+              />
+              <textarea
+                name="message"
+                placeholder="Your message"
+                className="w-full mb-4 p-2 border border-gray-500 rounded"
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div className="flex items-center mt-4 sm:mt-0">
+              <div className="text-xs text-gray-500 flex-grow">
+                This site is protected by reCAPTCHA and the Google
+                <a href="#" className="text-blue-700 hover:underline">
+                  {" "}
+                  Privacy Policy
+                </a>{" "}
+                and
+                <a href="#" className="text-blue-700 hover:underline">
+                  {" "}
+                  Terms of Service
+                </a>{" "}
+                apply.
+              </div>
+              <button
+                type="submit"
+                className="flex-none flex items-center justify-center w-12 h-12 bg-black text-white p-2 rounded-full hover:bg-green-500 hover:scale-105 transition transform duration-200 ease-in-out"
+                aria-label="Send"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  className="w-6 h-6 text-white"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M14 5l7 7m0 0l-7 7m7-7H3"
+                  />
+                </svg>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+
+  // If not used as an overlay, just return the form content
+  if (!isOverlay) {
+    return formContent;
+  }
+
+  // Use as a modal overlay with animation
+  return (
+    <motion.div
+      className={`fixed inset-0 flex justify-center items-center z-40 ${className}`}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.3 }}
+    >
+      <div
+        className="absolute inset-0 bg-black bg-opacity-50"
+        onClick={onClose}
+      ></div>
+      <div className="z-50">{formContent}</div>
+    </motion.div>
+  );
+};
+
+export default ContactForm;
+
+// ====== FILE: src\app\components\landingPage\contentWrapper.tsx ======
+
+"use client";
+
+import { motion, useAnimation } from "framer-motion";
+import React, { useEffect, PropsWithChildren } from "react";
+
+interface ContentWrapperProps {
+  isActive: boolean;
+}
+
+export const ContentWrapper: React.FC<
+  PropsWithChildren<ContentWrapperProps>
+> = ({ isActive, children }) => {
+  const controls = useAnimation();
+
+  useEffect(() => {
+    controls.start(isActive ? "visible" : "hidden");
+  }, [isActive, controls]);
+
+  const contentVariants = {
+    visible: {
+      opacity: 1,
+      maxHeight: "1000px",
+      overflow: "hidden",
+      transition: { duration: 0.5 },
+    },
+    hidden: {
+      opacity: 0,
+      maxHeight: 0, // Collapse content area when hidden
+      overflow: "hidden",
+      transition: { duration: 0.5 },
+    },
+  };
+
+  return (
+    <motion.div variants={contentVariants} animate={controls} initial="hidden">
+      {children}
+    </motion.div>
+  );
+};
+
+// ====== FILE: src\app\components\landingPage\peopleSection.tsx ======
+
+"use client";
+
+import React from "react";
+import Image from "next/image";
+
+interface Person {
+  name: string;
+  roles: string[];
+  images: [string, string];
+}
+
+const peopleData: Person[] = [
+  {
+    name: "Gustav Duus",
+    images: ["/members/ceo_1.jpg", "/members/ceo_2.jpg"],
+    roles: ["CEO", "Co-Founder"],
+  },
+  {
+    name: "Joakim Larsen",
+    images: ["/members/m_1.jpg", "/members/m_2.jpg"],
+    roles: ["Co-Founder"],
+  },
+  {
+    name: "George Aftincai",
+    images: ["/members/gerorge_1.jpg", "/members/gerorge_2.jpg"],
+    roles: ["Front-end"],
+  },
+  {
+    name: "Riccardo Conti",
+    images: ["/members/ricardo_1.jpg", "/members/ricardo_2.jpg"],
+    roles: ["Front-end", "Mobile"],
+  },
+  {
+    name: "Sam Hakimane",
+    images: ["/members/sam_1.jpg", "/members/sam_2.jpg"],
+    roles: ["Back-end"],
+  },
+  {
+    name: "Jedrzej Lagodzinski",
+    images: ["/members/j_1.jpg", "/members/j_2.jpg"],
+    roles: ["Front-end"],
+  },
+  {
+    name: "David Lin",
+    images: ["/members/david_1.jpg", "/members/david_2.jpg"],
+    roles: ["Front-end", "Design"],
+  },
+];
+
+interface PeopleSectionProps {
+  isActive: boolean;
+}
+
+const PeopleSection: React.FC<PeopleSectionProps> = ({ isActive }) => {
+  if (!isActive) return null;
+  return (
+    <div className="p-4">
+      <h2 className="text-3xl font-pt-sans-bold-900 mb-4 mx-4">People</h2>
+      <div className="people-section grid grid-cols-1 sm:grid-cols-3 gap-4 p-4">
+        {peopleData.map((person, index) => (
+          <PersonCard key={index} person={person} />
+        ))}
+      </div>
+    </div>
+  );
+};
+
+interface PersonCardProps {
+  person: Person;
+}
+
+type RoleIconMappingType = {
+  [roleName: string]: string;
+};
+
+const roleIconMapping: RoleIconMappingType = {
+  CEO: "ceo.svg",
+  "Co-Founder": "founder.svg",
+  "Front-end": "front.svg",
+  Mobile: "mobile.svg",
+  "Back-end": "back.svg",
+  Design: "design.svg",
+};
+
+const getIconPath = (role: string): string => {
+  return `/icons/${roleIconMapping[role] || "default-icon.svg"}`;
+};
+
+const PersonCard: React.FC<PersonCardProps> = ({ person }) => {
+  const [isHovered, setIsHovered] = React.useState(false);
+  return (
+    <div
+      className="person-card cursor-pointer overflow-hidden relative w-full h-auto shadow-lg"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <div
+        className="relative w-full md:w-auto lg:w-full aspect-w-1 aspect-h-1"
+        style={{ paddingTop: "calc(512 / 342 * 100%)" }}
+      >
+        <div
+          className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
+            isHovered ? "opacity-0" : "opacity-100"
+          }`}
+          style={{ paddingTop: "calc(512 / 342 * 100%)" }}
+        >
+          <Image
+            src={person.images[0]}
+            alt={`${person.name} - Base`}
+            fill
+            sizes="(max-width: 768px) 100vw, 50vw"
+            className="rounded-lg"
+          />
+        </div>
+        <div
+          className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
+            isHovered ? "opacity-100" : "opacity-0"
+          }`}
+          style={{ paddingTop: "calc(512 / 342 * 100%)" }}
+        >
+          <Image
+            src={person.images[1]}
+            alt={`${person.name} - Hover`}
+            fill
+            sizes="(max-width: 768px) 100vw, 50vw"
+            className="rounded-lg"
+          />
+        </div>
+      </div>
+      <div className="absolute inset-0 flex flex-col justify-end p-4 rounded-lg">
+        <div
+          style={{ width: "fit-content" }}
+          className="bg-black bg-opacity-40 lg:p-2 sm:p-1"
+        >
+          <h3 className="text-white lg:text-xl md:text-sm font-bold">
+            {person.name}
+          </h3>
+        </div>
+        {person.roles.map((role, index) => (
+          <div key={index} style={{ width: "fit-content" }}>
+            <div className="bg-black bg-opacity-40 flex items-center">
+              <div className="relative mr-1 flex justify-center items-center w-8 h-8 sm:w-[3vw] sm:h-[3vw] lg:w-[2vw] lg:h-[2vw] md:w-[3vw] md:h-[3vw]">
+                <Image
+                  src={getIconPath(role)}
+                  alt={`${role} icon`}
+                  fill
+                  className="filter invert"
+                />
+              </div>
+              <span className="text-white lg:text-lg md:text-sm mr-2">
+                {role}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export default PeopleSection;
+
+// ====== FILE: src\app\components\landingPage\sectionAnimation.tsx ======
+
+"use client";
+
+import React from "react";
+import { motion } from "framer-motion";
+import SectionWrapper from "@/app/components/landingPage/sectionWrapper";
+
+interface SectionAnimationProps {
+  section: string;
+  navigationDirection: "forward" | "backward";
+  videoSrc?: string;
+}
+
+const SectionAnimation: React.FC<SectionAnimationProps> = ({
+  section,
+  navigationDirection,
+  videoSrc,
+}) => {
+  return (
+    <motion.div
+      key={section}
+      className="w-full"
+      initial={{
+        opacity: 0,
+        x: navigationDirection === "forward" ? 100 : -100,
+      }}
+      animate={{
+        opacity: 1,
+        x: 0,
+      }}
+      exit={{
+        opacity: 0,
+        x: navigationDirection === "forward" ? -100 : 100,
+      }}
+      transition={{
+        type: "spring",
+        stiffness: 80,
+        damping: 15,
+        mass: 1,
+      }}
+    >
+      <SectionWrapper
+        id={section}
+        content={section}
+        color={"bg-gray-200"}
+        videoSrc={videoSrc}
+      />
+    </motion.div>
+  );
+};
+
+export default SectionAnimation;
+
+// ====== FILE: src\app\components\landingPage\sectionWrapper.tsx ======
+
+"use client";
+
+import React from "react";
+import PeopleSection from "@/app/components/landingPage/peopleSection";
+import AboutSection from "@/app/components/landingPage/aboutSection";
+import ServicesSection from "@/app/components/landingPage/servicesSection";
+
+interface SectionProps {
+  id: string;
+  content: string;
+  color: string;
+  videoSrc?: string;
+}
+
+const SectionWrapper: React.FC<SectionProps> = ({
+  id,
+  content,
+  color,
+  videoSrc,
+}) => {
+  return (
+    <div
+      className={`section border-2 border-green-600 rounded-tl-3xl rounded-tr-3xl shadow-lg ${color} responsive-section`}
+      style={{
+        width: "100%",
+        boxSizing: "border-box",
+      }}
+    >
+      {id === "People" ? (
+        <div
+          className="overflow-y-auto"
+          style={{ maxHeight: "calc(100vh - 200px)" }}
+        >
+          <PeopleSection isActive={true} />
+        </div>
+      ) : id === "About" ? (
+        <AboutSection />
+      ) : id === "Services" ? (
+        <ServicesSection />
+      ) : videoSrc ? (
+        <div className="w-full h-full">
+          <video
+            className="video w-full h-full overflow-hidden rounded-tl-3xl rounded-tr-3xl object-cover"
+            autoPlay
+            loop
+            muted
+            playsInline
+          >
+            <source src={videoSrc} type="video/mp4" />
+            Your browser does not support the video tag.
+          </video>
+          <div className="flex overlay-text lg:bottom-48 p-4 lg:relative md:flex ">
+            <h2 className="lg:text-4xl font-bold text-white p-4 bg-black bg-opacity-50 rounded-lg sm:text-lg">
+              We enable Collaborators
+              <br /> to create delightful technical solutions
+            </h2>
+          </div>
+        </div>
+      ) : (
+        <>
+          <h2 className="text-2xl font-bold mb-4">{content}</h2>
+          <p className="text-gray-700">
+            Placeholder content for the {content} section.
+          </p>
+        </>
+      )}
+    </div>
+  );
+};
+
+export default SectionWrapper;
+
+// ====== FILE: src\app\components\landingPage\servicesSection.tsx ======
+
+"use client";
+
+import React from "react";
+import Image from "next/image";
+
+interface IFeature {
+  name: string;
+  icon: string;
+}
+
+interface IService {
+  title: string;
+  description: string[];
+  icon: string;
+  features?: IFeature[];
+  imageUrl: string;
+}
+
+const servicesData: IService[] = [
+  {
+    title: "Digital Product Development",
+    description: [
+      "Do you know the feeling of navigating a website or a mobile application and it is either hideous or you are getting lost in the pages all the time?",
+      "UI and UX is the art of creating beautiful applications that offer a smooth user experience whether it is a web or mobile application.",
+      "Both are essential for creating a successful application. UI design ensures that the application looks visually appealing and attractive to users, while UX design ensures that the application is intuitive and easy to use.",
+      "Let us enable you to balance both.",
+    ],
+    icon: "/icons/digital.svg",
+    imageUrl: "/images/dpd.jpg",
+    features: [
+      {
+        name: "E-commerce & Websites",
+        icon: "/icons/e-commerce.svg",
+      },
+      {
+        name: "Mobile apps & Web applications",
+        icon: "/icons/mobile.svg",
+      },
+      {
+        name: "Digital Solutions & Platforms",
+        icon: "/icons/platforms.svg",
+      },
+    ],
+  },
+  {
+    title: "Climate Reporting",
+    description: [
+      "Searching for the right data? Preparing to report scope 1, 2 or 3? Or are you looking for internal tracking to make data-driven decisions to lower your climate footprint?",
+      "At Enablment, we have the technical skills to integrate with the correct data sources and align that data for trustworthy reporting. We can set up automated reporting flows from multiple data sources for internal tracking.",
+    ],
+    icon: "/icons/climate.svg",
+    imageUrl: "/images/climate.jpg",
+  },
+  {
+    title: "Insights through Data",
+    description: [
+      "On the journey of digitalization, automating and optimizing processes and data collection create the best fundamentals for an effective digital solution.",
+      "Luckily, we are more than stoked to help you with following.",
+    ],
+    icon: "/icons/data.svg",
+    imageUrl: "/images/data.jpg",
+  },
+  {
+    title: "Data Consolidation (Cloud)",
+    description: [
+      "Is it difficult, and time consuming gathering data, and structuring it for data analytics/insight?",
+      "This is the first step within data analytics and all companies will inevitably go through this transformation at some point. Once implemented there will be a consistent and reliable data foundation for all data analysis. Plus a setup like this is fully automated.",
+    ],
+    icon: "/icons/cloud.svg",
+    imageUrl: "/images/cloud.jpg",
+  },
+  {
+    title: "Business Intelligence (BI)",
+    description: [
+      "Do you have a database that is automatically sourcing the data for you? And is your data then, consequently, consolidated in one place and might even be structured? Now you want insight from your data?",
+      "This is Business Intelligence. We conduct a data analysis and transform your data, then we create dashboards to visualize the insight.",
+    ],
+    icon: "/icons/bi.svg",
+    imageUrl: "/images/bi.jpg",
+  },
+  {
+    title: "Machine Learning & Artificial Intelligence (ML & AI)",
+    description: [
+      "Is your decision-making process supplemented with insight and a descriptive data analysis through BI? Are you ready to let a data model offer you suggestions?",
+      "Certain trends and causalities that might not be visible to the human eye or the data input is simply too big. This is when you move from the descriptive to the prescriptive data analysis. A machine learning model can highlight causalities and forecast development.",
+    ],
+    icon: "/icons/ai.svg",
+    imageUrl: "/images/AI-ML.jpg",
+  },
+];
+
+const ServicesSection: React.FC = () => {
+  return (
+    <div className="space-y-8 p-4 sm:p-6">
+      <h2 className="text-3xl font-pt-sans-bold-900 mb-4">Services</h2>
+      <div
+        style={{
+          maxHeight: "calc(100vh - 300px)",
+          overflowY: "auto",
+        }}
+      >
+        {servicesData.map((service, index) => (
+          <div key={index} className="mb-6">
+            <div className="flex flex-wrap items-stretch shadow-lg rounded-lg overflow-hidden lg:justify-start sm:justify-center lg:flex-nowrap space-x-4">
+              <div className="relative w-full flex-grow tablet:flex-grow-0 md:w-1/2  services-image-container">
+                <Image
+                  src={service.imageUrl}
+                  alt={`${service.title}`}
+                  layout="fill"
+                  objectFit="cover"
+                  sizes="(min-width: 768px) 50vw, 100vw"
+                />
+              </div>
+              <div className="text-container lg:w-1/2 sm:mt-4">
+                <div className="flex items-center space-x-2">
+                  <Image
+                    src={service.icon}
+                    alt={`${service.title} Icon`}
+                    width={24}
+                    height={24}
+                  />
+                  <h3 className="text-2xl font-semibold mb-2">
+                    {service.title}
+                  </h3>
+                </div>
+                {service.description.map((paragraph, pIndex) => (
+                  <p
+                    key={pIndex}
+                    style={{ lineHeight: "1.4" }}
+                    className="text-lg mb-3"
+                  >
+                    {paragraph}
+                  </p>
+                ))}
+                {service.features && (
+                  <div className="flex flex-col space-y-2 mt-4">
+                    {service.features.map((feature, fIndex) => (
+                      <div
+                        key={fIndex}
+                        className="flex items-center space-x-2 "
+                      >
+                        <Image
+                          src={feature.icon}
+                          alt={`${feature.name} Icon`}
+                          width={20}
+                          height={20}
+                        />
+                        <span style={{ lineHeight: "1.4" }} className="text-lg">
+                          {feature.name}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export default ServicesSection;
+
+// ====== FILE: src\app\components\timer\ProjectRateSelectors.tsx ======
+
+"use client";
+
+import React from "react";
+import { ApolloError } from "@apollo/client";
+import { formatTimeFromMilliseconds } from "@/app/utils/timeUtils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Hourglass, Loader2 } from "lucide-react";
+
+interface Project {
+  id: string;
+  name: string;
+  teamName?: string;
+}
+
+interface Rate {
+  id: string;
+  name: string;
+  rate: number;
+}
+
+interface ProjectRateSelectorsProps {
+  userProjects: Project[];
+  selectedProject: string | null;
+  setSelectedProject: (projectId: string) => void;
+  rates: Rate[];
+  selectedRate: string | null;
+  setSelectedRate: (rateId: string) => void;
+  totalTimeLoading: boolean;
+  totalTimeError: ApolloError | undefined;
+  totalTime: number;
+}
+
+const ProjectRateSelectors: React.FC<ProjectRateSelectorsProps> = ({
+  userProjects,
+  selectedProject,
+  setSelectedProject,
+  rates,
+  selectedRate,
+  setSelectedRate,
+  totalTimeLoading,
+  totalTimeError,
+  totalTime,
+}) => {
+  return (
+    <Card className="overflow-visible">
+      <CardHeader>
+        <CardTitle>Project & Rate</CardTitle>
+        <CardDescription>
+          Select the project and rate for this time entry.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {/* Project Selector */}
+        <div className="space-y-2">
+          <Label htmlFor="project-select">Project</Label>
+          <Select
+            value={selectedProject ?? ""}
+            onValueChange={setSelectedProject}
+            disabled={userProjects.length === 0}
+          >
+            {/* Use default trigger styles, add w-full for layout */}
+            <SelectTrigger id="project-select" className="w-full">
+              <SelectValue placeholder="Select a project..." />
+            </SelectTrigger>
+            {/* Use default content styles */}
+            <SelectContent position="popper">
+              {userProjects.length > 0 ? (
+                userProjects.map((project) => (
+                  // Use default item styles
+                  <SelectItem key={project.id} value={project.id}>
+                    {project.name}{" "}
+                    {project.teamName ? `(${project.teamName})` : ""}
+                  </SelectItem>
+                ))
+              ) : (
+                <div className="p-2 text-sm text-muted-foreground">
+                  No projects found.
+                </div>
+              )}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Rate Selector */}
+        <div className="space-y-2">
+          <Label htmlFor="rate-select">Rate</Label>
+          <Select
+            value={selectedRate ?? ""}
+            onValueChange={setSelectedRate}
+            disabled={!selectedProject || rates.length === 0}
+          >
+            <SelectTrigger id="rate-select" className="w-full border-input">
+              <SelectValue placeholder="Select a rate..." />
+            </SelectTrigger>
+            <SelectContent position="popper">
+              {rates.length > 0 ? (
+                rates.map((rate) => (
+                  <SelectItem key={rate.id} value={rate.id}>
+                    {rate.name} ({rate.rate} DKK/h)
+                  </SelectItem>
+                ))
+              ) : (
+                <div className="p-2 text-sm text-muted-foreground">
+                  {selectedProject
+                    ? "No rates for this project."
+                    : "Select a project first."}
+                </div>
+              )}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Total Time Display */}
+        <div className="border-t pt-4 mt-4">
+          <Label className="text-sm font-medium">Total Time on Project</Label>
+          <div className="flex items-center gap-2 mt-1">
+            <Hourglass className="h-5 w-5 text-muted-foreground" />
+            {totalTimeLoading ? (
+              <span className="flex items-center gap-1 text-muted-foreground italic">
+                <Loader2 className="h-4 w-4 animate-spin" /> Loading...
+              </span>
+            ) : totalTimeError ? (
+              <span className="text-sm text-red-600">Error loading time</span>
+            ) : (
+              <span className="text-lg font-semibold font-mono">
+                {formatTimeFromMilliseconds(totalTime)}
+              </span>
+            )}
+          </div>
+          {totalTimeError && (
+            <p className="text-xs text-red-500 mt-1">
+              {totalTimeError.message}
+            </p>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+export default ProjectRateSelectors;
+
+// ====== FILE: src\app\components\timer\TimerControls.tsx ======
 
 "use client";
 import React from "react";
-import { motion } from "framer-motion";
-import { cn } from "@/app/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Play, Pause, RotateCcw, Send } from "lucide-react";
 
-export const BackgroundBeams = React.memo(
-  ({ className }: { className?: string }) => {
-    const paths = [
-      "M-380 -189C-380 -189 -312 216 152 343C616 470 684 875 684 875",
-      "M-373 -197C-373 -197 -305 208 159 335C623 462 691 867 691 867",
-      "M-366 -205C-366 -205 -298 200 166 327C630 454 698 859 698 859",
-      "M-359 -213C-359 -213 -291 192 173 319C637 446 705 851 705 851",
-      "M-352 -221C-352 -221 -284 184 180 311C644 438 712 843 712 843",
-      "M-345 -229C-345 -229 -277 176 187 303C651 430 719 835 719 835",
-      "M-338 -237C-338 -237 -270 168 194 295C658 422 726 827 726 827",
-      "M-331 -245C-331 -245 -263 160 201 287C665 414 733 819 733 819",
-      "M-324 -253C-324 -253 -256 152 208 279C672 406 740 811 740 811",
-      "M-317 -261C-317 -261 -249 144 215 271C679 398 747 803 747 803",
-      "M-310 -269C-310 -269 -242 136 222 263C686 390 754 795 754 795",
-      "M-303 -277C-303 -277 -235 128 229 255C693 382 761 787 761 787",
-      "M-296 -285C-296 -285 -228 120 236 247C700 374 768 779 768 779",
-      "M-289 -293C-289 -293 -221 112 243 239C707 366 775 771 775 771",
-      "M-282 -301C-282 -301 -214 104 250 231C714 358 782 763 782 763",
-      "M-275 -309C-275 -309 -207 96 257 223C721 350 789 755 789 755",
-      "M-268 -317C-268 -317 -200 88 264 215C728 342 796 747 796 747",
-      "M-261 -325C-261 -325 -193 80 271 207C735 334 803 739 803 739",
-      "M-254 -333C-254 -333 -186 72 278 199C742 326 810 731 810 731",
-      "M-247 -341C-247 -341 -179 64 285 191C749 318 817 723 817 723",
-      "M-240 -349C-240 -349 -172 56 292 183C756 310 824 715 824 715",
-      "M-233 -357C-233 -357 -165 48 299 175C763 302 831 707 831 707",
-      "M-226 -365C-226 -365 -158 40 306 167C770 294 838 699 838 699",
-      "M-219 -373C-219 -373 -151 32 313 159C777 286 845 691 845 691",
-      "M-212 -381C-212 -381 -144 24 320 151C784 278 852 683 852 683",
-      "M-205 -389C-205 -389 -137 16 327 143C791 270 859 675 859 675",
-      "M-198 -397C-198 -397 -130 8 334 135C798 262 866 667 866 667",
-      "M-191 -405C-191 -405 -123 0 341 127C805 254 873 659 873 659",
-      "M-184 -413C-184 -413 -116 -8 348 119C812 246 880 651 880 651",
-      "M-177 -421C-177 -421 -109 -16 355 111C819 238 887 643 887 643",
-      "M-170 -429C-170 -429 -102 -24 362 103C826 230 894 635 894 635",
-      "M-163 -437C-163 -437 -95 -32 369 95C833 222 901 627 901 627",
-      "M-156 -445C-156 -445 -88 -40 376 87C840 214 908 619 908 619",
-      "M-149 -453C-149 -453 -81 -48 383 79C847 206 915 611 915 611",
-      "M-142 -461C-142 -461 -74 -56 390 71C854 198 922 603 922 603",
-      "M-135 -469C-135 -469 -67 -64 397 63C861 190 929 595 929 595",
-      "M-128 -477C-128 -477 -60 -72 404 55C868 182 936 587 936 587",
-      "M-121 -485C-121 -485 -53 -80 411 47C875 174 943 579 943 579",
-      "M-114 -493C-114 -493 -46 -88 418 39C882 166 950 571 950 571",
-      "M-107 -501C-107 -501 -39 -96 425 31C889 158 957 563 957 563",
-      "M-100 -509C-100 -509 -32 -104 432 23C896 150 964 555 964 555",
-      "M-93 -517C-93 -517 -25 -112 439 15C903 142 971 547 971 547",
-      "M-86 -525C-86 -525 -18 -120 446 7C910 134 978 539 978 539",
-      "M-79 -533C-79 -533 -11 -128 453 -1C917 126 985 531 985 531",
-      "M-72 -541C-72 -541 -4 -136 460 -9C924 118 992 523 992 523",
-      "M-65 -549C-65 -549 3 -144 467 -17C931 110 999 515 999 515",
-      "M-58 -557C-58 -557 10 -152 474 -25C938 102 1006 507 1006 507",
-      "M-51 -565C-51 -565 17 -160 481 -33C945 94 1013 499 1013 499",
-      "M-44 -573C-44 -573 24 -168 488 -41C952 86 1020 491 1020 491",
-      "M-37 -581C-37 -581 31 -176 495 -49C959 78 1027 483 1027 483",
-    ];
-    return (
-      <div
-        className={cn(
-          "absolute  h-full w-full inset-0  [mask-size:40px] [mask-repeat:no-repeat] flex items-center justify-center bg-slate-100",
-          className
-        )}
-      >
-        <svg
-          className=" z-0 h-full w-full pointer-events-none absolute "
-          width="100%"
-          height="100%"
-          viewBox="0 0 696 316"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M-380 -189C-380 -189 -312 216 152 343C616 470 684 875 684 875M-373 -197C-373 -197 -305 208 159 335C623 462 691 867 691 867M-366 -205C-366 -205 -298 200 166 327C630 454 698 859 698 859M-359 -213C-359 -213 -291 192 173 319C637 446 705 851 705 851M-352 -221C-352 -221 -284 184 180 311C644 438 712 843 712 843M-345 -229C-345 -229 -277 176 187 303C651 430 719 835 719 835M-338 -237C-338 -237 -270 168 194 295C658 422 726 827 726 827M-331 -245C-331 -245 -263 160 201 287C665 414 733 819 733 819M-324 -253C-324 -253 -256 152 208 279C672 406 740 811 740 811M-317 -261C-317 -261 -249 144 215 271C679 398 747 803 747 803M-310 -269C-310 -269 -242 136 222 263C686 390 754 795 754 795M-303 -277C-303 -277 -235 128 229 255C693 382 761 787 761 787M-296 -285C-296 -285 -228 120 236 247C700 374 768 779 768 779M-289 -293C-289 -293 -221 112 243 239C707 366 775 771 775 771M-282 -301C-282 -301 -214 104 250 231C714 358 782 763 782 763M-275 -309C-275 -309 -207 96 257 223C721 350 789 755 789 755M-268 -317C-268 -317 -200 88 264 215C728 342 796 747 796 747M-261 -325C-261 -325 -193 80 271 207C735 334 803 739 803 739M-254 -333C-254 -333 -186 72 278 199C742 326 810 731 810 731M-247 -341C-247 -341 -179 64 285 191C749 318 817 723 817 723M-240 -349C-240 -349 -172 56 292 183C756 310 824 715 824 715M-233 -357C-233 -357 -165 48 299 175C763 302 831 707 831 707M-226 -365C-226 -365 -158 40 306 167C770 294 838 699 838 699M-219 -373C-219 -373 -151 32 313 159C777 286 845 691 845 691M-212 -381C-212 -381 -144 24 320 151C784 278 852 683 852 683M-205 -389C-205 -389 -137 16 327 143C791 270 859 675 859 675M-198 -397C-198 -397 -130 8 334 135C798 262 866 667 866 667M-191 -405C-191 -405 -123 0 341 127C805 254 873 659 873 659M-184 -413C-184 -413 -116 -8 348 119C812 246 880 651 880 651M-177 -421C-177 -421 -109 -16 355 111C819 238 887 643 887 643M-170 -429C-170 -429 -102 -24 362 103C826 230 894 635 894 635M-163 -437C-163 -437 -95 -32 369 95C833 222 901 627 901 627M-156 -445C-156 -445 -88 -40 376 87C840 214 908 619 908 619M-149 -453C-149 -453 -81 -48 383 79C847 206 915 611 915 611M-142 -461C-142 -461 -74 -56 390 71C854 198 922 603 922 603M-135 -469C-135 -469 -67 -64 397 63C861 190 929 595 929 595M-128 -477C-128 -477 -60 -72 404 55C868 182 936 587 936 587M-121 -485C-121 -485 -53 -80 411 47C875 174 943 579 943 579M-114 -493C-114 -493 -46 -88 418 39C882 166 950 571 950 571M-107 -501C-107 -501 -39 -96 425 31C889 158 957 563 957 563M-100 -509C-100 -509 -32 -104 432 23C896 150 964 555 964 555M-93 -517C-93 -517 -25 -112 439 15C903 142 971 547 971 547M-86 -525C-86 -525 -18 -120 446 7C910 134 978 539 978 539M-79 -533C-79 -533 -11 -128 453 -1C917 126 985 531 985 531M-72 -541C-72 -541 -4 -136 460 -9C924 118 992 523 992 523M-65 -549C-65 -549 3 -144 467 -17C931 110 999 515 999 515M-58 -557C-58 -557 10 -152 474 -25C938 102 1006 507 1006 507M-51 -565C-51 -565 17 -160 481 -33C945 94 1013 499 1013 499M-44 -573C-44 -573 24 -168 488 -41C952 86 1020 491 1020 491M-37 -581C-37 -581 31 -176 495 -49C959 78 1027 483 1027 483M-30 -589C-30 -589 38 -184 502 -57C966 70 1034 475 1034 475M-23 -597C-23 -597 45 -192 509 -65C973 62 1041 467 1041 467M-16 -605C-16 -605 52 -200 516 -73C980 54 1048 459 1048 459M-9 -613C-9 -613 59 -208 523 -81C987 46 1055 451 1055 451M-2 -621C-2 -621 66 -216 530 -89C994 38 1062 443 1062 443M5 -629C5 -629 73 -224 537 -97C1001 30 1069 435 1069 435M12 -637C12 -637 80 -232 544 -105C1008 22 1076 427 1076 427M19 -645C19 -645 87 -240 551 -113C1015 14 1083 419 1083 419"
-            stroke="url(#paint0_radial_242_278)"
-            strokeOpacity="0.05"
-            strokeWidth="0.5"
-          ></path>
-
-          {paths.map((path, index) => (
-            <motion.path
-              key={index}
-              d={path}
-              stroke={`url(#linearGradient-${index})`}
-              strokeOpacity="0.6"
-              strokeWidth="1"
-            ></motion.path>
-          ))}
-          <defs>
-            {paths.map((path, index) => (
-              <motion.linearGradient
-                id={`linearGradient-${index}`}
-                x1="100%"
-                x2="100%"
-                y1="100%"
-                y2="100%"
-                key={`gradient-${index}`}
-                animate={{
-                  x1: ["0%", "100%"],
-                  x2: ["0%", "95%"],
-                  y1: ["0%", "100%"],
-                  // y2: ["0%", `${93 + Math.random() * 8}%`],
-                  y2: [
-                    "0%",
-                    `${Math.max(1, Math.min(100, 93 + Math.random() * 8))}%`,
-                  ],
-                }}
-                transition={{
-                  duration: Math.random() * 10 + 10,
-                  ease: "easeInOut",
-                  repeat: Infinity,
-                  delay: Math.random() * 10,
-                }}
-              >
-                <stop stopColor="#18CCFC" stopOpacity="0"></stop>
-                <stop stopColor="#18CCFC"></stop>
-                <stop offset="32.5%" stopColor="#6344F5"></stop>
-                <stop offset="100%" stopColor="#AE48FF" stopOpacity="0"></stop>
-              </motion.linearGradient>
-            ))}
-
-            <radialGradient
-              id="paint0_radial_242_278"
-              cx="0"
-              cy="0"
-              r="1"
-              gradientUnits="userSpaceOnUse"
-              gradientTransform="translate(352 34) rotate(90) scale(555 1560.62)"
-            >
-              <stop offset="0.0666667" stopColor="var(--neutral-300)"></stop>
-              <stop offset="0.243243" stopColor="var(--neutral-300)"></stop>
-              <stop offset="0.43594" stopColor="white" stopOpacity="0"></stop>
-            </radialGradient>
-          </defs>
-        </svg>
-      </div>
-    );
-  }
-);
-BackgroundBeams.displayName = "BackgroundBeams";
-
-// ====== FILE: src\app\components\ui\button.tsx ======
-
-"use client";
-
-import * as React from "react";
-import { Slot } from "@radix-ui/react-slot";
-import { cva, type VariantProps } from "class-variance-authority";
-
-import { cn } from "@/app/lib/utils";
-
-const buttonVariants = cva(
-  "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
-  {
-    variants: {
-      variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
-        destructive:
-          "bg-destructive text-destructive-foreground hover:bg-destructive/90",
-        outline:
-          "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
-        secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        ghost: "hover:bg-accent hover:text-accent-foreground",
-        link: "text-primary underline-offset-4 hover:underline",
-      },
-      size: {
-        default: "h-10 px-4 py-2",
-        sm: "h-9 rounded-md px-3",
-        lg: "h-11 rounded-md px-8",
-        icon: "h-10 w-10",
-      },
-    },
-    defaultVariants: {
-      variant: "default",
-      size: "default",
-    },
-  }
-);
-
-export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
-  asChild?: boolean;
+interface TimerControlsProps {
+  isRunning: boolean;
+  handleStartStop: () => void;
+  handleReset: () => void;
+  handleSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
+  disabledStartPause: boolean;
+  disabledReset: boolean;
+  disabledSubmit: boolean;
 }
 
-const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
-    const Comp = asChild ? Slot : "button";
-    return (
-      <Comp
-        className={cn(buttonVariants({ variant, size, className }))}
-        ref={ref}
-        {...props}
-      />
-    );
-  }
-);
-Button.displayName = "Button";
+const TimerControls: React.FC<TimerControlsProps> = ({
+  isRunning,
+  handleStartStop,
+  handleReset,
+  handleSubmit,
+  disabledStartPause,
+  disabledReset,
+  disabledSubmit,
+}) => {
+  return (
+    <form onSubmit={handleSubmit} className="w-full">
+      <div className="flex justify-center items-center gap-4 mt-4 w-full">
+        <Button
+          type="button"
+          variant={isRunning ? "destructive" : "default"}
+          size="lg"
+          onClick={handleStartStop}
+          disabled={disabledStartPause}
+          className={`flex items-center gap-2 ${
+            isRunning
+              ? "bg-red-600 hover:bg-red-700"
+              : "bg-green-600 hover:bg-green-700"
+          }`}
+        >
+          {isRunning ? (
+            <Pause className="h-5 w-5" />
+          ) : (
+            <Play className="h-5 w-5" />
+          )}
+          {isRunning ? "Pause" : "Start"}
+        </Button>
 
-export { Button, buttonVariants };
+        <Button
+          type="button"
+          variant="outline"
+          size="lg"
+          onClick={handleReset}
+          disabled={disabledReset}
+          className="flex items-center gap-2"
+        >
+          <RotateCcw className="h-5 w-5" />
+          Reset
+        </Button>
+
+        <Button
+          type="submit"
+          variant="default"
+          size="lg"
+          disabled={disabledSubmit}
+          className="flex items-center gap-2"
+        >
+          <Send className="h-5 w-5" />
+          Submit
+        </Button>
+      </div>
+    </form>
+  );
+};
+
+export default TimerControls;
+
+// ====== FILE: src\app\components\timer\TimerDisplay.tsx ======
+
+import React from "react";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import "@/app/globals.css";
+import {
+  formatDateForDisplay,
+  formatTimeFromISOString,
+} from "@/app/utils/timeUtils";
+import { formatISO, isToday, isSameDay, getMonth } from "date-fns";
+import { Timer, ChevronLeft, ChevronRight } from "lucide-react";
+import { cn } from "@/app/lib/utils";
+import { buttonVariants } from "@/components/ui/button";
+
+interface TimerDisplayProps {
+  isRunning: boolean;
+  displayTime: string;
+  initialStartTime: Date | null;
+  handleDateChange: (date: Date | null) => void;
+}
+
+const getDayClassName = (
+  date: Date,
+  selectedDate: Date | null,
+  currentMonthDate: Date
+) => {
+  return cn(
+    buttonVariants({ variant: "ghost" }),
+    "h-8 w-8 p-0 font-normal text-sm", // Slightly smaller days
+    "aria-selected:opacity-100 rounded-md", // Keep rounding
+    !isSameDay(getMonth(date), getMonth(currentMonthDate)) &&
+      "text-muted-foreground opacity-50", // Dim days outside month
+    isToday(date) && "bg-accent text-accent-foreground",
+    selectedDate &&
+      isSameDay(date, selectedDate) &&
+      "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground", // Use hover variant
+    "focus:outline-none focus:ring-1 focus:ring-ring"
+  );
+};
+
+// Helper for Time class styling
+const getTimeClassName = (time: Date, selected: Date | null) => {
+  const isSelected =
+    selected &&
+    time.getHours() === selected.getHours() &&
+    time.getMinutes() === selected.getMinutes();
+  return cn(
+    "text-sm p-1 mx-1 flex justify-center items-center rounded-md cursor-pointer",
+    "hover:bg-accent hover:text-accent-foreground", // Hover effect
+    isSelected && "bg-primary text-primary-foreground hover:bg-primary/90" // Selected style (might be overridden by CSS)
+  );
+};
+
+const TimerDisplay: React.FC<TimerDisplayProps> = ({
+  isRunning,
+  displayTime,
+  initialStartTime,
+  handleDateChange,
+}) => {
+  return (
+    <div className="flex flex-col items-center gap-3 w-full">
+      {" "}
+      <div className="flex items-center justify-center gap-2 text-foreground mb-1">
+        <Timer
+          className={`h-5 w-5 ${
+            isRunning ? "text-green-500 animate-pulse" : "text-muted-foreground"
+          }`}
+        />
+        <div className="text-6xl md:text-7xl font-mono font-bold tracking-tighter text-center tabular-nums">
+          {" "}
+          {displayTime}
+        </div>
+      </div>
+      <div className="text-xs text-muted-foreground mb-2 text-center">
+        {" "}
+        Started:{" "}
+        {initialStartTime ? (
+          `${formatDateForDisplay(initialStartTime)} ${formatTimeFromISOString(
+            formatISO(initialStartTime)
+          )}`
+        ) : (
+          <span className="italic">Not Started</span>
+        )}
+      </div>
+      <div className="p-1 border rounded-md bg-card shadow-sm w-full max-w-xl overflow-hidden">
+        <DatePicker
+          inline
+          id="startDate"
+          selected={initialStartTime}
+          onChange={handleDateChange}
+          showTimeSelect
+          dateFormat="MMMM d, yyyy h:mm aa"
+          timeIntervals={15}
+          preventOpenOnFocus
+          // --- Styling Props ---
+          calendarClassName="bg-card rounded-lg shadow-lg border p-2"
+          dayClassName={(date) =>
+            getDayClassName(
+              date,
+              initialStartTime,
+              initialStartTime || new Date()
+            )
+          }
+          timeClassName={(time) => getTimeClassName(time, initialStartTime)}
+          timeFormat="h:mm aa"
+          timeCaption="Time"
+          // --- Custom Header ---
+          renderCustomHeader={({
+            date,
+            decreaseMonth,
+            increaseMonth,
+            prevMonthButtonDisabled,
+            nextMonthButtonDisabled,
+          }) => (
+            <div className="flex items-center justify-between px-1 py-1.5">
+              <button
+                type="button"
+                onClick={decreaseMonth}
+                disabled={prevMonthButtonDisabled}
+                className={cn(
+                  buttonVariants({ variant: "outline", size: "icon" }),
+                  "h-7 w-7 disabled:opacity-50 border"
+                )}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <span className="text-sm font-medium">
+                {/* Display Month Year */}
+                {new Intl.DateTimeFormat("en-US", {
+                  month: "long",
+                  year: "numeric",
+                }).format(date)}
+              </span>
+              <button
+                type="button"
+                onClick={increaseMonth}
+                disabled={nextMonthButtonDisabled}
+                className={cn(
+                  buttonVariants({ variant: "outline", size: "icon" }),
+                  "h-7 w-7 disabled:opacity-50 border"
+                )}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          )}
+        />
+      </div>
+    </div>
+  );
+};
+
+export default TimerDisplay;
