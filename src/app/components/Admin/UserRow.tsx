@@ -10,7 +10,18 @@ import {
 } from "@/app/graphql/adminOperations";
 import { loggedInUserTeamsVersion } from "@/app/lib/apolloClient";
 import UserRoleSelect, { UserRole } from "./UserRoleSelect";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { TableRow, TableCell } from "@/components/ui/table";
 import { Loader2, Check, X, Plus } from "lucide-react";
+import { cn } from "@/app/lib/utils";
 
 const USER_ROW_FRAGMENT = gql`
   fragment UserRowData on User {
@@ -240,148 +251,135 @@ const UserRow: React.FC<UserRowProps> = React.memo(
       isAddingTeam || isProcessingAnyRemove || isChangingRole;
 
     return (
-      <>
-        <tr>
-          <td className="px-6 py-4 whitespace-nowrap border-b border-gray-200 shadow-md">
-            {user.email}
-            {rowError && (
-              <p className="text-red-500 text-xs mt-1">{rowError}</p>
-            )}
-          </td>
+      <TableRow key={user.id}>
+        <TableCell className="font-medium">
+          {user.email}
+          {rowError && <p className="text-red-500 text-xs mt-1">{rowError}</p>}
+        </TableCell>
+        <TableCell>
+          <div className="flex flex-col space-y-2">
+            <div className="flex items-center space-x-2">
+              <Select
+                value={selectedTeamIdForRow}
+                onValueChange={setSelectedTeamIdForRow}
+                disabled={isAnyActionLoading}
+              >
+                <SelectTrigger className="w-full text-sm h-8">
+                  <SelectValue placeholder="Select team..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {allTeams.map((team) => (
+                    <SelectItem key={team.id} value={team.id}>
+                      {team.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-          <td className="px-6 py-4 whitespace-nowrap border-b border-gray-200 shadow-md align-top">
-            <div className="flex flex-col space-y-3">
-              <div className="flex items-center space-x-2">
-                <div className="relative flex-grow">
-                  <select
-                    value={selectedTeamIdForRow}
-                    onChange={(e) => setSelectedTeamIdForRow(e.target.value)}
-                    className="w-full px-3 py-1 border border-gray-300 rounded appearance-none text-sm focus:ring-indigo-500 focus:border-indigo-500 disabled:opacity-50"
-                    disabled={isAnyActionLoading}
-                  >
-                    <option value="">Select team...</option>
-                    {allTeams.map((team) => (
-                      <option key={team.id} value={team.id}>
-                        {team.name}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-                    <svg
-                      className="w-4 h-4 text-gray-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
+              <Button
+                onClick={handleAddToTeam}
+                disabled={
+                  isAddingTeam || !selectedTeamIdForRow || isAnyActionLoading
+                }
+                size="sm"
+                className="w-[70px] min-w-[70px] flex-shrink-0"
+                variant={isAddingTeam ? "secondary" : "default"}
+              >
+                {isAddingTeam ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Plus className="h-4 w-4 mr-1" />
+                )}
+                {!isAddingTeam && "Add"}
+              </Button>
+            </div>
+            {user.teams && user.teams.length > 0 ? (
+              <div className="flex flex-wrap gap-1 pt-1">
+                {user.teams.map((team) => {
+                  const isConfirmingThis = confirmingRemoveTeamId === team.id;
+                  const isRemovingThis =
+                    isRemovingTeam && confirmingRemoveTeamId === team.id;
+
+                  return (
+                    <Badge
+                      key={team.id}
+                      variant={isConfirmingThis ? "destructive" : "secondary"}
+                      className={cn(
+                        "flex items-center gap-1",
+                        isConfirmingThis && "border-destructive/50"
+                      )}
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M19 9l-7 7-7-7"
-                      ></path>
-                    </svg>
-                  </div>
-                </div>
-                <button
-                  onClick={handleAddToTeam}
-                  disabled={
-                    isAddingTeam || !selectedTeamIdForRow || isAnyActionLoading
-                  }
-                  className={`bg-black text-white font-bold py-1 px-2 rounded flex items-center justify-center text-sm disabled:opacity-50 w-[70px] min-w-[70px] ${
-                    isAddingTeam ? "bg-gray-500" : "hover:bg-green-700"
-                  }`}
-                >
-                  {isAddingTeam ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Plus className="h-4 w-4" />
-                  )}
-                  <span className="ml-1">{isAddingTeam ? "" : "Add"}</span>
-                </button>
-              </div>
-
-              {user.teams && user.teams.length > 0 ? (
-                <div className="flex flex-wrap gap-1 pt-1">
-                  {user.teams.map((team) => {
-                    const isConfirmingThis = confirmingRemoveTeamId === team.id;
-                    const isRemovingThis =
-                      isRemovingTeam && confirmingRemoveTeamId === team.id;
-
-                    return (
-                      <div
-                        key={team.id}
-                        className={`rounded-full px-2 py-0.5 text-xs flex items-center border ${
-                          isConfirmingThis
-                            ? "bg-red-100 border-red-400"
-                            : "bg-gray-100 border-gray-300"
-                        }`}
-                      >
-                        <span>{team.name}</span>
-                        {isConfirmingThis ? (
-                          <>
-                            <button
-                              onClick={() => executeRemoveTeam(team.id)}
-                              disabled={isRemovingThis}
-                              className="ml-1.5 px-1 py-0.5 bg-red-500 text-white rounded text-xxs hover:bg-red-700 disabled:opacity-50"
-                              title="Confirm Remove"
-                            >
-                              {isRemovingThis ? (
-                                <Loader2 className="h-3 w-3 animate-spin" />
-                              ) : (
-                                <Check className="h-3 w-3" />
-                              )}
-                            </button>
-                            <button
-                              onClick={cancelRemoveConfirmation}
-                              disabled={isRemovingThis}
-                              className="ml-1 px-1 py-0.5 bg-gray-300 text-black rounded text-xxs hover:bg-gray-400 disabled:opacity-50"
-                              title="Cancel"
-                            >
-                              <X className="h-3 w-3" />
-                            </button>
-                          </>
-                        ) : (
-                          <button
-                            onClick={() => requestRemoveConfirmation(team.id)}
-                            disabled={
-                              isAnyActionLoading || !!confirmingRemoveTeamId
-                            }
-                            className="ml-1.5 text-gray-400 hover:text-red-600 disabled:opacity-50"
-                            title="Remove from team"
+                      <span>{team.name}</span>
+                      {isConfirmingThis ? (
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-4 w-4 text-destructive hover:bg-destructive/10"
+                            onClick={() => executeRemoveTeam(team.id)}
+                            disabled={isRemovingThis}
+                            title="Confirm Remove"
+                          >
+                            {isRemovingThis ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <Check className="h-3 w-3" />
+                            )}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-4 w-4 text-muted-foreground hover:bg-muted/50"
+                            onClick={cancelRemoveConfirmation}
+                            disabled={isRemovingThis}
+                            title="Cancel"
                           >
                             <X className="h-3 w-3" />
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <span className="text-gray-500 text-xs italic pt-1">
-                  No teams assigned
-                </span>
-              )}
-            </div>
-          </td>
-
-          <td className="px-6 py-4 whitespace-nowrap border-b border-gray-200 shadow-md">
-            {isChangingRole ? (
-              <div className="flex items-center justify-center h-full">
-                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                          </Button>
+                        </>
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-4 w-4 text-muted-foreground hover:text-destructive hover:bg-destructive/10 ml-1"
+                          onClick={() => requestRemoveConfirmation(team.id)}
+                          disabled={
+                            isAnyActionLoading || !!confirmingRemoveTeamId
+                          }
+                          title="Remove from team"
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </Badge>
+                  );
+                })}
               </div>
             ) : (
-              <UserRoleSelect
-                currentRole={user.role}
-                onRoleChange={handleRoleChange}
-              />
+              <span className="text-muted-foreground text-xs italic pt-1">
+                No teams assigned
+              </span>
             )}
-          </td>
-        </tr>
-      </>
+          </div>
+        </TableCell>
+        <TableCell className="w-[150px]">
+          {isChangingRole ? (
+            <div className="flex items-center justify-start h-full">
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+            </div>
+          ) : (
+            <UserRoleSelect
+              currentRole={user.role}
+              onRoleChange={handleRoleChange}
+              disabled={isAnyActionLoading}
+              className="h-8 text-sm"
+            />
+          )}
+        </TableCell>
+      </TableRow>
     );
   }
 );
 
 UserRow.displayName = "UserRow";
-
 export default UserRow;

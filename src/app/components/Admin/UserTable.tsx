@@ -1,6 +1,15 @@
 "use client";
 import React from "react";
 import UserRow, { User, Team } from "./UserRow";
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableHead,
+  TableHeader,
+  TableRow,
+  TableCell,
+} from "@/components/ui/table";
 
 interface UserTableProps {
   users: User[];
@@ -14,31 +23,34 @@ const UserTable: React.FC<UserTableProps> = ({
   loggedInUserId,
 }) => {
   return (
-    <table className="min-w-full table-auto">
-      <thead className="bg-black">
-        <tr>
-          <th className="px-6 py-3 text-left text-lg font-medium text-white uppercase tracking-wider">
-            User
-          </th>
-          <th className="px-6 py-3 text-left text-lg font-medium text-white uppercase tracking-wider">
-            Team Management
-          </th>
-          <th className="px-6 py-3 text-left text-lg font-medium text-white uppercase tracking-wider">
-            Role
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-        {users.map((user) => (
-          <UserRow
-            key={user.id}
-            user={user}
-            allTeams={allTeams}
-            loggedInUserId={loggedInUserId}
-          />
-        ))}
-      </tbody>
-    </table>
+    <Table>
+      <TableCaption>A list of users and their teams/roles.</TableCaption>
+      <TableHeader>
+        <TableRow>
+          <TableHead className="w-[30%]">User</TableHead>
+          <TableHead>Team Management</TableHead>
+          <TableHead className="w-[150px]">Role</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {users.length > 0 ? (
+          users.map((user) => (
+            <UserRow
+              key={user.id}
+              user={user}
+              allTeams={allTeams}
+              loggedInUserId={loggedInUserId}
+            />
+          ))
+        ) : (
+          <TableRow>
+            <TableCell colSpan={3} className="h-24 text-center">
+              No users found matching criteria.
+            </TableCell>
+          </TableRow>
+        )}
+      </TableBody>
+    </Table>
   );
 };
 
