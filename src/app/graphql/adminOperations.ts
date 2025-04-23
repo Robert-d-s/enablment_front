@@ -41,6 +41,7 @@ export const ADD_USER_TO_TEAM = gql`
     addUserToTeam(userId: $userId, teamId: $teamId) {
       id
       email
+      role
       teams {
         id
         name
@@ -56,6 +57,7 @@ export const REMOVE_USER_FROM_TEAM = gql`
     removeUserFromTeam(userId: $userId, teamId: $teamId) {
       id
       email
+      role
       teams {
         id
         name

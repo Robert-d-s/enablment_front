@@ -5,6 +5,8 @@ import {
   from,
   Observable,
   makeVar,
+  FieldPolicy,
+  Reference,
 } from "@apollo/client";
 import { setContext } from "@apollo/client/link/context";
 import { onError } from "@apollo/client/link/error";
@@ -146,9 +148,33 @@ const httpLink = createHttpLink({
   credentials: "include",
 });
 
+const userTeamsMergePolicy: FieldPolicy<Reference[]> = {
+  keyArgs: false,
+  merge(
+    _existing: readonly Reference[] = [],
+    incoming: readonly Reference[]
+  ): readonly Reference[] {
+    return incoming;
+  },
+};
+
 const client = new ApolloClient({
   link: from([errorLink, authLink, httpLink]),
-  cache: new InMemoryCache(),
+  cache: new InMemoryCache({
+    typePolicies: {
+      user: {
+        fields: {
+          teams: userTeamsMergePolicy,
+        },
+      },
+      Team: {
+        keyFields: ["id"],
+      },
+      SimpleTeamDTO: {
+        keyFields: ["id"],
+      },
+    },
+  }),
   defaultOptions: {
     watchQuery: { fetchPolicy: "cache-and-network" },
     query: { fetchPolicy: "network-only", errorPolicy: "all" },

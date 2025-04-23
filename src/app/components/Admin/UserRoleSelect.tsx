@@ -1,5 +1,12 @@
 "use client";
 import React from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export enum UserRole {
   ADMIN = "ADMIN",
@@ -11,23 +18,33 @@ export enum UserRole {
 interface UserRoleSelectProps {
   currentRole: UserRole;
   onRoleChange: (newRole: UserRole) => void;
+  disabled?: boolean;
+  className?: string;
 }
 
 const UserRoleSelect: React.FC<UserRoleSelectProps> = ({
   currentRole,
   onRoleChange,
+  disabled = false,
+  className,
 }) => {
   return (
-    <select
+    <Select
       value={currentRole}
-      onChange={(e) => onRoleChange(e.target.value as UserRole)}
+      onValueChange={(value) => onRoleChange(value as UserRole)}
+      disabled={disabled}
     >
-      {Object.values(UserRole).map((role) => (
-        <option key={role} value={role}>
-          {role}
-        </option>
-      ))}
-    </select>
+      <SelectTrigger className={className}>
+        <SelectValue placeholder="Select role..." />
+      </SelectTrigger>
+      <SelectContent>
+        {Object.values(UserRole).map((role) => (
+          <SelectItem key={role} value={role}>
+            {role}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 };
 
