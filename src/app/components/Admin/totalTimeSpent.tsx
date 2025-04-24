@@ -6,6 +6,9 @@ import { useAuthStore } from "@/app/lib/authStore";
 import { formatTimeFromMilliseconds } from "@/app/utils/timeUtils";
 import { useReactiveVar } from "@apollo/client";
 import { loggedInUserTeamsVersion } from "@/app/lib/apolloClient";
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
+import LoadingIndicator from "@/app/components/Admin/LoadingIndicator";
+import ErrorMessage from "@/app/components/Admin/ErrorMessage";
 
 interface MyProject {
   id: string;
@@ -169,26 +172,26 @@ const TotalTimeSpent: React.FC = () => {
 
       {/* Project Selector */}
       <div className="flex-grow w-full md:w-auto">
-        <select
-          id="myProjectSelectorForTime"
-          value={selectedProject}
-          onChange={(e) => setSelectedProject(e.target.value)}
-          className="w-full p-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-          disabled={loadingUserProjects || userProjects.length === 0}
-        >
-          <option value="">
-            {loadingUserProjects
-              ? "Loading My Projects..."
-              : userProjects.length === 0
-              ? "No Projects Found"
-              : "Select My Project"}
-          </option>
-          {userProjects.map((project) => (
-            <option key={project.id} value={project.id}>
-              {project.name} {project.teamName ? `(${project.teamName})` : ""}
-            </option>
-          ))}
-        </select>
+        {loadingUserProjects ? (
+          <LoadingIndicator message="Loading Projects..." size="sm" />
+        ) : (
+          <Select
+            value={selectedProject}
+            onValueChange={(val) => setSelectedProject(val)}
+            disabled={userProjects.length === 0}
+          >
+            <SelectTrigger className="w-full bg-white border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+              <SelectValue placeholder={userProjects.length === 0 ? "No Projects Found" : "Select My Project"} />
+            </SelectTrigger>
+            <SelectContent>
+              {userProjects.map((project) => (
+                <SelectItem key={project.id} value={project.id}>
+                  {project.name} {project.teamName ? `(${project.teamName})` : ""}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
       </div>
 
       {/* Date Pickers */}
@@ -214,9 +217,22 @@ const TotalTimeSpent: React.FC = () => {
       {/* Total Time Display */}
       <div className="text-center md:text-right whitespace-nowrap">
         {isLoading && !displayError && (
-          <p className="text-gray-400">Loading Time...</p>
+          <LoadingIndicator message="Calculating..." size="sm" />
         )}
-        {displayError && <p className="text-red-400 text-sm">{displayError}</p>}
+        {displayError && (
+          <ErrorMessage
+            error={errorTime ?? errorUserProjects ?? new Error(displayError)}
+            context="Total Time Calculation"
+            onRetry={() =>
+              refetchTotalTime({
+                userId: loggedInUserId,
+                projectId: selectedProject,
+                startDate,
+                endDate,
+              })
+            }
+          />
+        )}
         {!isLoading && !displayError && (
           <p className="text-lg font-medium text-white">
             Total:{" "}
