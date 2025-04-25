@@ -9,6 +9,7 @@ import {
   UPDATE_USER_ROLE,
 } from "@/app/graphql/adminOperations";
 import { loggedInUserTeamsVersion } from "@/app/lib/apolloClient";
+import { GET_MY_PROJECTS } from "@/app/components/Admin/totalTimeSpent";
 import UserRoleSelect, { UserRole } from "./UserRoleSelect";
 import { Button } from "@/components/ui/button";
 import {
@@ -122,6 +123,8 @@ const UserRow: React.FC<UserRowProps> = React.memo(
           setSelectedTeamIdForRow("");
         },
         onError: (error) => handleMutationError("adding user to team", error),
+        refetchQueries: [{ query: GET_MY_PROJECTS }],
+        awaitRefetchQueries: true,
       }
     );
 
@@ -161,6 +164,8 @@ const UserRow: React.FC<UserRowProps> = React.memo(
           handleMutationError("removing user from team", error);
           setConfirmingRemoveTeamId(null);
         },
+        refetchQueries: [{ query: GET_MY_PROJECTS }],
+        awaitRefetchQueries: true,
       });
 
     const [updateUserRoleMutation, { loading: isChangingRole }] = useMutation(
