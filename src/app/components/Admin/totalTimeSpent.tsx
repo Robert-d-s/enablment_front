@@ -172,63 +172,80 @@ const TotalTimeSpent: React.FC = () => {
   }
 
   const ProjectSelector: React.FC<ProjectSelectorProps> = memo(
-    ({
-      projects,
-      selectedProject,
-      onSelect,
-      loading,
-      error,
-      refetchProjects,
-    }: ProjectSelectorProps) => (
-      <div className="flex-grow w-full md:w-auto">
-        {loading ? (
-          <LoadingIndicator size="sm" />
-        ) : error ? (
-          <ErrorMessage error={error} context="Projects" onRetry={refetchProjects} />
-        ) : (
-          <Select
-            value={selectedProject}
-            onValueChange={onSelect}
-            disabled={!projects.length}
-          >
-            <SelectTrigger className="flex w-fit items-center justify-between gap-2 rounded-md border  
+    ({ projects, selectedProject, onSelect, loading, error, refetchProjects }: ProjectSelectorProps) => {
+      const [localSelected, setLocalSelected] = useState<string>(selectedProject);
+      const [open, setOpen] = useState<boolean>(false);
+
+      useEffect(() => setLocalSelected(selectedProject), [selectedProject]);
+      useEffect(() => {
+        if (!open && localSelected !== selectedProject) {
+          onSelect(localSelected);
+        }
+      }, [open, localSelected, selectedProject, onSelect]);
+
+      return (
+        <div className="flex-grow w-full md:w-auto">
+          {loading ? (
+            <LoadingIndicator size="sm" />
+          ) : error ? (
+            <ErrorMessage error={error} context="Projects" onRetry={refetchProjects} />
+          ) : (
+            <Select
+              value={localSelected}
+              onValueChange={setLocalSelected}
+              open={open}
+              onOpenChange={setOpen}
+              disabled={!projects.length}
+            >
+              <SelectTrigger className="flex w-fit items-center justify-between gap-2 rounded-md border  
 bg-transparent px-3 py-2 text-sm whitespace-nowrap shadow-xs">
-              <SelectValue
-                className="block w-full truncate text-gray-800"
-                placeholder={projects.length === 0 ? "No Projects Found" : "Select My Project"}
-              />
-            </SelectTrigger>
-            <SelectContent className="w-auto min-w-full max-w-screen-md bg-white border border-gray-200 rounded-md mt-1 shadow-lg z-10 left-0 right-auto">
-              {projects.map((p) => (
-                <SelectItem key={p.id} value={p.id} title={p.name + (p.teamName ? ` (${p.teamName})` : "")}>
-                  {p.name} {p.teamName ? ` (${p.teamName})` : ""}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
-      </div>
-    )
+                <SelectValue
+                  className="block w-full truncate text-gray-800"
+                  placeholder={projects.length === 0 ? "No Projects Found" : "Select My Project"}
+                />
+              </SelectTrigger>
+              <SelectContent className="w-auto min-w-full max-w-screen-md bg-white border border-gray-200 rounded-md mt-1 shadow-lg z-10 left-0 right-auto">
+                {projects.map((p) => (
+                  <SelectItem key={p.id} value={p.id} title={p.name + (p.teamName ? ` (${p.teamName})` : "")}>
+                    {p.name} {p.teamName ? ` (${p.teamName})` : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        </div>
+      );
+    }
   );
   ProjectSelector.displayName = "ProjectSelector";
 
   const DateFilters: React.FC<DateFiltersProps> = memo(
-    ({ startDate, endDate, onStart, onEnd }: DateFiltersProps) => (
-      <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
-        <input
-          type="date"
-          value={startDate}
-          onChange={(e) => onStart(e.target.value)}
-          className="w-full sm:w-44 h-9 p-2 bg-white border rounded shadow-sm"
-        />
-        <input
-          type="date"
-          value={endDate}
-          onChange={(e) => onEnd(e.target.value)}
-          className="w-full sm:w-44 h-9 p-2 bg-white border rounded shadow-sm"
-        />
-      </div>
-    )
+    ({ startDate, endDate, onStart, onEnd }: DateFiltersProps) => {
+      const [localStart, setLocalStart] = useState(startDate);
+      const [localEnd, setLocalEnd] = useState(endDate);
+
+      useEffect(() => setLocalStart(startDate), [startDate]);
+      useEffect(() => setLocalEnd(endDate), [endDate]);
+
+      return (
+        <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+          <input
+            type="date"
+            value={localStart}
+            onChange={(e) => setLocalStart(e.target.value)}
+            onBlur={() => onStart(localStart)}
+            className="w-full sm:w-44 h-9 p-2 bg-white border rounded shadow-sm"
+          />
+          <input
+            type="date"
+            value={localEnd}
+            onChange={(e) => setLocalEnd(e.target.value)}
+            onBlur={() => onEnd(localEnd)}
+            className="w-full sm:w-44 h-9 p-2 bg-white border rounded shadow-sm"
+          />
+        </div>
+      );
+    }
   );
   DateFilters.displayName = "DateFilters";
 
