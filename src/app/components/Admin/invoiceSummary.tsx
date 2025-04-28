@@ -6,7 +6,6 @@ import { useQuery } from "@apollo/client";
 import gql from "graphql-tag";
 import DatePicker from "react-datepicker";
 import { formatISO, isValid } from "date-fns";
-
 import ProjectSelector from "../ProjectSelector";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
