@@ -969,6 +969,7 @@ export default NavBar;
 "use client";
 
 import React from "react";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 
 type ProjectSelectorProps = {
   projects: { id: string; name: string; teamName?: string }[];
@@ -983,20 +984,21 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
   onProjectChange,
 }) => {
   return (
-    <select
-      value={selectedProject}
-      onChange={(e) => onProjectChange(e.target.value)}
-      className="form-input block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-    >
-      <option value="" disabled>
-        Select a project
-      </option>
-      {projects.map((project) => (
-        <option key={project.id} value={project.id}>
-          {project.name} (Team: {project.teamName})
-        </option>
-      ))}
-    </select>
+       <Select
+        value={selectedProject}
+          onValueChange={onProjectChange}
+             >
+        <SelectTrigger className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-500 focus:ring-indigo-500 focus:border-indigo-500">
+           <SelectValue placeholder="Select a project" />
+          </SelectTrigger>
+          <SelectContent>
+            {projects.map((project) => (
+              <SelectItem key={project.id} value={project.id} className="text-sm">
+               {project.name} (Team: {project.teamName})
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
   );
 };
 
@@ -1675,6 +1677,7 @@ export const ADD_USER_TO_TEAM = gql`
     addUserToTeam(userId: $userId, teamId: $teamId) {
       id
       email
+      role
       teams {
         id
         name
@@ -1690,6 +1693,7 @@ export const REMOVE_USER_FROM_TEAM = gql`
     removeUserFromTeam(userId: $userId, teamId: $teamId) {
       id
       email
+      role
       teams {
         id
         name
@@ -2591,6 +2595,170 @@ export const useTimer = (
   };
 };
 
+// ====== FILE: src\app\hooks\useUserManagementData.ts ======
+
+import { useState, useEffect } from "react";
+import { useQuery, gql, NetworkStatus } from "@apollo/client";
+import { useDebounce } from "use-debounce";
+import { User as UserTableRowType } from "@/app/components/Admin/UserRow";
+import { UserRole } from "@/app/components/Admin/UserRoleSelect";
+import { GET_SIMPLE_TEAMS } from "@/app/graphql/adminOperations";
+import { useAuthStore } from "@/app/lib/authStore";
+
+const GET_MANAGEMENT_USERS = gql`
+  query GetManagementUsers(
+    $page: Int
+    $pageSize: Int
+    $search: String
+    $role: UserRole
+  ) {
+    users(
+      args: { page: $page, pageSize: $pageSize, search: $search, role: $role }
+    ) {
+      id
+      email
+      role
+      teams {
+        id
+        name
+        __typename
+      }
+      __typename
+    }
+  }
+`;
+
+const GET_USERS_COUNT = gql`
+  query GetUsersManagementCount($search: String, $role: UserRole) {
+    usersCount(search: $search, role: $role)
+  }
+`;
+
+// Keep interfaces
+interface GetUsersQueryData {
+  users: Array<{
+    id: number;
+    email: string;
+    role: string;
+    teams: Array<{ id: string; name: string; __typename: "Team" }>;
+    __typename: "User";
+  }>;
+}
+
+interface GetSimpleTeamsQueryData {
+  getAllSimpleTeams: Array<{
+    id: string;
+    name: string;
+    __typename: "SimpleTeamDTO";
+  }>;
+}
+
+interface GetUsersCountQueryData {
+  usersCount: number;
+}
+
+// The Custom Hook
+export const useUserManagementData = () => {
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [roleFilter, setRoleFilter] = useState<UserRole | "">("");
+  const [debouncedSearchTerm] = useDebounce(searchTerm, 500);
+  const loggedInUser = useAuthStore((state) => state.user);
+
+  const userQueryVariables = {
+    page,
+    pageSize,
+    search: debouncedSearchTerm || null,
+    role: roleFilter || null,
+  };
+
+  const countQueryVariables = {
+    search: debouncedSearchTerm || undefined,
+    role: roleFilter || undefined,
+  };
+
+  const {
+    loading: loadingUsers,
+    error: errorUsers,
+    data: dataUsers,
+    networkStatus,
+    refetch: refetchUsers,
+  } = useQuery<GetUsersQueryData>(GET_MANAGEMENT_USERS, {
+    variables: userQueryVariables,
+    notifyOnNetworkStatusChange: true,
+    fetchPolicy: "cache-and-network",
+  });
+
+  const {
+    data: countData,
+    error: countError,
+    refetch: refetchCount,
+  } = useQuery<GetUsersCountQueryData>(GET_USERS_COUNT, {
+    variables: countQueryVariables,
+    fetchPolicy: "cache-and-network",
+  });
+
+  const {
+    loading: loadingTeams,
+    data: dataTeams,
+    error: teamsError,
+    refetch: refetchTeams,
+  } = useQuery<GetSimpleTeamsQueryData>(GET_SIMPLE_TEAMS);
+
+  const totalUsers = countData?.usersCount ?? 0;
+  const totalPages = Math.ceil(totalUsers / pageSize);
+
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearchTerm, roleFilter, pageSize]);
+
+  const isLoading = loadingUsers || loadingTeams;
+  const isRefetching =
+    networkStatus === NetworkStatus.refetch ||
+    networkStatus === NetworkStatus.setVariables;
+  const error = errorUsers || countError || teamsError;
+
+  const users: UserTableRowType[] = (dataUsers?.users ?? []).map((user) => ({
+    ...user,
+    role: user.role as UserRole,
+  }));
+
+  const teams = dataTeams?.getAllSimpleTeams || [];
+
+  const refetchAll = async () => {
+    try {
+      await Promise.all([refetchUsers(), refetchCount(), refetchTeams()]);
+    } catch (err) {
+      console.error("Failed to refetch user management data:", err);
+    }
+  };
+
+  return {
+    // Data
+    users,
+    teams,
+    totalUsers,
+    totalPages,
+    // State Values
+    page,
+    pageSize,
+    searchTerm,
+    roleFilter,
+    loggedInUser,
+    // State Setters
+    setPage,
+    setPageSize,
+    setSearchTerm,
+    setRoleFilter,
+    // Status
+    isLoading: isLoading && !isRefetching,
+    isRefetching,
+    error,
+    refetch: refetchAll,
+  };
+};
+
 // ====== FILE: src\app\issuesPage\page.tsx ======
 
 "use client";
@@ -3178,6 +3346,8 @@ import {
   from,
   Observable,
   makeVar,
+  FieldPolicy,
+  Reference,
 } from "@apollo/client";
 import { setContext } from "@apollo/client/link/context";
 import { onError } from "@apollo/client/link/error";
@@ -3319,9 +3489,33 @@ const httpLink = createHttpLink({
   credentials: "include",
 });
 
+const userTeamsMergePolicy: FieldPolicy<Reference[]> = {
+  keyArgs: false,
+  merge(
+    _existing: readonly Reference[] = [],
+    incoming: readonly Reference[]
+  ): readonly Reference[] {
+    return incoming;
+  },
+};
+
 const client = new ApolloClient({
   link: from([errorLink, authLink, httpLink]),
-  cache: new InMemoryCache(),
+  cache: new InMemoryCache({
+    typePolicies: {
+      user: {
+        fields: {
+          teams: userTeamsMergePolicy,
+        },
+      },
+      Team: {
+        keyFields: ["id"],
+      },
+      SimpleTeamDTO: {
+        keyFields: ["id"],
+      },
+    },
+  }),
   defaultOptions: {
     watchQuery: { fetchPolicy: "cache-and-network" },
     query: { fetchPolicy: "network-only", errorPolicy: "all" },
@@ -4238,6 +4432,55 @@ export const BackgroundBeams = React.memo(
 );
 BackgroundBeams.displayName = "BackgroundBeams";
 
+// ====== FILE: src\components\ui\badge.tsx ======
+
+import * as React from "react";
+import { Slot } from "@radix-ui/react-slot";
+import { cva, type VariantProps } from "class-variance-authority";
+
+import { cn } from "@/app/lib/utils";
+
+const badgeVariants = cva(
+  "inline-flex items-center justify-center rounded-md border px-2 py-0.5 text-xs font-medium w-fit whitespace-nowrap shrink-0 [&>svg]:size-3 gap-1 [&>svg]:pointer-events-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive transition-[color,box-shadow] overflow-hidden",
+  {
+    variants: {
+      variant: {
+        default:
+          "border-transparent bg-primary text-primary-foreground [a&]:hover:bg-primary/90",
+        secondary:
+          "border-transparent bg-secondary text-secondary-foreground [a&]:hover:bg-secondary/90",
+        destructive:
+          "border-transparent bg-destructive text-white [a&]:hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
+        outline:
+          "text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+    },
+  }
+);
+
+function Badge({
+  className,
+  variant,
+  asChild = false,
+  ...props
+}: React.ComponentProps<"span"> &
+  VariantProps<typeof badgeVariants> & { asChild?: boolean }) {
+  const Comp = asChild ? Slot : "span";
+
+  return (
+    <Comp
+      data-slot="badge"
+      className={cn(badgeVariants({ variant }), className)}
+      {...props}
+    />
+  );
+}
+
+export { Badge, badgeVariants };
+
 // ====== FILE: src\components\ui\button.tsx ======
 
 import * as React from "react";
@@ -4655,6 +4898,30 @@ export {
   DropdownMenuSubContent,
 };
 
+// ====== FILE: src\components\ui\input.tsx ======
+
+import * as React from "react";
+
+import { cn } from "@/app/lib/utils";
+
+function Input({ className, type, ...props }: React.ComponentProps<"input">) {
+  return (
+    <input
+      type={type}
+      data-slot="input"
+      className={cn(
+        "file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+        "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
+        "aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
+        className
+      )}
+      {...props}
+    />
+  );
+}
+
+export { Input };
+
 // ====== FILE: src\components\ui\label.tsx ======
 
 "use client";
@@ -5012,6 +5279,206 @@ export {
   SheetDescription,
 };
 
+// ====== FILE: src\components\ui\skeleton.tsx ======
+
+import { cn } from "@/app/lib/utils";
+
+function Skeleton({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="skeleton"
+      className={cn("bg-accent animate-pulse rounded-md", className)}
+      {...props}
+    />
+  )
+}
+
+export { Skeleton }
+
+// ====== FILE: src\components\ui\table.tsx ======
+
+"use client";
+
+import * as React from "react";
+
+import { cn } from "@/app/lib/utils";
+
+function Table({ className, ...props }: React.ComponentProps<"table">) {
+  return (
+    <div
+      data-slot="table-container"
+      className="relative w-full overflow-x-auto"
+    >
+      <table
+        data-slot="table"
+        className={cn("w-full caption-bottom text-sm", className)}
+        {...props}
+      />
+    </div>
+  );
+}
+
+function TableHeader({ className, ...props }: React.ComponentProps<"thead">) {
+  return (
+    <thead
+      data-slot="table-header"
+      className={cn("[&_tr]:border-b", className)}
+      {...props}
+    />
+  );
+}
+
+function TableBody({ className, ...props }: React.ComponentProps<"tbody">) {
+  return (
+    <tbody
+      data-slot="table-body"
+      className={cn("[&_tr:last-child]:border-0", className)}
+      {...props}
+    />
+  );
+}
+
+function TableFooter({ className, ...props }: React.ComponentProps<"tfoot">) {
+  return (
+    <tfoot
+      data-slot="table-footer"
+      className={cn(
+        "bg-muted/50 border-t font-medium [&>tr]:last:border-b-0",
+        className
+      )}
+      {...props}
+    />
+  );
+}
+
+function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
+  return (
+    <tr
+      data-slot="table-row"
+      className={cn(
+        "hover:bg-muted/50 data-[state=selected]:bg-muted border-b transition-colors",
+        className
+      )}
+      {...props}
+    />
+  );
+}
+
+function TableHead({ className, ...props }: React.ComponentProps<"th">) {
+  return (
+    <th
+      data-slot="table-head"
+      className={cn(
+        "text-foreground h-10 px-2 text-left align-middle font-medium whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+        className
+      )}
+      {...props}
+    />
+  );
+}
+
+function TableCell({ className, ...props }: React.ComponentProps<"td">) {
+  return (
+    <td
+      data-slot="table-cell"
+      className={cn(
+        "p-2 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+        className
+      )}
+      {...props}
+    />
+  );
+}
+
+function TableCaption({
+  className,
+  ...props
+}: React.ComponentProps<"caption">) {
+  return (
+    <caption
+      data-slot="table-caption"
+      className={cn("text-muted-foreground mt-4 text-sm", className)}
+      {...props}
+    />
+  );
+}
+
+export {
+  Table,
+  TableHeader,
+  TableBody,
+  TableFooter,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableCaption,
+};
+
+// ====== FILE: src\app\components\Admin\ErrorMessage.tsx ======
+
+// src/app/components/common/ErrorMessage.tsx
+import React from "react";
+import { ApolloError } from "@apollo/client";
+import { AlertTriangle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/app/lib/utils";
+
+interface ErrorMessageProps {
+  error: ApolloError | Error | null | undefined;
+  context?: string;
+  className?: string;
+  onRetry?: () => void;
+}
+
+const ErrorMessage: React.FC<ErrorMessageProps> = ({
+  error,
+  context,
+  className,
+  onRetry,
+}) => {
+  if (!error) return null;
+
+  console.error(`Error ${context ? `in ${context}` : ""}:`, error);
+
+  let displayMessage = "An unexpected error occurred.";
+  let isForbidden = false;
+
+  if (error instanceof ApolloError) {
+    const graphQLError = error.graphQLErrors?.[0];
+    isForbidden = graphQLError?.extensions?.code === "FORBIDDEN";
+    displayMessage = isForbidden
+      ? `Permission denied${context ? ` to access ${context}` : ""}.`
+      : graphQLError?.message || error.networkError?.message || error.message;
+  } else if (error instanceof Error) {
+    displayMessage = error.message;
+  }
+
+  return (
+    <div
+      className={cn(
+        "p-4 border border-destructive/50 bg-destructive/10 text-destructive rounded-md flex flex-col items-center gap-3",
+        className
+      )}
+      role="alert"
+    >
+      <div className="flex items-center gap-2">
+        <AlertTriangle className="h-5 w-5 flex-shrink-0" />
+        <p className="font-medium">
+          Error{context ? ` loading ${context}` : ""}
+        </p>
+      </div>
+      <p className="text-sm text-center">{displayMessage}</p>
+      {onRetry && !isForbidden && (
+        <Button variant="destructive" size="sm" onClick={onRetry}>
+          Retry
+        </Button>
+      )}
+    </div>
+  );
+};
+
+export default ErrorMessage;
+
 // ====== FILE: src\app\components\Admin\invoiceSummary.tsx ======
 
 // src/app/components/Admin/invoiceSummary.tsx
@@ -5020,7 +5487,10 @@ export {
 import React, { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@apollo/client";
 import gql from "graphql-tag";
+
 import ProjectSelector from "../ProjectSelector";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 
 interface QueryRateDetail {
   rateId: number;
@@ -5183,21 +5653,14 @@ const InvoiceSummary: React.FC = () => {
 
   const renderInvoiceDetails = () => {
     if (loadingInvoice) {
-      return <p className="text-gray-400 mt-4">Loading Invoice...</p>;
+      return <p className="text-gray-500 mt-4">Loading invoice…</p>;
     }
-    if (errorInvoice) {
-      return (
-        <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mt-4 rounded">
-          <p className="font-bold">Error Loading Invoice</p>
-          <p>{errorInvoice.message}</p>
-        </div>
-      );
-    }
+
     if (invoiceData) {
       return (
         <div className="mt-4 p-6 bg-white shadow-md rounded-lg">
           <h4 className="text-md font-bold bg-slate-200 p-2 rounded-t-lg">
-            Project: {invoiceData.projectName} - Team:{" "}
+            Project: {invoiceData.projectName} – Team:{" "}
             {invoiceData.teamName ?? "N/A"}
           </h4>
           <div className="p-2 space-y-1">
@@ -5208,16 +5671,18 @@ const InvoiceSummary: React.FC = () => {
               Total Cost: {formatCurrency(invoiceData.totalCost)}
             </p>
             <div className="mt-4">
-              <h5 className="font-semibold bg-slate-200 p-1">Rates Applied:</h5>
-              {invoiceData.rates && invoiceData.rates.length > 0 ? (
+              <h5 className="font-semibold bg-slate-200 p-1">
+                Rates Applied:
+              </h5>
+              {invoiceData.rates.length > 0 ? (
                 <ul className="list-disc list-inside pl-4 pt-1">
-                  {invoiceData.rates.map((rate: QueryRateDetail) => (
+                  {invoiceData.rates.map((rate) => (
                     <li
-                      className="border-b border-gray-100 py-1 text-sm"
                       key={rate.rateId}
+                      className="border-b border-gray-100 py-1 text-sm"
                     >
-                      {rate.rateName}: {rate.hours?.toFixed(2) ?? "N/A"} hours
-                      at {formatCurrency(rate.cost)} (
+                      {rate.rateName}: {rate.hours.toFixed(2)} hours at{" "}
+                      {formatCurrency(rate.cost)} (
                       {formatCurrency(rate.ratePerHour)} / h)
                     </li>
                   ))}
@@ -5232,6 +5697,7 @@ const InvoiceSummary: React.FC = () => {
         </div>
       );
     }
+
     if (selectedProject && startDate && endDate) {
       return (
         <p className="text-gray-400 mt-4">
@@ -5239,6 +5705,7 @@ const InvoiceSummary: React.FC = () => {
         </p>
       );
     }
+
     return (
       <p className="text-gray-500 mt-4">
         Please select a project and date range.
@@ -5247,24 +5714,24 @@ const InvoiceSummary: React.FC = () => {
   };
 
   return (
-    <div className="p-6 bg-black shadow-md rounded-lg">
-      <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0 md:space-x-4 mb-4">
-        <h3 className="text-lg font-bold text-white">Invoice Summary</h3>
+    <Card className="bg-black border-none p-6 shadow-md rounded-lg">
+      <CardHeader className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0 md:space-x-4 mb-4">
+        <CardTitle className="text-lg font-bold text-white">
+          Invoice Summary
+        </CardTitle>
         <div className="flex-grow">
-          {isInitialLoading && (
+          {isInitialLoading ? (
             <select
-              className="w-full p-2 bg-gray-200 border border-gray-300 rounded-md text-gray-500 cursor-not-allowed"
               disabled
+              className="w-full p-2 bg-gray-200 border border-gray-300 rounded-md text-gray-500 cursor-not-allowed"
             >
-              <option>Loading Projects...</option>
+              <option>Loading Projects…</option>
             </select>
-          )}
-          {initialLoadingError && (
+          ) : initialLoadingError ? (
             <div className="p-2 bg-red-100 text-red-700 border border-red-300 rounded">
-              Error loading projects/teams.
+              Error loading projects.
             </div>
-          )}
-          {!isInitialLoading && !initialLoadingError && (
+          ) : (
             <ProjectSelector
               projects={projectsForSelector}
               selectedProject={selectedProject}
@@ -5273,35 +5740,74 @@ const InvoiceSummary: React.FC = () => {
           )}
         </div>
         <div className="flex-grow flex flex-col md:flex-row gap-2 md:gap-4">
-          <input
+          <Input
             type="date"
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
-            className="w-full p-2 bg-white text-black border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-            aria-label="Start Date"
+            className="w-full bg-white text-black border border-gray-300"
             disabled={isInitialLoading}
+            aria-label="Start Date"
           />
-          <input
+          <Input
             type="date"
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
-            className="w-full p-2 bg-white text-black border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-            aria-label="End Date"
+            className="w-full bg-white text-black border border-gray-300"
             disabled={isInitialLoading}
             min={startDate}
+            aria-label="End Date"
           />
         </div>
-      </div>
+      </CardHeader>
+
       {!isInitialLoading && !initialLoadingError ? (
-        renderInvoiceDetails()
+        <CardContent>{renderInvoiceDetails()}</CardContent>
       ) : (
-        <p className="text-gray-500 mt-4 italic">Loading initial data...</p>
+        <p className="text-gray-500 mt-4 italic">Loading initial data…</p>
       )}
-    </div>
+    </Card>
   );
 };
 
 export default InvoiceSummary;
+
+// ====== FILE: src\app\components\Admin\LoadingIndicator.tsx ======
+
+import React from "react";
+import { Loader2 } from "lucide-react";
+import { cn } from "@/app/lib/utils";
+
+interface LoadingIndicatorProps {
+  message?: string;
+  className?: string;
+  size?: "sm" | "md" | "lg";
+}
+
+const LoadingIndicator: React.FC<LoadingIndicatorProps> = ({
+  message = "Loading...",
+  className,
+  size = "md",
+}) => {
+  const sizeClasses = {
+    sm: "h-4 w-4",
+    md: "h-6 w-6",
+    lg: "h-8 w-8",
+  };
+
+  return (
+    <div
+      className={cn(
+        "flex flex-col items-center justify-center gap-2 p-4 text-muted-foreground",
+        className
+      )}
+    >
+      <Loader2 className={cn("animate-spin", sizeClasses[size])} />
+      {message && <p className="text-sm italic">{message}</p>}
+    </div>
+  );
+};
+
+export default LoadingIndicator;
 
 // ====== FILE: src\app\components\Admin\NavigationBar.tsx ======
 
@@ -5310,9 +5816,11 @@ export default InvoiceSummary;
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { clientLogout } from "@/app/lib/apolloClient";
 import { useAuthStore } from "@/app/lib/authStore";
 import { Button } from "@/components/ui/button";
+import LoadingIndicator from "@/app/components/Admin/LoadingIndicator";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -5323,7 +5831,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Menu, LogOut, User as UserIcon } from "lucide-react";
 
+const navLinks = [
+  { href: "/issuesPage", label: "Issues" },
+  { href: "/adminPage", label: "Admin" },
+  { href: "/timeKeeper", label: "Timekeeper" },
+];
+
 const NavigationBar: React.FC = () => {
+  const pathname = usePathname();
   const user = useAuthStore((state) => state.user);
 
   const handleLogout = async () => {
@@ -5332,7 +5847,7 @@ const NavigationBar: React.FC = () => {
 
   return (
     <nav className="flex items-center justify-between p-4 bg-card border-b font-roboto-condensed shadow-sm">
-      <Link href="/" className="flex-shrink-0">
+      <Link href="/" className="flex-shrink-0" tabIndex={0}>
         <Image
           src="/logo.svg"
           alt="Enablment-tt Logo"
@@ -5343,25 +5858,25 @@ const NavigationBar: React.FC = () => {
         />
       </Link>
 
+      {/* Desktop Navigation */}
       <div className="hidden md:flex flex-grow items-center justify-center gap-6 font-medium text-sm uppercase">
-        <Link
-          href="/issuesPage"
-          className="text-muted-foreground hover:text-foreground transition-colors"
-        >
-          Issues
-        </Link>
-        <Link
-          href="/adminPage"
-          className="text-muted-foreground hover:text-foreground transition-colors"
-        >
-          Admin
-        </Link>
-        <Link
-          href="/timeKeeper"
-          className="text-muted-foreground hover:text-foreground transition-colors"
-        >
-          Timekeeper
-        </Link>
+        {navLinks.map((link) => (
+          <Link
+            key={link.href}
+            href={link.href}
+            tabIndex={0}
+            className={`
+              transition-colors focus:outline-none
+              focus:border-b-2 focus:border-blue-500
+              ${pathname===link.href
+                ? "text-foreground border-b-2 border-foreground"
+                : "text-muted-foreground hover:text-foreground"}
+            `}
+            aria-current={pathname === link.href ? "page" : undefined}
+          >
+            {link.label}
+          </Link>
+        ))}
       </div>
 
       <div className="flex items-center gap-4">
@@ -5369,15 +5884,16 @@ const NavigationBar: React.FC = () => {
           {user ? (
             <span className="text-sm text-muted-foreground">{user.email}</span>
           ) : (
-            <span className="text-sm text-muted-foreground italic">
-              Loading...
-            </span>
+            <div className="flex items-center h-5 w-24">
+              <LoadingIndicator message="" size="sm" />
+            </div>
           )}
           <Button
             variant="outline"
             size="sm"
             onClick={handleLogout}
             aria-label="Logout"
+            tabIndex={0}
           >
             <LogOut className="h-4 w-4" />
           </Button>
@@ -5387,12 +5903,16 @@ const NavigationBar: React.FC = () => {
         <div className="md:hidden">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="icon" aria-label="Open menu">
+              <Button
+                variant="outline"
+                size="icon"
+                aria-label="Open menu"
+                tabIndex={0}
+              >
                 <Menu className="h-5 w-5" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
-              {/* Optional User Info Label */}
               {user && (
                 <>
                   <DropdownMenuLabel className="flex items-center gap-2 font-normal">
@@ -5404,21 +5924,27 @@ const NavigationBar: React.FC = () => {
                   <DropdownMenuSeparator />
                 </>
               )}
-              {/* Navigation Items */}
-              <DropdownMenuItem asChild>
-                <Link href="/issuesPage">Issues</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/adminPage">Admin</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/timeKeeper">Timekeeper</Link>
-              </DropdownMenuItem>
+              {navLinks.map((link) => (
+                <DropdownMenuItem asChild key={link.href}>
+                  <Link
+                    href={link.href}
+                    tabIndex={0}
+                    className={
+                      pathname === link.href
+                        ? "font-bold underline underline-offset-4"
+                        : ""
+                    }
+                    aria-current={pathname === link.href ? "page" : undefined}
+                  >
+                    {link.label}
+                  </Link>
+                </DropdownMenuItem>
+              ))}
               <DropdownMenuSeparator />
-              {/* Logout Item */}
               <DropdownMenuItem
                 onClick={handleLogout}
                 className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                tabIndex={0}
               >
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>Logout</span>
@@ -5440,6 +5966,11 @@ export default NavigationBar;
 import React, { useState, useCallback } from "react";
 import { useQuery, useMutation, gql } from "@apollo/client";
 import { toast } from "react-toastify";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 
 interface Team {
   id: string;
@@ -5642,215 +6173,217 @@ const RatesManager = () => {
   const isActionLoading = creatingRate || processingDeleteId !== null;
 
   return (
-    <div className="p-4 bg-gray-50 shadow-md rounded-lg border">
-      <h3 className="font-bold text-lg mb-4 border-b pb-2">Manage Rates</h3>
-      <div className="mb-4">
-        <label
-          htmlFor="teamSelectorRates"
-          className="block text-sm font-medium text-gray-700 mb-1"
-        >
-          Select Team
-        </label>
-        <select
-          id="teamSelectorRates"
-          className="w-full p-2 border border-gray-300 rounded shadow-sm focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-gray-100"
-          onChange={(e) => setSelectedTeamId(e.target.value)}
-          value={selectedTeamId}
-          disabled={teamsLoading}
-        >
-          <option value="">
-            {teamsLoading ? "Loading Teams..." : "-- Select a Team --"}
-          </option>
-          {teamsData?.getAllSimpleTeams.map((team: Team) => (
-            <option key={team.id} value={team.id}>
-              {team.name}
-            </option>
-          ))}
-        </select>
-        {teamsError && (
-          <p className="text-red-500 text-xs mt-1">{teamsError.message}</p>
-        )}
-      </div>
-
-      {selectedTeamId && (
-        <div className="mb-4 p-4 border rounded-md bg-white grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-          <div className="md:col-span-2">
-            <label
-              htmlFor="rateName"
-              className="block text-sm font-medium text-gray-700"
+    <Card className="p-4 bg-gray-50 shadow-md rounded-lg border">
+      <CardHeader className="border-b pb-2 mb-4">
+        <CardTitle className="font-bold text-lg">Manage Rates</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="mb-4">
+          <Label htmlFor="teamSelectorRates" className="block text-sm font-medium text-gray-700 mb-1">
+            Select Team
+          </Label>
+          <Select
+            value={selectedTeamId}
+            onValueChange={setSelectedTeamId}
+            disabled={teamsLoading}
+          >
+            <SelectTrigger
+              id="teamSelectorRates"
+              className="w-full p-2 border border-gray-300 rounded shadow-sm focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-gray-100"
             >
-              New Rate Name
-            </label>
-            <input
-              type="text"
-              id="rateName"
-              className="w-full p-2 mt-1 border border-gray-300 rounded disabled:bg-gray-100"
-              value={rateName}
-              onChange={(e) => setRateName(e.target.value)}
-              placeholder="e.g., Standard Rate"
-              disabled={isActionLoading}
-            />
-          </div>
-          <div>
-            <label
-              htmlFor="rateValue"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Rate Value (DKK)
-            </label>
-            <input
-              type="number"
-              id="rateValue"
-              className="w-full p-2 mt-1 border border-gray-300 rounded disabled:bg-gray-100"
-              value={rateValue}
-              onChange={handleRateValueChange}
-              placeholder="e.g., 800"
-              min="0"
-              step="1"
-              disabled={isActionLoading}
-            />
-          </div>
-          <div>
-            <button
-              className="w-full p-2 bg-black text-white rounded hover:bg-gray-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              onClick={handleCreateRate}
-              disabled={isActionLoading || !!formError}
-            >
-              {creatingRate ? (
-                <>
-                  <svg
-                    className="animate-spin h-4 w-4 text-white"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    {" "}
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    ></circle>{" "}
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>{" "}
-                  </svg>
-                  Creating...
-                </>
-              ) : (
-                "Create Rate"
-              )}
-            </button>
-            {formError && (
-              <p className="text-red-500 text-xs mt-1">{formError}</p>
-            )}
-          </div>
+              <SelectValue placeholder={teamsLoading ? "Loading Teams..." : "-- Select a Team --"} />
+            </SelectTrigger>
+            <SelectContent>
+              {teamsData?.getAllSimpleTeams.map((team) => (
+                <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {teamsError && (
+            <p className="text-red-500 text-xs mt-1">{teamsError.message}</p>
+          )}
         </div>
-      )}
 
-      <div className="mt-4">
-        <h4 className="font-semibold mb-2">Existing Rates for Team:</h4>
-        {selectedTeamId ? (
-          <>
-            {ratesLoading && (
-              <p className="text-gray-500 italic">Loading rates...</p>
-            )}
-            {ratesError && (
-              <p className="text-red-500">
-                Error loading rates: {ratesError.message}
-              </p>
-            )}
-            {!ratesLoading &&
-              !ratesError &&
-              ratesData?.rates &&
-              ratesData.rates.length === 0 && (
-                <p className="text-gray-500 italic">
-                  No rates defined for this team yet.
+        {selectedTeamId && (
+          <div className="mb-4 p-4 border rounded-md bg-white grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+            <div className="md:col-span-2">
+              <Label
+                htmlFor="rateName"
+                className="block text-sm font-medium text-gray-700"
+              >
+                New Rate Name
+              </Label>
+              <Input
+                id="rateName"
+                type="text"
+                className="w-full p-2 mt-1 border border-gray-300 rounded disabled:bg-gray-100"
+                value={rateName}
+                onChange={(e) => setRateName(e.target.value)}
+                placeholder="e.g., Standard Rate"
+                disabled={isActionLoading}
+              />
+            </div>
+            <div>
+              <Label
+                htmlFor="rateValue"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Rate Value (DKK)
+              </Label>
+              <Input
+                id="rateValue"
+                type="number"
+                className="w-full p-2 mt-1 border border-gray-300 rounded disabled:bg-gray-100"
+                value={rateValue}
+                onChange={handleRateValueChange}
+                placeholder="e.g., 800"
+                min="0"
+                step="1"
+                disabled={isActionLoading}
+              />
+            </div>
+            <div>
+              <Button
+                className="w-full p-2 bg-black text-white rounded hover:bg-gray-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                onClick={handleCreateRate}
+                disabled={isActionLoading || !!formError}
+              >
+                {creatingRate ? (
+                  <>
+                    <svg
+                      className="animate-spin h-4 w-4 text-white"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      {" "}
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>{" "}
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>{" "}
+                    </svg>
+                    Creating...
+                  </>
+                ) : (
+                  "Create Rate"
+                )}
+              </Button>
+              {formError && (
+                <p className="text-red-500 text-xs mt-1">{formError}</p>
+              )}
+            </div>
+          </div>
+        )}
+
+        <div className="mt-4">
+          <h4 className="font-semibold mb-2">Existing Rates for Team:</h4>
+          {selectedTeamId ? (
+            <>
+              {ratesLoading && (
+                <p className="text-gray-500 italic">Loading rates...</p>
+              )}
+              {ratesError && (
+                <p className="text-red-500">
+                  Error loading rates: {ratesError.message}
                 </p>
               )}
-            {!ratesLoading &&
-              !ratesError &&
-              ratesData?.rates &&
-              ratesData.rates.length > 0 && (
-                <div className="border rounded-md max-h-60 overflow-y-auto bg-white">
-                  <ul className="divide-y divide-gray-200">
-                    {ratesData.rates.map((rate: Rate) => {
-                      const isDeletingThisRate = processingDeleteId === rate.id;
-                      return (
-                        <li
-                          key={rate.id}
-                          className="flex justify-between items-center p-3 hover:bg-gray-50"
-                        >
-                          <div>
-                            <span className="font-medium mr-2">
-                              {rate.name}
-                            </span>
-                            <span className="text-gray-600">
-                              ({rate.rate} DKK/h)
-                            </span>
-                          </div>
-                          <button
-                            className={`p-1 px-2 bg-red-600 text-white text-xs rounded hover:bg-red-700 disabled:opacity-50 flex items-center gap-1`}
-                            onClick={() => handleDeleteRate(rate.id)}
-                            disabled={isActionLoading || isDeletingThisRate}
+              {!ratesLoading &&
+                !ratesError &&
+                ratesData?.rates &&
+                ratesData.rates.length === 0 && (
+                  <p className="text-gray-500 italic">
+                    No rates defined for this team yet.
+                  </p>
+                )}
+              {!ratesLoading &&
+                !ratesError &&
+                ratesData?.rates &&
+                ratesData.rates.length > 0 && (
+                  <div className="border rounded-md max-h-60 overflow-y-auto bg-white">
+                    <ul className="divide-y divide-gray-200">
+                      {ratesData.rates.map((rate: Rate) => {
+                        const isDeletingThisRate = processingDeleteId === rate.id;
+                        return (
+                          <li
+                            key={rate.id}
+                            className="flex justify-between items-center p-3 hover:bg-gray-50"
                           >
-                            {isDeletingThisRate ? (
-                              <svg
-                                className="animate-spin h-3 w-3 text-white"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                              >
-                                {" "}
-                                <circle
-                                  className="opacity-25"
-                                  cx="12"
-                                  cy="12"
-                                  r="10"
+                            <div>
+                              <span className="font-medium mr-2">
+                                {rate.name}
+                              </span>
+                              <span className="text-gray-600">
+                                ({rate.rate} DKK/h)
+                              </span>
+                            </div>
+                            <Button
+                              className="p-1 px-2 bg-red-600 text-white text-xs rounded hover:bg-red-700 disabled:opacity-50 flex items-center gap-1"
+                              onClick={() => handleDeleteRate(rate.id)}
+                              disabled={isActionLoading || isDeletingThisRate}
+                            >
+                              {isDeletingThisRate ? (
+                                <svg
+                                  className="animate-spin h-3 w-3 text-white"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                >
+                                  {" "}
+                                  <circle
+                                    className="opacity-25"
+                                    cx="12"
+                                    cy="12"
+                                    r="10"
+                                    stroke="currentColor"
+                                    strokeWidth="4"
+                                  ></circle>{" "}
+                                  <path
+                                    className="opacity-75"
+                                    fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                  ></path>{" "}
+                                </svg>
+                              ) : (
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="h-3 w-3"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
                                   stroke="currentColor"
-                                  strokeWidth="4"
-                                ></circle>{" "}
-                                <path
-                                  className="opacity-75"
-                                  fill="currentColor"
-                                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                ></path>{" "}
-                              </svg>
-                            ) : (
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                className="h-3 w-3"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                                strokeWidth={2}
-                              >
-                                {" "}
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                />{" "}
-                              </svg>
-                            )}
-                            {isDeletingThisRate ? "Deleting..." : "Delete"}
-                          </button>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
-              )}
-          </>
-        ) : (
-          <p className="text-gray-500 italic">
-            Select a team to view and manage rates.
-          </p>
-        )}
-      </div>
-    </div>
+                                  strokeWidth={2}
+                                >
+                                  {" "}
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                  />{" "}
+                                </svg>
+                              )}
+                              {isDeletingThisRate ? "Deleting..." : "Delete"}
+                            </Button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                )}
+            </>
+          ) : (
+            <p className="text-gray-500 italic">
+              Select a team to view and manage rates.
+            </p>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 
@@ -5860,12 +6393,15 @@ export default RatesManager;
 
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { useQuery, gql } from "@apollo/client";
+import React, { useState, useEffect, memo } from "react";
+import { useQuery, useLazyQuery, gql, ApolloError, ApolloQueryResult } from "@apollo/client";
 import { useAuthStore } from "@/app/lib/authStore";
 import { formatTimeFromMilliseconds } from "@/app/utils/timeUtils";
 import { useReactiveVar } from "@apollo/client";
 import { loggedInUserTeamsVersion } from "@/app/lib/apolloClient";
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
+import LoadingIndicator from "@/app/components/Admin/LoadingIndicator";
+import ErrorMessage from "@/app/components/Admin/ErrorMessage";
 
 interface MyProject {
   id: string;
@@ -5927,56 +6463,46 @@ const TotalTimeSpent: React.FC = () => {
   const teamsVersion = useReactiveVar(loggedInUserTeamsVersion);
 
   const {
+    data: projectsData,
     loading: loadingUserProjects,
     error: errorUserProjects,
     refetch: refetchMyProjects,
   } = useQuery<GetMyProjectsQueryData>(GET_MY_PROJECTS, {
     skip: !loggedInUserId,
     fetchPolicy: "cache-and-network",
-    onCompleted: (data) => {
-      if (data?.myProjects) {
-        const currentProjects = data.myProjects;
-        setUserProjects(currentProjects);
-        const selectedExists = currentProjects.some(
-          (p) => p.id === selectedProject
-        );
-        if (!selectedExists && currentProjects.length > 0) {
-          setSelectedProject(currentProjects[0].id);
-        } else if (!selectedExists && currentProjects.length === 0) {
-          setSelectedProject("");
-        }
-      } else {
-        setUserProjects([]);
-        setSelectedProject("");
-      }
-    },
+    notifyOnNetworkStatusChange: true,
     onError: (error) => {
       console.error("Error fetching my projects:", error);
       setErrorMessage("Could not load your projects.");
     },
   });
 
-  const {
-    loading: loadingTime,
-    error: errorTime,
-    data: timeData,
-    refetch: refetchTotalTime,
-  } = useQuery<GetTotalTimeSpentQueryData>(GET_TOTAL_TIME_SPENT, {
-    variables: {
-      userId: loggedInUserId,
-      projectId: selectedProject,
-      startDate: startDate,
-      endDate: endDate,
-    },
-    skip: !loggedInUserId || !selectedProject || !startDate || !endDate,
-    fetchPolicy: "cache-first",
-    notifyOnNetworkStatusChange: true,
-    onError: (error) => {
-      console.error("Error fetching total time:", error);
-      setErrorMessage("Could not calculate total time for the selection.");
-      setTotalTime(null);
-    },
-  });
+  useEffect(() => {
+    if (projectsData?.myProjects) {
+      setUserProjects(projectsData.myProjects);
+      // initialize or adjust selection if needed
+      if (!selectedProject && projectsData.myProjects.length > 0) {
+        setSelectedProject(projectsData.myProjects[0].id);
+      }
+      if (
+        selectedProject &&
+        !projectsData.myProjects.some((p) => p.id === selectedProject)
+      ) {
+        setSelectedProject(projectsData.myProjects[0]?.id || "");
+      }
+    }
+  }, [projectsData, selectedProject]);
+
+  const [fetchTotalTime, { loading: loadingTime, error: errorTime, data: timeData }] =
+    useLazyQuery<GetTotalTimeSpentQueryData>(GET_TOTAL_TIME_SPENT, {
+      fetchPolicy: "cache-first",
+      notifyOnNetworkStatusChange: true,
+      onError: (error) => {
+        console.error("Error fetching total time:", error);
+        setErrorMessage("Could not calculate total time for the selection.");
+        setTotalTime(null);
+      },
+    });
 
   useEffect(() => {
     if (loggedInUserId) {
@@ -5991,23 +6517,6 @@ const TotalTimeSpent: React.FC = () => {
   }, [teamsVersion, loggedInUserId, refetchMyProjects]);
 
   useEffect(() => {
-    if (loggedInUserId && selectedProject && startDate && endDate) {
-      console.log("Inputs changed, refetching total time...");
-      refetchTotalTime({
-        userId: loggedInUserId,
-        projectId: selectedProject,
-        startDate: startDate,
-        endDate: endDate,
-      }).catch((err) => {
-        console.error("Manual refetch failed:", err);
-        setErrorMessage("Failed to refresh total time.");
-      });
-    } else if (!selectedProject) {
-      setTotalTime(null);
-    }
-  }, [loggedInUserId, selectedProject, startDate, endDate, refetchTotalTime]);
-
-  useEffect(() => {
     if (timeData) {
       setTotalTime(timeData.getTotalTimeSpent ?? 0);
       if (!errorTime) setErrorMessage(null);
@@ -6017,336 +6526,412 @@ const TotalTimeSpent: React.FC = () => {
     }
   }, [timeData, errorTime]);
 
+  // Fetch total time only when all selectors have valid values
+  useEffect(() => {
+    if (loggedInUserId && selectedProject && startDate && endDate) {
+      fetchTotalTime({ variables: { userId: loggedInUserId, projectId: selectedProject, startDate, endDate } });
+    } else {
+      setTotalTime(null);
+    }
+  }, [loggedInUserId, selectedProject, startDate, endDate, fetchTotalTime]);
+
   const isLoading = loadingUserProjects || loadingTime;
   const displayError =
     errorMessage || errorUserProjects?.message || errorTime?.message;
 
+  // Subcomponent prop types
+  interface ProjectSelectorProps {
+    projects: MyProject[];
+    selectedProject: string;
+    onSelect: (val: string) => void;
+    loading: boolean;
+    error?: ApolloError;
+    refetchProjects: () => Promise<ApolloQueryResult<GetMyProjectsQueryData>>;
+  }
+
+  interface DateFiltersProps {
+    startDate: string;
+    endDate: string;
+    onStart: (val: string) => void;
+    onEnd: (val: string) => void;
+  }
+
+  interface TimeDisplayProps {
+    isLoading: boolean;
+    displayError?: string;
+    error: Error;
+    onRetry: () => void;
+    totalTime: number | null;
+  }
+
+  const ProjectSelector: React.FC<ProjectSelectorProps> = memo(
+    ({ projects, selectedProject, onSelect, loading, error, refetchProjects }: ProjectSelectorProps) => {
+      const [localSelected, setLocalSelected] = useState<string>(selectedProject);
+      const [open, setOpen] = useState<boolean>(false);
+
+      useEffect(() => setLocalSelected(selectedProject), [selectedProject]);
+      useEffect(() => {
+        if (!open && localSelected !== selectedProject) {
+          onSelect(localSelected);
+        }
+      }, [open, localSelected, selectedProject, onSelect]);
+
+      return (
+        <div className="flex-grow w-full md:w-auto">
+          {loading ? (
+            <LoadingIndicator size="sm" />
+          ) : error ? (
+            <ErrorMessage error={error} context="Projects" onRetry={refetchProjects} />
+          ) : (
+            <Select
+              value={localSelected}
+              onValueChange={setLocalSelected}
+              open={open}
+              onOpenChange={setOpen}
+              disabled={!projects.length}
+            >
+              <SelectTrigger className="flex w-fit items-center justify-between gap-2 rounded-md border
+bg-transparent px-3 py-2 text-sm whitespace-nowrap shadow-xs">
+                <SelectValue
+                  className="block w-full truncate text-gray-800"
+                  placeholder={projects.length === 0 ? "No Projects Found" : "Select My Project"}
+                />
+              </SelectTrigger>
+              <SelectContent className="w-auto min-w-full max-w-screen-md bg-white border border-gray-200 rounded-md mt-1 shadow-lg z-10 left-0 right-auto">
+                {projects.map((p) => (
+                  <SelectItem key={p.id} value={p.id} title={p.name + (p.teamName ? ` (${p.teamName})` : "")}>
+                    {p.name} {p.teamName ? ` (${p.teamName})` : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        </div>
+      );
+    }
+  );
+  ProjectSelector.displayName = "ProjectSelector";
+
+  const DateFilters: React.FC<DateFiltersProps> = memo(
+    ({ startDate, endDate, onStart, onEnd }: DateFiltersProps) => {
+      const [localStart, setLocalStart] = useState(startDate);
+      const [localEnd, setLocalEnd] = useState(endDate);
+
+      useEffect(() => setLocalStart(startDate), [startDate]);
+      useEffect(() => setLocalEnd(endDate), [endDate]);
+
+      return (
+        <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+          <input
+            type="date"
+            value={localStart}
+            onChange={(e) => setLocalStart(e.target.value)}
+            onBlur={() => onStart(localStart)}
+            className="w-full sm:w-44 h-9 p-2 bg-white border rounded shadow-sm"
+          />
+          <input
+            type="date"
+            value={localEnd}
+            onChange={(e) => setLocalEnd(e.target.value)}
+            onBlur={() => onEnd(localEnd)}
+            className="w-full sm:w-44 h-9 p-2 bg-white border rounded shadow-sm"
+          />
+        </div>
+      );
+    }
+  );
+  DateFilters.displayName = "DateFilters";
+
+  // Skeleton loader to preserve layout during fetches
+  const Skeleton: React.FC<{ width?: string; height?: string }> = ({ width = "w-20", height = "h-6" }) => (
+    <div className={`${width} ${height} bg-gray-200 animate-pulse rounded`}></div>
+  );
+
+  const TimeDisplay: React.FC<TimeDisplayProps> = memo(
+    ({ isLoading, displayError, error, onRetry, totalTime }: TimeDisplayProps) => (
+      <div className="text-center md:text-right whitespace-nowrap min-h-[2.25rem]">
+        {isLoading && !displayError ? (
+          <Skeleton width="w-24" height="h-6" />
+        ) : displayError ? (
+          <ErrorMessage error={error} context="Total Time Calculation" onRetry={onRetry} />
+        ) : (
+          <p className="text-lg">{formatTimeFromMilliseconds(totalTime ?? 0)}</p>
+        )}
+      </div>
+    )
+  );
+  TimeDisplay.displayName = "TimeDisplay";
+
   return (
-    <div className="p-6 bg-black shadow-md flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0 md:space-x-6">
-      <h3 className="text-lg font-bold text-white whitespace-nowrap">
-        Time Spent Analysis (My Projects)
-      </h3>
-
-      {/* Project Selector */}
-      <div className="flex-grow w-full md:w-auto">
-        <select
-          id="myProjectSelectorForTime"
-          value={selectedProject}
-          onChange={(e) => setSelectedProject(e.target.value)}
-          className="w-full p-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-          disabled={loadingUserProjects || userProjects.length === 0}
-        >
-          <option value="">
-            {loadingUserProjects
-              ? "Loading My Projects..."
-              : userProjects.length === 0
-              ? "No Projects Found"
-              : "Select My Project"}
-          </option>
-          {userProjects.map((project) => (
-            <option key={project.id} value={project.id}>
-              {project.name} {project.teamName ? `(${project.teamName})` : ""}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* Date Pickers */}
-      <div className="flex-grow w-full md:w-auto flex flex-col sm:flex-row gap-2">
-        <input
-          type="date"
-          id="startDatePicker"
-          value={startDate}
-          onChange={(e) => setStartDate(e.target.value)}
-          className="w-full p-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-          aria-label="Start Date"
-        />
-        <input
-          type="date"
-          id="endDatePicker"
-          value={endDate}
-          onChange={(e) => setEndDate(e.target.value)}
-          className="w-full p-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-          aria-label="End Date"
-        />
-      </div>
-
-      {/* Total Time Display */}
-      <div className="text-center md:text-right whitespace-nowrap">
-        {isLoading && !displayError && (
-          <p className="text-gray-400">Loading Time...</p>
-        )}
-        {displayError && <p className="text-red-400 text-sm">{displayError}</p>}
-        {!isLoading && !displayError && (
-          <p className="text-lg font-medium text-white">
-            Total:{" "}
-            {totalTime !== null ? formatTimeFromMilliseconds(totalTime) : "N/A"}
-          </p>
-        )}
-      </div>
+    <div className="flex flex-col sm:flex-row items-end gap-4 p-4 bg-white rounded shadow">
+      <ProjectSelector
+        projects={userProjects}
+        selectedProject={selectedProject}
+        onSelect={setSelectedProject}
+        loading={loadingUserProjects}
+        error={errorUserProjects}
+        refetchProjects={refetchMyProjects}
+      />
+      <DateFilters
+        startDate={startDate}
+        endDate={endDate}
+        onStart={setStartDate}
+        onEnd={setEndDate}
+      />
+      <TimeDisplay
+        isLoading={isLoading}
+        displayError={displayError}
+        error={errorTime || errorUserProjects || new Error(displayError)}
+        onRetry={() =>
+          fetchTotalTime({
+            variables: { userId: loggedInUserId, projectId: selectedProject, startDate, endDate },
+          })
+        }
+        totalTime={totalTime}
+      />
     </div>
   );
 };
 
 export default TotalTimeSpent;
 
-// ====== FILE: src\app\components\Admin\userManagementSection.tsx ======
+// ====== FILE: src\app\components\Admin\UserManagementControls.tsx ======
 
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { useQuery, gql, NetworkStatus, ApolloError } from "@apollo/client";
-import { useDebounce } from "use-debounce";
-import UserTable from "@/app/components/Admin/UserTable";
-import { User as UserTableRowType } from "@/app/components/Admin/UserRow";
-import { UserRole } from "@/app/components/Admin/UserRoleSelect";
-import { GET_SIMPLE_TEAMS } from "@/app/graphql/adminOperations";
-import { useAuthStore } from "@/app/lib/authStore";
+import React from "react";
+import { UserRole } from "./UserRoleSelect";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 
-const GET_MANAGEMENT_USERS = gql`
-  query GetManagementUsers(
-    $page: Int
-    $pageSize: Int
-    $search: String
-    $role: UserRole
-  ) {
-    users(
-      args: { page: $page, pageSize: $pageSize, search: $search, role: $role }
-    ) {
-      id
-      email
-      role
-      teams {
-        id
-        name
-        __typename
-      }
-      __typename
-    }
-  }
-`;
-
-const GET_USERS_COUNT = gql`
-  query GetUsersManagementCount($search: String, $role: UserRole) {
-    usersCount(search: $search, role: $role)
-  }
-`;
-
-interface GetUsersQueryData {
-  users: Array<{
-    id: number;
-    email: string;
-    role: string;
-    teams: Array<{ id: string; name: string; __typename: "Team" }>;
-    __typename: "User";
-  }>;
+interface UserManagementControlsProps {
+  searchTerm: string;
+  setSearchTerm: (term: string) => void;
+  roleFilter: UserRole | "";
+  setRoleFilter: (role: UserRole | "") => void;
+  pageSize: number;
+  setPageSize: (size: number) => void;
+  currentPage: number;
+  totalItems: number;
+  totalPages: number;
+  setPage: (page: number) => void;
+  isLoading: boolean;
 }
 
-interface GetSimpleTeamsQueryData {
-  getAllSimpleTeams: Array<{
-    id: string;
-    name: string;
-    __typename: "SimpleTeamDTO";
-  }>;
-}
-
-interface GetUsersCountQueryData {
-  usersCount: number;
-}
-
-const UserManagementSection: React.FC = () => {
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [roleFilter, setRoleFilter] = useState<UserRole | "">("");
-
-  const [debouncedSearchTerm] = useDebounce(searchTerm, 500);
-
-  const [users, setUsers] = useState<GetUsersQueryData["users"]>([]);
-  const loggedInUser = useAuthStore((state) => state.user);
-
-  const userQueryVariables = {
-    page: page || null,
-    pageSize: pageSize || null,
-    search: debouncedSearchTerm || null,
-    role: roleFilter || null,
-  };
-
-  const countQueryVariables = {
-    search: debouncedSearchTerm || undefined,
-    role: roleFilter || undefined,
-  };
-
-  const {
-    loading: loadingUsers,
-    error: errorUsers,
-    data: dataUsers,
-    networkStatus,
-  } = useQuery<GetUsersQueryData>(GET_MANAGEMENT_USERS, {
-    variables: userQueryVariables,
-    notifyOnNetworkStatusChange: true,
-    fetchPolicy: "cache-and-network",
-  });
-
-  const { data: countData, error: countError } =
-    useQuery<GetUsersCountQueryData>(GET_USERS_COUNT, {
-      variables: countQueryVariables,
-      fetchPolicy: "cache-and-network",
-    });
-
-  const {
-    loading: loadingTeams,
-    data: dataTeams,
-    error: teamsError,
-  } = useQuery<GetSimpleTeamsQueryData>(GET_SIMPLE_TEAMS);
-
-  const totalUsers = countData?.usersCount ?? 0;
-  const totalPages = Math.ceil(totalUsers / pageSize);
-
-  useEffect(() => {
-    if (dataUsers?.users) {
-      setUsers(dataUsers.users);
-    }
-  }, [dataUsers]);
-
-  useEffect(() => {
-    setPage(1);
-  }, [debouncedSearchTerm, roleFilter, pageSize]);
-
-  const isLoading =
-    loadingUsers &&
-    networkStatus !== NetworkStatus.refetch &&
-    networkStatus !== NetworkStatus.setVariables;
-  const isRefetching =
-    networkStatus === NetworkStatus.refetch ||
-    networkStatus === NetworkStatus.setVariables;
-  const combinedError = errorUsers || countError || teamsError;
-
-  if (isLoading || loadingTeams) return <p>Loading User Data...</p>;
-
-  if (combinedError) {
-    const error = combinedError as ApolloError;
-    console.error("Data loading error:", error);
-    const graphQLError = error.graphQLErrors?.[0];
-    if (graphQLError?.extensions?.code === "FORBIDDEN") {
-      return <p>You do not have permission to view users.</p>;
-    }
-    return <p>Error loading data: {error.message}</p>;
-  }
-
-  const usersForTable: UserTableRowType[] = users.map((user) => ({
-    ...user,
-    role: user.role as UserRole,
-  }));
+const UserManagementControls: React.FC<UserManagementControlsProps> = ({
+  searchTerm,
+  setSearchTerm,
+  roleFilter,
+  setRoleFilter,
+  pageSize,
+  setPageSize,
+  currentPage,
+  totalItems,
+  totalPages,
+  setPage,
+  isLoading,
+}) => {
+  const startItem = totalItems > 0 ? (currentPage - 1) * pageSize + 1 : 0;
+  const endItem = Math.min(currentPage * pageSize, totalItems);
 
   return (
-    <div className="mb-6 shadow-md p-4 border rounded-lg bg-white">
-      {" "}
-      <h2 className="text-xl font-semibold mb-4">User Management</h2>{" "}
-      <div className="mb-4 flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-4 items-center">
+    <>
+      <div className="mb-4 flex flex-col sm:flex-row flex-wrap gap-3 items-center">
         <div className="flex-grow w-full sm:w-auto">
-          <label htmlFor="userSearch" className="sr-only">
+          <label htmlFor="userSearchControl" className="sr-only">
             Search by email
           </label>
-          <input
-            id="userSearch"
+          <Input
+            id="userSearchControl"
             type="text"
             placeholder="Search by email..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full p-2 border rounded text-sm focus:ring-indigo-500 focus:border-indigo-500"
+            className="h-9"
+            disabled={isLoading}
           />
         </div>
         <div className="w-full sm:w-auto">
-          <label htmlFor="roleFilter" className="sr-only">
-            Filter by role
-          </label>
-          <select
-            id="roleFilter"
-            value={roleFilter}
-            onChange={(e) => setRoleFilter(e.target.value as UserRole | "")}
-            className="w-full p-2 border rounded text-sm focus:ring-indigo-500 focus:border-indigo-500"
+          <Select
+            value={roleFilter === "" ? "all" : roleFilter}
+            onValueChange={(value) =>
+              setRoleFilter(value === "all" ? "" : (value as UserRole))
+            }
+            disabled={isLoading}
           >
-            <option value="">All Roles</option>
-            {Object.values(UserRole).map((role) => (
-              <option key={role} value={role}>
-                {role}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger className="w-full sm:w-[180px] h-9">
+              <SelectValue placeholder="Filter by Role" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Roles</SelectItem>
+              {Object.values(UserRole).map((role) => (
+                <SelectItem key={role} value={role}>
+                  {role}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-        <div className="text-sm text-gray-700 w-full sm:w-auto sm:ml-auto">
-          <label htmlFor="pageSizeSelect" className="mr-1">
-            Show:
-          </label>
-          <select
-            id="pageSizeSelect"
-            value={pageSize}
-            onChange={(e) => setPageSize(Number(e.target.value))}
-            className="border rounded px-2 py-1 mx-1 focus:ring-indigo-500 focus:border-indigo-500"
+        <div className="text-sm text-muted-foreground w-full sm:w-auto sm:ml-auto flex items-center gap-2">
+          <span>Show:</span>
+          <Select
+            value={String(pageSize)}
+            onValueChange={(value) => setPageSize(Number(value))}
+            disabled={isLoading}
           >
-            <option value="5">5</option>
-            <option value="10">10</option>
-            <option value="25">25</option>
-            <option value="50">50</option>
-          </select>
+            <SelectTrigger className="w-[70px] h-9">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="5">5</SelectItem>
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="25">25</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+            </SelectContent>
+          </Select>
           <span>entries</span>
         </div>
       </div>
-      {!isLoading && !combinedError && (
-        <>
-          <div
-            className={`transition-opacity duration-300 ${
-              isRefetching ? "opacity-50 pointer-events-none" : "opacity-100"
-            }`}
-          >
-            <UserTable
-              users={usersForTable}
-              allTeams={dataTeams?.getAllSimpleTeams || []}
-              loggedInUserId={loggedInUser?.id}
-            />
+      {totalItems > 0 && (
+        <div className="flex flex-col sm:flex-row justify-between items-center mt-4 text-sm text-muted-foreground border-t pt-4">
+          <div className="mb-2 sm:mb-0 flex-shrink-0 mr-4">
+            Showing {Math.min(startItem, totalItems)} to {endItem} of{" "}
+            {totalItems} entries
           </div>
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage(1)}
+              disabled={currentPage === 1 || isLoading}
+              aria-label="First Page"
+            >
+              First
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1 || isLoading}
+              aria-label="Previous Page"
+            >
+              Previous
+            </Button>
+            <span className="font-medium px-2">
+              Page {currentPage} of {totalPages > 0 ? totalPages : 1}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage(Math.min(totalPages, currentPage + 1))}
+              disabled={
+                currentPage === totalPages || totalPages === 0 || isLoading
+              }
+              aria-label="Next Page"
+            >
+              Next
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage(totalPages)}
+              disabled={
+                currentPage === totalPages || totalPages === 0 || isLoading
+              }
+              aria-label="Last Page"
+            >
+              Last
+            </Button>
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
 
-          <div className="flex flex-col sm:flex-row justify-between items-center mt-4 text-sm text-gray-700">
-            <div className="mb-2 sm:mb-0">
-              Showing{" "}
-              {Math.min(
-                totalUsers > 0 ? (page - 1) * pageSize + 1 : 0,
-                totalUsers
-              )}{" "}
-              to {Math.min(page * pageSize, totalUsers)} of {totalUsers} entries
-            </div>
-            <div className="flex items-center">
-              <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1 || isRefetching}
-                className="px-3 py-1 border rounded mr-2 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors"
-                aria-label="Previous Page"
-              >
-                {" "}
-                Previous{" "}
-              </button>
-              <span className="mx-2 font-medium">
-                Page {page} of {totalPages > 0 ? totalPages : 1}
-              </span>
-              <button
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={
-                  page === totalPages || totalPages === 0 || isRefetching
-                }
-                className="px-3 py-1 border rounded ml-2 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors"
-                aria-label="Next Page"
-              >
-                {" "}
-                Next{" "}
-              </button>
-            </div>
+export default UserManagementControls;
+
+// ====== FILE: src\app\components\Admin\userManagementSection.tsx ======
+
+"use client";
+
+import React from "react";
+import UserTable from "./UserTable";
+import UserManagementControls from "./UserManagementControls";
+import { useUserManagementData } from "@/app/hooks/useUserManagementData";
+import LoadingIndicator from "@/app/components/Admin/LoadingIndicator";
+import ErrorMessage from "@/app/components/Admin/ErrorMessage";
+import { Loader2 } from "lucide-react";
+
+const UserManagementSection: React.FC = () => {
+  const {
+    users,
+    teams,
+    totalUsers,
+    page,
+    pageSize,
+    totalPages,
+    isLoading,
+    isRefetching,
+    error,
+    setPage,
+    setPageSize,
+    setSearchTerm,
+    setRoleFilter,
+    searchTerm,
+    roleFilter,
+    loggedInUser,
+    refetch,
+  } = useUserManagementData();
+
+  if (isLoading) return <LoadingIndicator message="Loading User Data..." />;
+  if (error)
+    return (
+      <ErrorMessage error={error} context="User Management" onRetry={refetch} />
+    );
+  return (
+    <div className="mb-6 shadow-md p-4 border rounded-lg bg-white relative">
+      <h2 className="text-xl font-semibold mb-4">User Management</h2>
+
+      <UserManagementControls
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        roleFilter={roleFilter}
+        setRoleFilter={setRoleFilter}
+        pageSize={pageSize}
+        setPageSize={setPageSize}
+        currentPage={page}
+        totalItems={totalUsers}
+        totalPages={totalPages}
+        setPage={setPage}
+        isLoading={isRefetching || isLoading}
+      />
+
+      <div className="relative mt-4">
+        {isRefetching && (
+          <div className="absolute inset-0 bg-white/50 flex items-center justify-center z-10 rounded-md">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
-        </>
-      )}
-      {isRefetching && !isLoading && (
-        <p className="text-center text-gray-500 mt-4">Updating list...</p>
-      )}
+        )}
+        <div
+          className={`transition-opacity duration-150 ${
+            isRefetching ? "opacity-60" : "opacity-100"
+          }`}
+        >
+          <UserTable
+            users={users}
+            allTeams={teams}
+            loggedInUserId={loggedInUser?.id}
+          />
+        </div>
+      </div>
     </div>
   );
 };
@@ -6357,6 +6942,13 @@ export default UserManagementSection;
 
 "use client";
 import React from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export enum UserRole {
   ADMIN = "ADMIN",
@@ -6368,23 +6960,33 @@ export enum UserRole {
 interface UserRoleSelectProps {
   currentRole: UserRole;
   onRoleChange: (newRole: UserRole) => void;
+  disabled?: boolean;
+  className?: string;
 }
 
 const UserRoleSelect: React.FC<UserRoleSelectProps> = ({
   currentRole,
   onRoleChange,
+  disabled = false,
+  className,
 }) => {
   return (
-    <select
+    <Select
       value={currentRole}
-      onChange={(e) => onRoleChange(e.target.value as UserRole)}
+      onValueChange={(value) => onRoleChange(value as UserRole)}
+      disabled={disabled}
     >
-      {Object.values(UserRole).map((role) => (
-        <option key={role} value={role}>
-          {role}
-        </option>
-      ))}
-    </select>
+      <SelectTrigger className={className}>
+        <SelectValue placeholder="Select role..." />
+      </SelectTrigger>
+      <SelectContent>
+        {Object.values(UserRole).map((role) => (
+          <SelectItem key={role} value={role}>
+            {role}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 };
 
@@ -6395,7 +6997,7 @@ export default UserRoleSelect;
 "use client";
 
 import React, { useState, useCallback } from "react";
-import { useMutation, useApolloClient, gql, ApolloError } from "@apollo/client";
+import { useMutation, gql, ApolloError } from "@apollo/client";
 import { toast } from "react-toastify";
 import {
   ADD_USER_TO_TEAM,
@@ -6403,7 +7005,34 @@ import {
   UPDATE_USER_ROLE,
 } from "@/app/graphql/adminOperations";
 import { loggedInUserTeamsVersion } from "@/app/lib/apolloClient";
+import { GET_MY_PROJECTS } from "@/app/components/Admin/totalTimeSpent";
 import UserRoleSelect, { UserRole } from "./UserRoleSelect";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { TableRow, TableCell } from "@/components/ui/table";
+import { Loader2, Check, X, Plus } from "lucide-react";
+import { cn } from "@/app/lib/utils";
+
+const USER_ROW_FRAGMENT = gql`
+  fragment UserRowData on User {
+    id
+    email
+    role
+    teams {
+      id
+      name
+      __typename
+    }
+    __typename
+  }
+`;
 
 export interface Team {
   id: string;
@@ -6425,379 +7054,351 @@ interface UserRowProps {
   loggedInUserId: number | undefined;
 }
 
-const UserRow: React.FC<UserRowProps> = ({
-  user,
-  allTeams,
-  loggedInUserId,
-}) => {
-  const [selectedTeamIdForRow, setSelectedTeamIdForRow] = useState<string>("");
-  const [isAdding, setIsAdding] = useState(false);
-  const [confirmingRemoveTeamId, setConfirmingRemoveTeamId] = useState<
-    string | null
-  >(null);
-  const [isProcessingRemove, setIsProcessingRemove] = useState<string | null>(
-    null
-  );
-  const [isChangingRole, setIsChangingRole] = useState(false);
-  const [rowError, setRowError] = useState<string | null>(null);
+const UserRow: React.FC<UserRowProps> = React.memo(
+  ({ user, allTeams, loggedInUserId }) => {
+    const [selectedTeamIdForRow, setSelectedTeamIdForRow] =
+      useState<string>("");
+    const [confirmingRemoveTeamId, setConfirmingRemoveTeamId] = useState<
+      string | null
+    >(null);
+    const [rowError, setRowError] = useState<string | null>(null);
 
-  const client = useApolloClient();
+    const handleMutationError = (
+      action: string,
+      error: ApolloError | Error | unknown
+    ) => {
+      console.error(`Error ${action}:`, error);
+      let errorMsg = `Failed to ${action}.`;
 
-  const [addUserToTeamMutation] = useMutation(ADD_USER_TO_TEAM, {
-    onError: (error) => {
-      console.error("Error adding user to team:", error);
-      const errorMsg = error.message || "Failed to add user to team.";
+      if (error instanceof ApolloError) {
+        errorMsg =
+          error.graphQLErrors?.[0]?.message ||
+          error.networkError?.message ||
+          error.message;
+      } else if (error instanceof Error) {
+        errorMsg = error.message;
+      } else {
+        errorMsg = `An unknown error occurred while ${action}.`;
+        console.error("Unknown error type:", error);
+      }
       setRowError(errorMsg);
       toast.error(`Error: ${errorMsg}`);
-      setIsAdding(false);
-    },
-  });
-  const [removeUserFromTeamMutation] = useMutation(REMOVE_USER_FROM_TEAM, {
-    onError: (error) => {
-      console.error("Error removing user from team:", error);
-      const errorMsg = error.message || "Failed to remove user from team.";
-      setRowError(errorMsg);
-      toast.error(`Error: ${errorMsg}`);
-      setIsProcessingRemove(null);
-      setConfirmingRemoveTeamId(null);
-    },
-  });
-  const [updateUserRoleMutation] = useMutation(UPDATE_USER_ROLE, {
-    onError: (error) => {
-      console.error("Error updating user role:", error);
-      const errorMsg =
-        error instanceof ApolloError
-          ? error.graphQLErrors[0]?.message || "Error updating role"
-          : "An unexpected error occurred during role update.";
-      setRowError(errorMsg);
-      toast.error(`Error: ${errorMsg}`);
-      setIsChangingRole(false);
-    },
-  });
+    };
 
-  const handleAddToTeam = useCallback(async () => {
-    if (!selectedTeamIdForRow) {
-      setRowError("Please select a team first.");
-      return;
-    }
-    setRowError(null);
-    setIsAdding(true);
+    const [addUserToTeamMutation, { loading: isAddingTeam }] = useMutation(
+      ADD_USER_TO_TEAM,
+      {
+        optimisticResponse: (variables) => {
+          const teamToAdd = allTeams.find((t) => t.id === variables.teamId);
+          if (!teamToAdd) return undefined;
+          const optimisticTeams = [
+            ...user.teams,
+            { ...teamToAdd, __typename: "Team" as const },
+          ];
+          return {
+            addUserToTeam: {
+              __typename: "User",
+              id: user.id,
+              email: user.email,
+              role: user.role,
+              teams: optimisticTeams,
+            },
+          };
+        },
+        update: (cache, { data }) => {
+          if (!data?.addUserToTeam) return;
+          const userId = cache.identify({ __typename: "User", id: user.id });
+          if (!userId) return;
+          cache.writeFragment({
+            id: userId,
+            fragment: USER_ROW_FRAGMENT,
+            data: data.addUserToTeam,
+          });
+          if (loggedInUserId === user.id)
+            loggedInUserTeamsVersion(loggedInUserTeamsVersion() + 1);
+          setSelectedTeamIdForRow("");
+        },
+        onError: (error) => handleMutationError("adding user to team", error),
+        refetchQueries: [{ query: GET_MY_PROJECTS }],
+        awaitRefetchQueries: true,
+      }
+    );
 
-    try {
-      await addUserToTeamMutation({
-        variables: { userId: user.id, teamId: selectedTeamIdForRow },
+    const [removeUserFromTeamMutation, { loading: isRemovingTeam }] =
+      useMutation(REMOVE_USER_FROM_TEAM, {
+        optimisticResponse: (variables) => {
+          const optimisticTeams = user.teams.filter(
+            (t) => t.id !== variables.teamId
+          );
+          return {
+            removeUserFromTeam: {
+              __typename: "User",
+              id: user.id,
+              email: user.email,
+              role: user.role,
+              teams: optimisticTeams,
+            },
+          };
+        },
+        update: (cache, { data }) => {
+          if (!data?.removeUserFromTeam) return;
+          const userId = cache.identify({ __typename: "User", id: user.id });
+          if (!userId) return;
+          cache.writeFragment({
+            id: userId,
+            fragment: USER_ROW_FRAGMENT,
+            data: data.removeUserFromTeam,
+          });
+          if (loggedInUserId === user.id)
+            loggedInUserTeamsVersion(loggedInUserTeamsVersion() + 1);
+        },
+        onCompleted: () => {
+          toast.success("User removed from team!");
+          setConfirmingRemoveTeamId(null);
+        },
+        onError: (error) => {
+          handleMutationError("removing user from team", error);
+          setConfirmingRemoveTeamId(null);
+        },
+        refetchQueries: [{ query: GET_MY_PROJECTS }],
+        awaitRefetchQueries: true,
       });
 
-      console.log(
-        `[UserRow Add] Checking if user ${user.id} matches loggedInUser ${loggedInUserId}`
-      );
-      if (loggedInUserId && user.id === loggedInUserId) {
-        const currentVersion = loggedInUserTeamsVersion();
-        loggedInUserTeamsVersion(currentVersion + 1);
-        console.log(
-          `[UserRow Add] Incremented teamsVersion to: ${loggedInUserTeamsVersion()}`
-        );
+    const [updateUserRoleMutation, { loading: isChangingRole }] = useMutation(
+      UPDATE_USER_ROLE,
+      {
+        optimisticResponse: (variables) => ({
+          updateUserRole: {
+            __typename: "User",
+            id: user.id,
+            role: variables.newRole,
+          },
+        }),
+        update: (cache, { data }) => {
+          if (!data?.updateUserRole) return;
+          const userId = cache.identify({ __typename: "User", id: user.id });
+          if (!userId) return;
+          const existingUser = cache.readFragment<User>({
+            id: userId,
+            fragment: USER_ROW_FRAGMENT,
+          });
+          if (existingUser) {
+            cache.writeFragment({
+              id: userId,
+              fragment: USER_ROW_FRAGMENT,
+              data: { ...existingUser, role: data.updateUserRole.role },
+            });
+          }
+        },
+        onCompleted: (data) => {
+          if (data?.updateUserRole) {
+            toast.success(
+              `Role for ${user.email} updated to ${data.updateUserRole.role}!`
+            );
+          }
+        },
+        onError: (error) => handleMutationError("updating role", error),
       }
-    } catch (error) {
-      console.error("Catch block for handleAddToTeam:", error);
-      if (!rowError) {
-        const errorMsg =
-          error instanceof Error ? error.message : "Failed to add to team.";
-        setRowError(errorMsg);
-        toast.error(`Error: ${errorMsg}`);
+    );
+
+    const handleAddToTeam = useCallback(() => {
+      if (!selectedTeamIdForRow) {
+        setRowError("Please select a team first.");
+        return;
       }
-    } finally {
-      setIsAdding(false);
-    }
-  }, [
-    user.id,
-    selectedTeamIdForRow,
-    addUserToTeamMutation,
-    loggedInUserId,
-    rowError,
-  ]);
-
-  const requestRemoveConfirmation = (teamId: string) => {
-    setConfirmingRemoveTeamId(teamId);
-    setRowError(null);
-  };
-
-  const cancelRemoveConfirmation = () => {
-    setConfirmingRemoveTeamId(null);
-  };
-
-  const executeRemoveTeam = useCallback(
-    async (teamIdToRemove: string) => {
-      if (!teamIdToRemove) return;
+      if (user.teams.some((team) => team.id === selectedTeamIdForRow)) {
+        setRowError("User is already in this team.");
+        toast.warn("User is already a member of this team.");
+        return;
+      }
       setRowError(null);
-      setIsProcessingRemove(teamIdToRemove);
-      setConfirmingRemoveTeamId(null);
+      addUserToTeamMutation({
+        variables: { userId: user.id, teamId: selectedTeamIdForRow },
+      });
+    }, [addUserToTeamMutation, selectedTeamIdForRow, user.id, user.teams]);
 
-      try {
-        await removeUserFromTeamMutation({
+    const requestRemoveConfirmation = useCallback((teamId: string) => {
+      setConfirmingRemoveTeamId(teamId);
+      setRowError(null);
+    }, []);
+
+    const cancelRemoveConfirmation = useCallback(() => {
+      setConfirmingRemoveTeamId(null);
+    }, []);
+
+    const executeRemoveTeam = useCallback(
+      (teamIdToRemove: string) => {
+        if (!teamIdToRemove) return;
+        setRowError(null);
+        removeUserFromTeamMutation({
           variables: { userId: user.id, teamId: teamIdToRemove },
         });
+      },
+      [removeUserFromTeamMutation, user.id]
+    );
 
-        console.log(
-          `[UserRow Remove] Checking if user ${user.id} matches loggedInUser ${loggedInUserId}`
-        );
-        if (loggedInUserId && user.id === loggedInUserId) {
-          const currentVersion = loggedInUserTeamsVersion();
-          loggedInUserTeamsVersion(currentVersion + 1);
-          console.log(
-            `[UserRow Remove] Incremented teamsVersion to: ${loggedInUserTeamsVersion()}`
-          );
-        }
-      } catch (error) {
-        console.error("Catch block for executeRemoveTeam:", error);
-        if (!rowError) {
-          const errorMsg =
-            error instanceof Error
-              ? error.message
-              : "Failed to remove from team.";
-          setRowError(errorMsg);
-          toast.error(`Error: ${errorMsg}`);
-        }
-      } finally {
-        setIsProcessingRemove(null);
-      }
-    },
-    [user.id, removeUserFromTeamMutation, loggedInUserId, rowError]
-  );
+    const handleRoleChange = useCallback(
+      (newRole: UserRole) => {
+        if (newRole === user.role) return;
+        setRowError(null);
+        updateUserRoleMutation({ variables: { userId: user.id, newRole } });
+      },
+      [updateUserRoleMutation, user.id, user.role]
+    );
 
-  const handleRoleChange = useCallback(
-    async (newRole: UserRole) => {
-      if (newRole === user.role) return;
-      setRowError(null);
-      setIsChangingRole(true);
+    const isProcessingAnyRemove =
+      isRemovingTeam && confirmingRemoveTeamId !== null;
+    const isAnyActionLoading =
+      isAddingTeam || isProcessingAnyRemove || isChangingRole;
 
-      try {
-        const result = await updateUserRoleMutation({
-          variables: { userId: user.id, newRole },
-        });
-        const updatedRole = result.data?.updateUserRole?.role;
-        if (!updatedRole) {
-          throw new Error("Mutation did not return updated role.");
-        }
-
-        const userCacheId = client.cache.identify({
-          __typename: "User",
-          id: user.id,
-        });
-        if (!userCacheId) {
-          throw new Error("Could not identify user in cache");
-        }
-
-        client.writeFragment({
-          id: userCacheId,
-          fragment: gql`
-            fragment UpdateUserRoleDataRow on User {
-              role
-            }
-          `,
-          data: { role: updatedRole },
-        });
-        console.log(`Successfully updated role cache for user ${user.id}.`);
-        toast.success(`Role for ${user.email} updated to ${newRole}!`);
-      } catch (error) {
-        console.error("Catch block for handleRoleChange:", error);
-        if (!rowError) {
-          const errorMsg =
-            error instanceof ApolloError
-              ? error.graphQLErrors[0]?.message || "Error updating role"
-              : error instanceof Error
-              ? error.message
-              : "Failed to update role.";
-          setRowError(errorMsg);
-          toast.error(`Error: ${errorMsg}`);
-        }
-      } finally {
-        setIsChangingRole(false);
-      }
-    },
-    [user.id, user.role, updateUserRoleMutation, client, rowError, user.email]
-  );
-
-  return (
-    <>
-      <tr>
-        <td className="px-6 py-4 whitespace-nowrap border-b border-gray-200 shadow-md">
+    return (
+      <TableRow key={user.id}>
+        <TableCell className="font-medium">
           {user.email}
           {rowError && <p className="text-red-500 text-xs mt-1">{rowError}</p>}
-        </td>
-
-        <td className="px-6 py-4 whitespace-nowrap border-b border-gray-200 shadow-md align-top">
-          <div className="flex flex-col space-y-3">
+        </TableCell>
+        <TableCell>
+          <div className="flex flex-col space-y-2">
             <div className="flex items-center space-x-2">
-              <div className="relative flex-grow">
-                <select
-                  value={selectedTeamIdForRow}
-                  onChange={(e) => setSelectedTeamIdForRow(e.target.value)}
-                  className="w-full px-3 py-1 border border-gray-300 rounded appearance-none text-sm"
-                  disabled={isAdding}
-                >
-                  <option value="">Select team...</option>
-                  {allTeams.map((team) => (
-                    <option key={team.id} value={team.id}>
-                      {team.name}
-                    </option>
-                  ))}
-                </select>
-                <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-                  <svg
-                    className="w-4 h-4 text-gray-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M19 9l-7 7-7-7"
-                    ></path>
-                  </svg>
-                </div>
-              </div>
-              <button
-                onClick={handleAddToTeam}
-                disabled={isAdding || !selectedTeamIdForRow}
-                className={`bg-black text-white font-bold py-1 px-2 rounded flex items-center text-sm disabled:opacity-50 ${
-                  isAdding ? "bg-gray-500" : "hover:bg-green-700"
-                }`}
+              <Select
+                value={selectedTeamIdForRow}
+                onValueChange={setSelectedTeamIdForRow}
+                disabled={isAnyActionLoading}
               >
-                {isAdding ? (
-                  <>
-                    <svg
-                      className="animate-spin mr-1 h-3 w-3 text-white"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      ></circle>
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
-                    </svg>
-                    Adding...
-                  </>
-                ) : (
-                  <svg
-                    className="w-3 h-3 mr-1"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                    ></path>
-                  </svg>
-                )}
-                Add
-              </button>
-            </div>
+                <SelectTrigger className="w-full text-sm h-8">
+                  <SelectValue placeholder="Select team..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {allTeams.map((team) => (
+                    <SelectItem key={team.id} value={team.id}>
+                      {team.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
+              <Button
+                onClick={handleAddToTeam}
+                disabled={
+                  isAddingTeam || !selectedTeamIdForRow || isAnyActionLoading
+                }
+                size="sm"
+                className="w-[70px] min-w-[70px] flex-shrink-0"
+                variant={isAddingTeam ? "secondary" : "default"}
+              >
+                {isAddingTeam ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Plus className="h-4 w-4 mr-1" />
+                )}
+                {!isAddingTeam && "Add"}
+              </Button>
+            </div>
             {user.teams && user.teams.length > 0 ? (
               <div className="flex flex-wrap gap-1 pt-1">
-                {user.teams.map((team) => (
-                  <div
-                    key={team.id}
-                    className={`rounded-full px-2 py-0.5 text-xs flex items-center border ${
-                      confirmingRemoveTeamId === team.id
-                        ? "bg-red-100 border-red-400"
-                        : "bg-gray-100 border-gray-300"
-                    }`}
-                  >
-                    <span>{team.name}</span>
-                    {confirmingRemoveTeamId === team.id ? (
-                      <>
-                        <button
-                          onClick={() => executeRemoveTeam(team.id)}
-                          disabled={isProcessingRemove === team.id}
-                          className="ml-1.5 px-1 py-0.5 bg-red-500 text-white rounded text-xxs hover:bg-red-700 disabled:opacity-50"
-                          title="Confirm Remove"
+                {user.teams.map((team) => {
+                  const isConfirmingThis = confirmingRemoveTeamId === team.id;
+                  const isRemovingThis =
+                    isRemovingTeam && confirmingRemoveTeamId === team.id;
+
+                  return (
+                    <Badge
+                      key={team.id}
+                      variant={isConfirmingThis ? "destructive" : "secondary"}
+                      className={cn(
+                        "flex items-center gap-1",
+                        isConfirmingThis && "border-destructive/50"
+                      )}
+                    >
+                      <span>{team.name}</span>
+                      {isConfirmingThis ? (
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-4 w-4 text-destructive hover:bg-destructive/10"
+                            onClick={() => executeRemoveTeam(team.id)}
+                            disabled={isRemovingThis}
+                            title="Confirm Remove"
+                          >
+                            {isRemovingThis ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <Check className="h-3 w-3" />
+                            )}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-4 w-4 text-muted-foreground hover:bg-muted/50"
+                            onClick={cancelRemoveConfirmation}
+                            disabled={isRemovingThis}
+                            title="Cancel"
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </>
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-4 w-4 text-muted-foreground hover:text-destructive hover:bg-destructive/10 ml-1"
+                          onClick={() => requestRemoveConfirmation(team.id)}
+                          disabled={
+                            isAnyActionLoading || !!confirmingRemoveTeamId
+                          }
+                          title="Remove from team"
                         >
-                          {isProcessingRemove === team.id ? "..." : "Confirm"}
-                        </button>
-                        <button
-                          onClick={cancelRemoveConfirmation}
-                          disabled={isProcessingRemove === team.id}
-                          className="ml-1 px-1 py-0.5 bg-gray-300 text-black rounded text-xxs hover:bg-gray-400 disabled:opacity-50"
-                          title="Cancel"
-                        >
-                          {" "}
-                          X{" "}
-                        </button>
-                      </>
-                    ) : (
-                      <button
-                        onClick={() => requestRemoveConfirmation(team.id)}
-                        disabled={
-                          !!isProcessingRemove ||
-                          confirmingRemoveTeamId === team.id
-                        }
-                        className="ml-1.5 text-gray-400 hover:text-red-600 disabled:opacity-50"
-                        title="Remove from team"
-                      >
-                        <svg
-                          className="w-3 h-3"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M6 18L18 6M6 6l12 12"
-                          ></path>
-                        </svg>
-                      </button>
-                    )}
-                  </div>
-                ))}
+                          <X className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </Badge>
+                  );
+                })}
               </div>
             ) : (
-              <span className="text-gray-500 text-xs italic pt-1">
+              <span className="text-muted-foreground text-xs italic pt-1">
                 No teams assigned
               </span>
             )}
           </div>
-        </td>
-
-        <td className="px-6 py-4 whitespace-nowrap border-b border-gray-200 shadow-md">
+        </TableCell>
+        <TableCell className="w-[150px]">
           {isChangingRole ? (
-            <span className="text-xs text-gray-500 italic">Updating...</span>
+            <div className="flex items-center justify-start h-full">
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+            </div>
           ) : (
             <UserRoleSelect
               currentRole={user.role}
               onRoleChange={handleRoleChange}
+              disabled={isAnyActionLoading}
+              className="h-8 text-sm"
             />
           )}
-        </td>
-      </tr>
-    </>
-  );
-};
+        </TableCell>
+      </TableRow>
+    );
+  }
+);
 
-export default React.memo(UserRow);
+UserRow.displayName = "UserRow";
+export default UserRow;
 
 // ====== FILE: src\app\components\Admin\UserTable.tsx ======
 
 "use client";
 import React from "react";
 import UserRow, { User, Team } from "./UserRow";
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableHead,
+  TableHeader,
+  TableRow,
+  TableCell,
+} from "@/components/ui/table";
 
 interface UserTableProps {
   users: User[];
@@ -6811,31 +7412,34 @@ const UserTable: React.FC<UserTableProps> = ({
   loggedInUserId,
 }) => {
   return (
-    <table className="min-w-full table-auto">
-      <thead className="bg-black">
-        <tr>
-          <th className="px-6 py-3 text-left text-lg font-medium text-white uppercase tracking-wider">
-            User
-          </th>
-          <th className="px-6 py-3 text-left text-lg font-medium text-white uppercase tracking-wider">
-            Team Management
-          </th>
-          <th className="px-6 py-3 text-left text-lg font-medium text-white uppercase tracking-wider">
-            Role
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-        {users.map((user) => (
-          <UserRow
-            key={user.id}
-            user={user}
-            allTeams={allTeams}
-            loggedInUserId={loggedInUserId}
-          />
-        ))}
-      </tbody>
-    </table>
+    <Table>
+      <TableCaption>A list of users and their teams/roles.</TableCaption>
+      <TableHeader>
+        <TableRow>
+          <TableHead className="w-[30%]">User</TableHead>
+          <TableHead>Team Management</TableHead>
+          <TableHead className="w-[150px]">Role</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {users.length > 0 ? (
+          users.map((user) => (
+            <UserRow
+              key={user.id}
+              user={user}
+              allTeams={allTeams}
+              loggedInUserId={loggedInUserId}
+            />
+          ))
+        ) : (
+          <TableRow>
+            <TableCell colSpan={3} className="h-24 text-center">
+              No users found matching criteria.
+            </TableCell>
+          </TableRow>
+        )}
+      </TableBody>
+    </Table>
   );
 };
 

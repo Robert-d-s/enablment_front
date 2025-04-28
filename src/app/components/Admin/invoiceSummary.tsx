@@ -4,7 +4,15 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@apollo/client";
 import gql from "graphql-tag";
+import DatePicker from "react-datepicker";
+import { formatISO, isValid } from "date-fns";
+
 import ProjectSelector from "../ProjectSelector";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { cn } from "@/app/lib/utils";
+import "react-datepicker/dist/react-datepicker.css";
+import "@/app/globals.css";
 
 interface QueryRateDetail {
   rateId: number;
@@ -83,8 +91,8 @@ const GET_INVOICE_FOR_PROJECT = gql`
 
 const InvoiceSummary: React.FC = () => {
   const [selectedProject, setSelectedProject] = useState<string>("");
-  const [startDate, setStartDate] = useState<string>("");
-  const [endDate, setEndDate] = useState<string>("");
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
   const [invoiceData, setInvoiceData] = useState<InvoiceData | null>(null);
 
   const {
@@ -93,15 +101,21 @@ const InvoiceSummary: React.FC = () => {
     error: projectsError,
   } = useQuery<GetProjectsData>(GET_PROJECTS_FOR_SELECTOR);
 
+  const formattedStartDate =
+    startDate && isValid(startDate) ? formatISO(startDate) : null;
+  const formattedEndDate =
+    endDate && isValid(endDate) ? formatISO(endDate) : null;
+
   const { loading: loadingInvoice, error: errorInvoice } =
     useQuery<GetInvoiceData>(GET_INVOICE_FOR_PROJECT, {
       variables: {
         input: {
           projectId: selectedProject,
-          startDate: startDate ? new Date(startDate).toISOString() : null,
-          endDate: endDate ? new Date(endDate).toISOString() : null,
+          startDate: formattedStartDate,
+          endDate: formattedEndDate,
         },
       },
+
       skip: !selectedProject || !startDate || !endDate,
       fetchPolicy: "network-only",
       notifyOnNetworkStatusChange: true,
@@ -165,23 +179,26 @@ const InvoiceSummary: React.FC = () => {
   const isInitialLoading = projectsLoading;
   const initialLoadingError = projectsError;
 
+  const datePickerInputClass = cn(
+    "w-full h-9 px-3 py-1 text-sm",
+    "border border-input",
+    "rounded-md",
+    "bg-background",
+    "shadow-sm",
+    "focus:outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
+    "placeholder:text-muted-foreground"
+  );
+
   const renderInvoiceDetails = () => {
     if (loadingInvoice) {
-      return <p className="text-gray-400 mt-4">Loading Invoice...</p>;
+      return <p className="text-gray-500 mt-4">Loading invoice…</p>;
     }
-    if (errorInvoice) {
-      return (
-        <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mt-4 rounded">
-          <p className="font-bold">Error Loading Invoice</p>
-          <p>{errorInvoice.message}</p>
-        </div>
-      );
-    }
+
     if (invoiceData) {
       return (
         <div className="mt-4 p-6 bg-white shadow-md rounded-lg">
           <h4 className="text-md font-bold bg-slate-200 p-2 rounded-t-lg">
-            Project: {invoiceData.projectName} - Team:{" "}
+            Project: {invoiceData.projectName} – Team:{" "}
             {invoiceData.teamName ?? "N/A"}
           </h4>
           <div className="p-2 space-y-1">
@@ -193,15 +210,15 @@ const InvoiceSummary: React.FC = () => {
             </p>
             <div className="mt-4">
               <h5 className="font-semibold bg-slate-200 p-1">Rates Applied:</h5>
-              {invoiceData.rates && invoiceData.rates.length > 0 ? (
+              {invoiceData.rates.length > 0 ? (
                 <ul className="list-disc list-inside pl-4 pt-1">
-                  {invoiceData.rates.map((rate: QueryRateDetail) => (
+                  {invoiceData.rates.map((rate) => (
                     <li
-                      className="border-b border-gray-100 py-1 text-sm"
                       key={rate.rateId}
+                      className="border-b border-gray-100 py-1 text-sm"
                     >
-                      {rate.rateName}: {rate.hours?.toFixed(2) ?? "N/A"} hours
-                      at {formatCurrency(rate.cost)} (
+                      {rate.rateName}: {rate.hours.toFixed(2)} hours at{" "}
+                      {formatCurrency(rate.cost)} (
                       {formatCurrency(rate.ratePerHour)} / h)
                     </li>
                   ))}
@@ -216,6 +233,7 @@ const InvoiceSummary: React.FC = () => {
         </div>
       );
     }
+
     if (selectedProject && startDate && endDate) {
       return (
         <p className="text-gray-400 mt-4">
@@ -223,6 +241,7 @@ const InvoiceSummary: React.FC = () => {
         </p>
       );
     }
+
     return (
       <p className="text-gray-500 mt-4">
         Please select a project and date range.
@@ -231,24 +250,25 @@ const InvoiceSummary: React.FC = () => {
   };
 
   return (
-    <div className="p-6 bg-black shadow-md rounded-lg">
-      <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0 md:space-x-4 mb-4">
-        <h3 className="text-lg font-bold text-white">Invoice Summary</h3>
-        <div className="flex-grow">
-          {isInitialLoading && (
+    <Card className="bg-black border-none p-6 shadow-md rounded-lg">
+      <CardHeader className="flex flex-col md:flex-row justify-between items-start space-y-4 md:space-y-0 md:space-x-4 mb-4">
+        <CardTitle className="text-lg font-bold text-white whitespace-nowrap pt-1">
+          Invoice Summary
+        </CardTitle>
+        {/* Project Selector container */}
+        <div className="flex-grow w-full md:w-auto">
+          {isInitialLoading ? (
             <select
-              className="w-full p-2 bg-gray-200 border border-gray-300 rounded-md text-gray-500 cursor-not-allowed"
               disabled
+              className="w-full h-9 px-3 py-2 bg-gray-200 border border-gray-300 rounded-md text-gray-500 cursor-not-allowed"
             >
-              <option>Loading Projects...</option>
+              <option>Loading Projects…</option>
             </select>
-          )}
-          {initialLoadingError && (
+          ) : initialLoadingError ? (
             <div className="p-2 bg-red-100 text-red-700 border border-red-300 rounded">
-              Error loading projects/teams.
+              Error loading projects.
             </div>
-          )}
-          {!isInitialLoading && !initialLoadingError && (
+          ) : (
             <ProjectSelector
               projects={projectsForSelector}
               selectedProject={selectedProject}
@@ -256,32 +276,65 @@ const InvoiceSummary: React.FC = () => {
             />
           )}
         </div>
-        <div className="flex-grow flex flex-col md:flex-row gap-2 md:gap-4">
-          <input
-            type="date"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            className="w-full p-2 bg-white text-black border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-            aria-label="Start Date"
-            disabled={isInitialLoading}
-          />
-          <input
-            type="date"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            className="w-full p-2 bg-white text-black border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-            aria-label="End Date"
-            disabled={isInitialLoading}
-            min={startDate}
-          />
+        {/* Date Pickers container */}
+        <div className="flex-grow flex flex-col md:flex-row gap-4 w-full md:w-auto">
+          <div className="flex-1 datepicker-wrapper">
+            <Label htmlFor="startDatePicker" className="sr-only">
+              Start Date
+            </Label>
+            <DatePicker
+              id="startDatePicker"
+              selected={startDate}
+              onChange={(date: Date | null) => setStartDate(date)}
+              selectsStart
+              startDate={startDate}
+              endDate={endDate}
+              dateFormat="yyyy-MM-dd"
+              placeholderText="Start Date"
+              className={datePickerInputClass}
+              wrapperClassName="w-full"
+              disabled={isInitialLoading}
+              isClearable
+              maxDate={endDate || new Date()}
+              popperPlacement="bottom-start"
+            />
+          </div>
+          <div className="flex-1 datepicker-wrapper">
+            <Label htmlFor="endDatePicker" className="sr-only">
+              End Date
+            </Label>
+            <DatePicker
+              id="endDatePicker"
+              selected={endDate}
+              onChange={(date: Date | null) => setEndDate(date)}
+              selectsEnd
+              startDate={startDate}
+              endDate={endDate}
+              minDate={startDate || undefined}
+              maxDate={new Date()}
+              dateFormat="yyyy-MM-dd"
+              placeholderText="End Date"
+              className={datePickerInputClass}
+              wrapperClassName="w-full"
+              disabled={isInitialLoading}
+              isClearable
+              popperPlacement="bottom-start"
+            />
+          </div>
         </div>
-      </div>
+      </CardHeader>
+
       {!isInitialLoading && !initialLoadingError ? (
-        renderInvoiceDetails()
+        <CardContent>{renderInvoiceDetails()}</CardContent>
       ) : (
-        <p className="text-gray-500 mt-4 italic">Loading initial data...</p>
+        // Keep loading indicator simple if projects are loading
+        <CardContent>
+          <p className="text-gray-400 mt-4 italic text-center">
+            Loading projects...
+          </p>
+        </CardContent>
       )}
-    </div>
+    </Card>
   );
 };
 

@@ -9,6 +9,13 @@ import { loggedInUserTeamsVersion } from "@/app/lib/apolloClient";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 import LoadingIndicator from "@/app/components/Admin/LoadingIndicator";
 import ErrorMessage from "@/app/components/Admin/ErrorMessage";
+import { Skeleton } from "@/components/ui/skeleton";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import "@/app/globals.css";
+import { cn } from "@/app/lib/utils";
+import { Label } from "@/components/ui/label";
+import ProjectSelector from "../ProjectSelector";
 
 interface MyProject {
   id: string;
@@ -219,46 +226,71 @@ bg-transparent px-3 py-2 text-sm whitespace-nowrap shadow-xs">
   );
   ProjectSelector.displayName = "ProjectSelector";
 
+  const datePickerInputClass = cn(
+    "w-full h-9 px-3 py-1 text-sm",
+    "border border-input",
+    "rounded-md",
+    "bg-background",
+    "shadow-sm",
+    "focus:outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
+    "placeholder:text-muted-foreground"
+  );
+
   const DateFilters: React.FC<DateFiltersProps> = memo(
     ({ startDate, endDate, onStart, onEnd }: DateFiltersProps) => {
-      const [localStart, setLocalStart] = useState(startDate);
-      const [localEnd, setLocalEnd] = useState(endDate);
-
-      useEffect(() => setLocalStart(startDate), [startDate]);
-      useEffect(() => setLocalEnd(endDate), [endDate]);
+      const startDateObj = startDate ? new Date(startDate) : null;
+      const endDateObj = endDate ? new Date(endDate) : null;
 
       return (
-        <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
-          <input
-            type="date"
-            value={localStart}
-            onChange={(e) => setLocalStart(e.target.value)}
-            onBlur={() => onStart(localStart)}
-            className="w-full sm:w-44 h-9 p-2 bg-white border rounded shadow-sm"
-          />
-          <input
-            type="date"
-            value={localEnd}
-            onChange={(e) => setLocalEnd(e.target.value)}
-            onBlur={() => onEnd(localEnd)}
-            className="w-full sm:w-44 h-9 p-2 bg-white border rounded shadow-sm"
-          />
+        <div className="flex-grow flex flex-col md:flex-row gap-4 w-full md:w-auto">
+          <div className="flex-1 datepicker-wrapper">
+            <Label htmlFor="total-start-date" className="sr-only">Start Date</Label>
+            <DatePicker
+              id="total-start-date"
+              selected={startDateObj}
+              onChange={(date: Date | null) => onStart(date ? date.toISOString().split("T")[0] : "")}
+              selectsStart
+              startDate={startDateObj}
+              endDate={endDateObj}
+              dateFormat="yyyy-MM-dd"
+              placeholderText="Start Date"
+              className={datePickerInputClass}
+              wrapperClassName="w-full"
+              isClearable
+              maxDate={endDateObj || new Date()}
+              popperPlacement="bottom-start"
+            />
+          </div>
+          <div className="flex-1 datepicker-wrapper">
+            <Label htmlFor="total-end-date" className="sr-only">End Date</Label>
+            <DatePicker
+              id="total-end-date"
+              selected={endDateObj}
+              onChange={(date: Date | null) => onEnd(date ? date.toISOString().split("T")[0] : "")}
+              selectsEnd
+              startDate={startDateObj}
+              endDate={endDateObj}
+              minDate={startDateObj || undefined}
+              maxDate={new Date()}
+              dateFormat="yyyy-MM-dd"
+              placeholderText="End Date"
+              className={datePickerInputClass}
+              wrapperClassName="w-full"
+              isClearable
+              popperPlacement="bottom-start"
+            />
+          </div>
         </div>
       );
     }
   );
   DateFilters.displayName = "DateFilters";
 
-  // Skeleton loader to preserve layout during fetches
-  const Skeleton: React.FC<{ width?: string; height?: string }> = ({ width = "w-20", height = "h-6" }) => (
-    <div className={`${width} ${height} bg-gray-200 animate-pulse rounded`}></div>
-  );
-
   const TimeDisplay: React.FC<TimeDisplayProps> = memo(
     ({ isLoading, displayError, error, onRetry, totalTime }: TimeDisplayProps) => (
       <div className="text-center md:text-right whitespace-nowrap min-h-[2.25rem]">
         {isLoading && !displayError ? (
-          <Skeleton width="w-24" height="h-6" />
+          <Skeleton className="w-24 h-6" />
         ) : displayError ? (
           <ErrorMessage error={error} context="Total Time Calculation" onRetry={onRetry} />
         ) : (

@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 
 type ProjectSelectorProps = {
   projects: { id: string; name: string; teamName?: string }[];
@@ -15,20 +16,21 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
   onProjectChange,
 }) => {
   return (
-    <select
-      value={selectedProject}
-      onChange={(e) => onProjectChange(e.target.value)}
-      className="form-input block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-    >
-      <option value="" disabled>
-        Select a project
-      </option>
-      {projects.map((project) => (
-        <option key={project.id} value={project.id}>
-          {project.name} (Team: {project.teamName})
-        </option>
-      ))}
-    </select>
+       <Select
+        value={selectedProject}
+          onValueChange={onProjectChange}
+             >
+        <SelectTrigger className="w-full px-3 py-2 bg-background border border-gray-300 rounded-md shadow-sm text-gray-500 focus:ring-indigo-500 focus:border-indigo-500">
+           <SelectValue placeholder="Select a project" />
+          </SelectTrigger>
+          <SelectContent>
+            {projects.map((project) => (
+              <SelectItem key={project.id} value={project.id} className="text-sm">
+               {project.name} (Team: {project.teamName})
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
   );
 };
 
