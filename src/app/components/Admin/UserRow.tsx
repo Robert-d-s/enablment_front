@@ -9,7 +9,6 @@ import {
   UPDATE_USER_ROLE,
 } from "@/app/graphql/adminOperations";
 import { loggedInUserTeamsVersion } from "@/app/lib/apolloClient";
-import { GET_MY_PROJECTS } from "@/app/components/Admin/totalTimeSpent";
 import UserRoleSelect, { UserRole } from "./UserRoleSelect";
 import { Button } from "@/components/ui/button";
 import {
@@ -60,6 +59,10 @@ interface UserRowProps {
 
 const UserRow: React.FC<UserRowProps> = React.memo(
   ({ user, allTeams, loggedInUserId }) => {
+    console.log(
+      `UserRow for ${user.email} received allTeams:`,
+      JSON.stringify(allTeams, null, 2)
+    );
     const [selectedTeamIdForRow, setSelectedTeamIdForRow] =
       useState<string>("");
     const [confirmingRemoveTeamId, setConfirmingRemoveTeamId] = useState<
@@ -93,70 +96,175 @@ const UserRow: React.FC<UserRowProps> = React.memo(
       ADD_USER_TO_TEAM,
       {
         optimisticResponse: (variables) => {
-          const teamToAdd = allTeams.find((t) => t.id === variables.teamId);
-          if (!teamToAdd) return undefined;
+          const teamIdToAdd = variables.input.teamId;
+          const userId = variables.input.userId;
+          const teamToAdd = allTeams.find((t) => t.id === teamIdToAdd);
+          console.log(
+            "Found teamToAdd in optimisticResponse:",
+            JSON.stringify(teamToAdd, null, 2)
+          );
+          if (!teamToAdd || !teamToAdd.name) {
+            console.warn(
+              "Optimistic Response: Could not find team",
+              teamIdToAdd,
+              "in allTeams prop."
+            );
+            return undefined;
+          }
           const optimisticTeams = [
-            ...user.teams,
-            { ...teamToAdd, __typename: "Team" as const },
+            ...user.teams.map((t) => ({
+              __typename: "Team" as const,
+              id: t.id,
+              name: t.name,
+            })),
+            {
+              __typename: "Team" as const,
+              id: teamToAdd.id,
+              name: teamToAdd.name,
+            },
           ];
-          return {
+
+          const result = {
             addUserToTeam: {
               __typename: "User",
-              id: user.id,
+              id: userId,
               email: user.email,
               role: user.role,
               teams: optimisticTeams,
             },
           };
+          console.log(
+            "Optimistic Response Generated:",
+            JSON.stringify(result, null, 2)
+          );
+          return result;
         },
         update: (cache, { data }) => {
-          if (!data?.addUserToTeam) return;
-          const userId = cache.identify({ __typename: "User", id: user.id });
-          if (!userId) return;
-          cache.writeFragment({
-            id: userId,
-            fragment: USER_ROW_FRAGMENT,
-            data: data.addUserToTeam,
+          console.log(
+            "Mutation Response Data in Update:",
+            JSON.stringify(data, null, 2)
+          );
+          if (!data?.addUserToTeam) {
+            console.log(
+              "Cache update skipped: No addUserToTeam data in response."
+            );
+            return;
+          }
+          const userIdCacheId = cache.identify({
+            __typename: "User",
+            id: data.addUserToTeam.id,
           });
-          if (loggedInUserId === user.id)
+          if (!userIdCacheId) {
+            console.log(
+              "Cache update skipped: Could not identify user in cache."
+            );
+            return;
+          }
+          console.log(
+            `Writing fragment for user ${userIdCacheId} with data:`,
+            JSON.stringify(data.addUserToTeam, null, 2)
+          );
+          try {
+            cache.writeFragment({
+              id: userIdCacheId,
+              fragment: USER_ROW_FRAGMENT,
+              data: data.addUserToTeam,
+            });
+            console.log(
+              `Successfully wrote fragment for user ${userIdCacheId}`
+            );
+          } catch (writeError) {
+            console.error(
+              `Error writing fragment for user ${userIdCacheId}:`,
+              writeError
+            );
+          }
+          if (loggedInUserId === data.addUserToTeam.id)
+            setSelectedTeamIdForRow("");
+        },
+        onCompleted: (data) => {
+          console.log("Mutation onCompleted received data:", data);
+          if (data?.addUserToTeam && loggedInUserId === data.addUserToTeam.id) {
+            console.log("Updating loggedInUserTeamsVersion in onCompleted");
             loggedInUserTeamsVersion(loggedInUserTeamsVersion() + 1);
-          setSelectedTeamIdForRow("");
+          }
+          toast.success("User added to team!");
         },
         onError: (error) => handleMutationError("adding user to team", error),
-        refetchQueries: [{ query: GET_MY_PROJECTS }],
-        awaitRefetchQueries: true,
       }
     );
 
     const [removeUserFromTeamMutation, { loading: isRemovingTeam }] =
       useMutation(REMOVE_USER_FROM_TEAM, {
         optimisticResponse: (variables) => {
-          const optimisticTeams = user.teams.filter(
-            (t) => t.id !== variables.teamId
-          );
-          return {
+          const teamIdToRemove = variables.input.teamId;
+          const userId = variables.input.userId;
+          const optimisticTeams = user.teams
+            .filter((t) => t.id !== teamIdToRemove)
+            .map((t) => ({
+              __typename: "Team" as const,
+              id: t.id,
+              name: t.name,
+            }));
+          const result = {
             removeUserFromTeam: {
               __typename: "User",
-              id: user.id,
+              id: userId,
               email: user.email,
               role: user.role,
               teams: optimisticTeams,
             },
           };
+          console.log(
+            "Optimistic Response Generated (Remove):",
+            JSON.stringify(result, null, 2)
+          );
+          return result;
         },
         update: (cache, { data }) => {
-          if (!data?.removeUserFromTeam) return;
-          const userId = cache.identify({ __typename: "User", id: user.id });
-          if (!userId) return;
-          cache.writeFragment({
-            id: userId,
-            fragment: USER_ROW_FRAGMENT,
-            data: data.removeUserFromTeam,
+          console.log(
+            "Mutation Response Data in Update (Remove):",
+            JSON.stringify(data, null, 2)
+          );
+          if (!data?.removeUserFromTeam) {
+            console.log(
+              "Cache update skipped (Remove): No removeUserFromTeam data."
+            );
+            return;
+          }
+          const userIdCacheId = cache.identify({
+            __typename: "User",
+            id: data.removeUserFromTeam.id,
           });
-          if (loggedInUserId === user.id)
-            loggedInUserTeamsVersion(loggedInUserTeamsVersion() + 1);
+          if (!userIdCacheId) {
+            console.log("Cache update skipped (Remove): Cannot identify user.");
+            return;
+          }
+          console.log(
+            `Writing fragment for user ${userIdCacheId} with data (Remove):`,
+            JSON.stringify(data.removeUserFromTeam, null, 2)
+          );
+          try {
+            cache.writeFragment({
+              id: userIdCacheId,
+              fragment: USER_ROW_FRAGMENT,
+              data: data.removeUserFromTeam,
+            });
+            console.log(
+              `Successfully wrote fragment for user ${userIdCacheId} (Remove)`
+            );
+          } catch (writeError) {
+            console.error(
+              `Error writing fragment for user ${userIdCacheId} (Remove):`,
+              writeError
+            );
+          }
         },
-        onCompleted: () => {
+        onCompleted: (data) => {
+          if (loggedInUserId === data.removeUserFromTeam.id) {
+            console.log("Updating loggedInUserTeamsVersion in onCompleted");
+            loggedInUserTeamsVersion(loggedInUserTeamsVersion() + 1);
+          }
           toast.success("User removed from team!");
           setConfirmingRemoveTeamId(null);
         },
@@ -164,34 +272,86 @@ const UserRow: React.FC<UserRowProps> = React.memo(
           handleMutationError("removing user from team", error);
           setConfirmingRemoveTeamId(null);
         },
-        refetchQueries: [{ query: GET_MY_PROJECTS }],
-        awaitRefetchQueries: true,
       });
 
     const [updateUserRoleMutation, { loading: isChangingRole }] = useMutation(
       UPDATE_USER_ROLE,
       {
-        optimisticResponse: (variables) => ({
-          updateUserRole: {
-            __typename: "User",
-            id: user.id,
-            role: variables.newRole,
-          },
-        }),
+        optimisticResponse: (variables) => {
+          const userId = variables.input.userId;
+          const newRole = variables.input.newRole;
+
+          const optimisticTeams = user.teams.map((t) => ({
+            __typename: "Team" as const,
+            id: t.id,
+            name: t.name,
+          }));
+
+          const result = {
+            updateUserRole: {
+              __typename: "User",
+              id: userId,
+
+              email: user.email,
+              role: newRole,
+              teams: optimisticTeams,
+            },
+          };
+          console.log(
+            "Optimistic Response Generated (UpdateRole):",
+            JSON.stringify(result, null, 2)
+          );
+          return result;
+        },
         update: (cache, { data }) => {
-          if (!data?.updateUserRole) return;
-          const userId = cache.identify({ __typename: "User", id: user.id });
-          if (!userId) return;
+          console.log(
+            "Mutation Response Data in Update (UpdateRole):",
+            JSON.stringify(data, null, 2)
+          );
+          if (!data?.updateUserRole) {
+            console.log(
+              "Cache update skipped (UpdateRole): No updateUserRole data."
+            );
+            return;
+          }
+          const userIdCacheId = cache.identify({
+            __typename: "User",
+            id: data.updateUserRole.id,
+          });
+          if (!userIdCacheId) {
+            console.log(
+              "Cache update skipped (UpdateRole): Cannot identify user."
+            );
+            return;
+          }
           const existingUser = cache.readFragment<User>({
-            id: userId,
+            id: userIdCacheId,
             fragment: USER_ROW_FRAGMENT,
           });
           if (existingUser) {
-            cache.writeFragment({
-              id: userId,
-              fragment: USER_ROW_FRAGMENT,
-              data: { ...existingUser, role: data.updateUserRole.role },
-            });
+            console.log(
+              `Writing fragment for user ${userIdCacheId} with data (UpdateRole):`,
+              JSON.stringify(data.updateUserRole, null, 2)
+            );
+            try {
+              cache.writeFragment({
+                id: userIdCacheId,
+                fragment: USER_ROW_FRAGMENT,
+                data: { ...existingUser, role: data.updateUserRole.role },
+              });
+              console.log(
+                `Successfully wrote fragment for user ${userIdCacheId} (UpdateRole)`
+              );
+            } catch (writeError) {
+              console.error(
+                `Error writing fragment for user ${userIdCacheId} (UpdateRole):`,
+                writeError
+              );
+            }
+          } else {
+            console.log(
+              `Cache update skipped (UpdateRole): Cannot read existing fragment for user ${userIdCacheId}.`
+            );
           }
         },
         onCompleted: (data) => {
@@ -217,7 +377,12 @@ const UserRow: React.FC<UserRowProps> = React.memo(
       }
       setRowError(null);
       addUserToTeamMutation({
-        variables: { userId: user.id, teamId: selectedTeamIdForRow },
+        variables: {
+          input: {
+            userId: user.id,
+            teamId: selectedTeamIdForRow,
+          },
+        },
       });
     }, [addUserToTeamMutation, selectedTeamIdForRow, user.id, user.teams]);
 
@@ -235,7 +400,7 @@ const UserRow: React.FC<UserRowProps> = React.memo(
         if (!teamIdToRemove) return;
         setRowError(null);
         removeUserFromTeamMutation({
-          variables: { userId: user.id, teamId: teamIdToRemove },
+          variables: { input: { userId: user.id, teamId: teamIdToRemove } },
         });
       },
       [removeUserFromTeamMutation, user.id]
@@ -245,7 +410,9 @@ const UserRow: React.FC<UserRowProps> = React.memo(
       (newRole: UserRole) => {
         if (newRole === user.role) return;
         setRowError(null);
-        updateUserRoleMutation({ variables: { userId: user.id, newRole } });
+        updateUserRoleMutation({
+          variables: { input: { userId: user.id, newRole } },
+        });
       },
       [updateUserRoleMutation, user.id, user.role]
     );

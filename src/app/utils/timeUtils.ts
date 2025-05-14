@@ -1,5 +1,3 @@
-// timeUtils.ts
-
 export const formatDateForDisplay = (date: Date): string => {
   const options: Intl.DateTimeFormatOptions = {
     weekday: "long",

@@ -1,8 +1,18 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { format } from "date-fns";
 import type { TimerState } from "../types";
 import { useTimerStore } from "@/app/lib/timerStore";
 
+const formatSecondsToHHMMSS = (totalSeconds: number): string => {
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  const paddedHours = hours.toString().padStart(2, "0");
+  const paddedMinutes = minutes.toString().padStart(2, "0");
+  const paddedSeconds = seconds.toString().padStart(2, "0");
+
+  return `${paddedHours}:${paddedMinutes}:${paddedSeconds}`;
+};
 export const useTimer = (
   selectedProjectId: string | null,
   selectedRateId: string | null
@@ -158,10 +168,7 @@ export const useTimer = (
   const updateDisplay = useCallback(() => {
     const elapsedMs = calculateTotalActiveTime();
     const elapsedSeconds = Math.floor(elapsedMs / 1000);
-    const formattedTime = format(
-      new Date(0, 0, 0, 0, 0, elapsedSeconds),
-      "HH:mm:ss"
-    );
+    const formattedTime = formatSecondsToHHMMSS(elapsedSeconds);
     setDisplayTime(formattedTime);
   }, [calculateTotalActiveTime]);
 
@@ -170,10 +177,8 @@ export const useTimer = (
     console.log("useTimer Mount Effect: Setting initial display time.");
     // Caslculate the time based on the state as it was loaded
     const initialElapsedMs = calculateTotalActiveTime();
-    const initialElapsedSeconds = Math.floor(initialElapsedMs / 1000);
-    const initialFormatedTime = format(
-      new Date(0, 0, 0, 0, 0, initialElapsedSeconds),
-      "HH:mm:ss"
+    const initialFormatedTime = formatSecondsToHHMMSS(
+      Math.floor(initialElapsedMs / 1000)
     );
     setDisplayTime(initialFormatedTime);
     // eslint-disable-next-line react-hooks/exhaustive-deps

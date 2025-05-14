@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, memo } from "react";
+import React, { useState, useEffect, memo, useCallback, useDeferredValue } from "react";
 import { useQuery, useLazyQuery, gql } from "@apollo/client";
 import { useAuthStore } from "@/app/lib/authStore";
 import { formatTimeFromMilliseconds } from "@/app/utils/timeUtils";
@@ -75,6 +75,13 @@ const TotalTimeSpent: React.FC = () => {
   const loggedInUserId = loggedInUser?.id;
   const teamsVersion = useReactiveVar(loggedInUserTeamsVersion);
 
+  const deferredProject = useDeferredValue(selectedProject);
+  const onProjectChange = useCallback((id: string) => {
+    if (id !== selectedProject) setSelectedProject(id);
+  }, [selectedProject]);
+  const onStart = useCallback((d: string) => setStartDate(d), []);
+  const onEnd = useCallback((d: string) => setEndDate(d), []);
+
   const {
     data: projectsData,
     loading: loadingUserProjects,
@@ -82,7 +89,7 @@ const TotalTimeSpent: React.FC = () => {
     refetch: refetchMyProjects,
   } = useQuery<GetMyProjectsQueryData>(GET_MY_PROJECTS, {
     skip: !loggedInUserId,
-    fetchPolicy: "cache-and-network",
+    fetchPolicy: "cache-first",
     notifyOnNetworkStatusChange: true,
     onError: (error) => {
       console.error("Error fetching my projects:", error);
@@ -91,10 +98,17 @@ const TotalTimeSpent: React.FC = () => {
   });
 
   useEffect(() => {
-       if (projectsData?.myProjects) {
-           setUserProjects(projectsData.myProjects);
-          }
-       }, [projectsData]);
+    if (projectsData?.myProjects) {
+      const newProjects = projectsData.myProjects;
+      // Only set when list really changes
+      if (
+        newProjects.length !== userProjects.length ||
+        newProjects.some((p, i) => p.id !== userProjects[i]?.id)
+      ) {
+        setUserProjects(newProjects);
+      }
+    }
+  }, [projectsData, userProjects]);
 
   const [fetchTotalTime, { loading: loadingTime, error: errorTime, data: timeData }] =
     useLazyQuery<GetTotalTimeSpentQueryData>(GET_TOTAL_TIME_SPENT, {
@@ -117,7 +131,8 @@ const TotalTimeSpent: React.FC = () => {
         setErrorMessage("Failed to update project list.");
       });
     }
-  }, [teamsVersion, loggedInUserId, refetchMyProjects]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [teamsVersion]);
 
   useEffect(() => {
     if (timeData) {
@@ -131,12 +146,11 @@ const TotalTimeSpent: React.FC = () => {
 
   // Fetch total time only when all selectors have valid values
   useEffect(() => {
-    if (loggedInUserId && selectedProject && startDate && endDate) {
-      fetchTotalTime({ variables: { userId: loggedInUserId, projectId: selectedProject, startDate, endDate } });
-    } else {
-      setTotalTime(null);
+    if (loggedInUserId && deferredProject && startDate && endDate) {
+      fetchTotalTime({ variables: { userId: loggedInUserId, projectId: deferredProject, startDate, endDate } });
     }
-  }, [loggedInUserId, selectedProject, startDate, endDate, fetchTotalTime]);
+    // keep previous totalTime until new data arrives
+  }, [loggedInUserId, deferredProject, startDate, endDate, fetchTotalTime]);
 
   const isLoading = loadingUserProjects || loadingTime;
   const displayError =
@@ -235,6 +249,8 @@ const TotalTimeSpent: React.FC = () => {
   );
   TimeDisplay.displayName = "TimeDisplay";
 
+  const MemoProjectSelector = memo(ProjectSelector);
+
   return (
     <div className="flex flex-col sm:flex-row items-end gap-4 p-4 bg-white rounded shadow">
       {loadingUserProjects ? (
@@ -246,19 +262,21 @@ const TotalTimeSpent: React.FC = () => {
           onRetry={refetchMyProjects}
         />
       ) : (
-        <ProjectSelector
-          projects={userProjects}
-          selectedProject={selectedProject}
-          onProjectChange={setSelectedProject}
-          className="w-full"
-        />
+        <div className="w-full sm:w-64">
+          <MemoProjectSelector
+            projects={userProjects}
+            selectedProject={deferredProject}
+            onProjectChange={onProjectChange}
+            className="w-full"
+          />
+        </div>
       )}
       <DateFilters
         startDate={startDate}
         endDate={endDate}
-        onStart={setStartDate}
-        onEnd={setEndDate}
-        disabled={!selectedProject}
+        onStart={onStart}
+        onEnd={onEnd}
+        disabled={!deferredProject}
       />
       <TimeDisplay
         isLoading={isLoading}
@@ -266,7 +284,7 @@ const TotalTimeSpent: React.FC = () => {
         error={errorTime || errorUserProjects || new Error(displayError)}
         onRetry={() =>
           fetchTotalTime({
-            variables: { userId: loggedInUserId, projectId: selectedProject, startDate, endDate },
+            variables: { userId: loggedInUserId, projectId: deferredProject, startDate, endDate },
           })
         }
         totalTime={totalTime}

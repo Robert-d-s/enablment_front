@@ -1,15 +1,19 @@
 import React from "react";
-import DatePicker from "react-datepicker";
+import dynamic from "next/dynamic";
 import "react-datepicker/dist/react-datepicker.css";
-import "@/app/globals.css";
 import {
   formatDateForDisplay,
   formatTimeFromISOString,
 } from "@/app/utils/timeUtils";
-import { formatISO, isToday, isSameDay, getMonth } from "date-fns";
+import { formatISO } from "date-fns/formatISO";
+import { isToday } from "date-fns/isToday";
+import { isSameDay } from "date-fns/isSameDay";
+import { getMonth } from "date-fns/getMonth";
 import { Timer, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/app/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import type { DatePickerProps } from "react-datepicker";
 
 interface TimerDisplayProps {
   isRunning: boolean;
@@ -17,6 +21,24 @@ interface TimerDisplayProps {
   initialStartTime: Date | null;
   handleDateChange: (date: Date | null) => void;
 }
+
+const DynamicDatePicker = dynamic<DatePickerProps>(
+  () =>
+    import("react-datepicker").then(
+      (mod) => mod.default as unknown as React.ComponentType<DatePickerProps>
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        className="flex justify-center items-center p-1 w-full max-w-xl"
+        style={{ minHeight: "300px" }}
+      >
+        <Skeleton className="h-[280px] w-[280px] md:h-[300px] md:w-[320px]" />
+      </div>
+    ),
+  }
+);
 
 const getDayClassName = (
   date: Date,
@@ -82,7 +104,7 @@ const TimerDisplay: React.FC<TimerDisplayProps> = ({
         )}
       </div>
       <div className="p-1 border rounded-md bg-card shadow-sm w-full max-w-xl overflow-hidden">
-        <DatePicker
+        <DynamicDatePicker
           inline
           id="startDate"
           selected={initialStartTime}
@@ -93,14 +115,16 @@ const TimerDisplay: React.FC<TimerDisplayProps> = ({
           preventOpenOnFocus
           // --- Styling Props ---
           calendarClassName="bg-card rounded-lg shadow-lg border p-2"
-          dayClassName={(date) =>
+          dayClassName={(date: Date) =>
             getDayClassName(
               date,
               initialStartTime,
               initialStartTime || new Date()
             )
           }
-          timeClassName={(time) => getTimeClassName(time, initialStartTime)}
+          timeClassName={(time: Date) =>
+            getTimeClassName(time, initialStartTime)
+          }
           timeFormat="h:mm aa"
           timeCaption="Time"
           // --- Custom Header ---
@@ -110,6 +134,12 @@ const TimerDisplay: React.FC<TimerDisplayProps> = ({
             increaseMonth,
             prevMonthButtonDisabled,
             nextMonthButtonDisabled,
+          }: {
+            date: Date;
+            decreaseMonth: () => void;
+            increaseMonth: () => void;
+            prevMonthButtonDisabled: boolean;
+            nextMonthButtonDisabled: boolean;
           }) => (
             <div className="flex items-center justify-between px-1 py-1.5">
               <button
@@ -120,6 +150,7 @@ const TimerDisplay: React.FC<TimerDisplayProps> = ({
                   buttonVariants({ variant: "outline", size: "icon" }),
                   "h-7 w-7 disabled:opacity-50 border"
                 )}
+                aria-label="Previous month"
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
@@ -138,6 +169,7 @@ const TimerDisplay: React.FC<TimerDisplayProps> = ({
                   buttonVariants({ variant: "outline", size: "icon" }),
                   "h-7 w-7 disabled:opacity-50 border"
                 )}
+                aria-label="Next month"
               >
                 <ChevronRight className="h-4 w-4" />
               </button>

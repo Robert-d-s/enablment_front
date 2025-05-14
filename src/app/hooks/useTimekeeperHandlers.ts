@@ -1,4 +1,4 @@
-import { formatISO } from "date-fns";
+import { formatISO } from "date-fns/formatISO";
 import type { TimerState, TimeEntry } from "../types";
 
 interface HandlersConfig {

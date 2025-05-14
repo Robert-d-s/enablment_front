@@ -27,8 +27,8 @@ export const GET_SIMPLE_TEAMS = gql`
 `;
 
 export const UPDATE_USER_ROLE = gql`
-  mutation UpdateUserRole($userId: Int!, $newRole: UserRole!) {
-    updateUserRole(userId: $userId, newRole: $newRole) {
+  mutation UpdateUserRole($input: UpdateUserRoleInput!) {
+    updateUserRole(input: $input) {
       id
       role
       __typename
@@ -37,8 +37,8 @@ export const UPDATE_USER_ROLE = gql`
 `;
 
 export const ADD_USER_TO_TEAM = gql`
-  mutation AddUserToTeam($userId: Int!, $teamId: String!) {
-    addUserToTeam(userId: $userId, teamId: $teamId) {
+  mutation AddUserToTeam($input: UserTeamInput!) {
+    addUserToTeam(input: $input) {
       id
       email
       role
@@ -53,8 +53,8 @@ export const ADD_USER_TO_TEAM = gql`
 `;
 
 export const REMOVE_USER_FROM_TEAM = gql`
-  mutation RemoveUserFromTeam($userId: Int!, $teamId: String!) {
-    removeUserFromTeam(userId: $userId, teamId: $teamId) {
+  mutation RemoveUserFromTeam($input: UserTeamInput!) {
+    removeUserFromTeam(input: $input) {
       id
       email
       role
