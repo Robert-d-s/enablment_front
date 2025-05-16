@@ -4,9 +4,10 @@ import React from "react";
 import UserTable from "./UserTable";
 import UserManagementControls from "./UserManagementControls";
 import { useUserManagementData } from "@/app/hooks/useUserManagementData";
-import LoadingIndicator from "@/app/components/Admin/LoadingIndicator";
+// import LoadingIndicator from "@/app/components/Admin/LoadingIndicator";
 import ErrorMessage from "@/app/components/Admin/ErrorMessage";
-import { Loader2 } from "lucide-react";
+// import { Loader2 } from "lucide-react";
+import UserManagementSkeleton from "./skeletons/UserManagementSkeleton";
 
 const UserManagementSection: React.FC = () => {
   const {
@@ -29,7 +30,9 @@ const UserManagementSection: React.FC = () => {
     refetch,
   } = useUserManagementData();
 
-  if (isLoading) return <LoadingIndicator message="Loading User Data..." />;
+  if (isLoading && !isRefetching) {
+    return <UserManagementSkeleton />;
+  }
   if (error)
     return (
       <ErrorMessage error={error} context="User Management" onRetry={refetch} />
@@ -55,7 +58,7 @@ const UserManagementSection: React.FC = () => {
       <div className="relative mt-4">
         {isRefetching && (
           <div className="absolute inset-0 bg-white/50 flex items-center justify-center z-10 rounded-md">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            <UserManagementSkeleton />
           </div>
         )}
         <div
