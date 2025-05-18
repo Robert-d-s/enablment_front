@@ -42,6 +42,7 @@ interface ProjectRateSelectorsProps {
   totalTimeLoading: boolean;
   totalTimeError: ApolloError | undefined;
   totalTime: number;
+  isTimerRunning: boolean;
 }
 
 const ProjectRateSelectors: React.FC<ProjectRateSelectorsProps> = ({
@@ -54,6 +55,7 @@ const ProjectRateSelectors: React.FC<ProjectRateSelectorsProps> = ({
   totalTimeLoading,
   totalTimeError,
   totalTime,
+  isTimerRunning,
 }) => {
   return (
     <Card className="overflow-visible">
@@ -70,7 +72,7 @@ const ProjectRateSelectors: React.FC<ProjectRateSelectorsProps> = ({
           <Select
             value={selectedProject ?? ""}
             onValueChange={setSelectedProject}
-            disabled={userProjects.length === 0}
+            disabled={userProjects.length === 0 || isTimerRunning}
           >
             {/* Use default trigger styles, add w-full for layout */}
             <SelectTrigger id="project-select" className="w-full">
@@ -101,7 +103,7 @@ const ProjectRateSelectors: React.FC<ProjectRateSelectorsProps> = ({
           <Select
             value={selectedRate ?? ""}
             onValueChange={setSelectedRate}
-            disabled={!selectedProject || rates.length === 0}
+            disabled={!selectedProject || rates.length === 0 || isTimerRunning}
           >
             <SelectTrigger id="rate-select" className="w-full border-input">
               <SelectValue placeholder="Select a rate..." />

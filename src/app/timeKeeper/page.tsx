@@ -112,7 +112,7 @@ const TimeKeeper: React.FC = () => {
   }, [uiSelectedProject, refetch, loggedInUser?.id]);
 
   const isStartPauseDisabled = !uiSelectedProject || !uiSelectedRate;
-  const isResetDisabled = !timerState.initialStartTime;
+  const isResetDisabled = !timerState.initialStartTime || timerState.isRunning;
   const isSubmitDisabled = timerState.isRunning || !timerState.initialStartTime;
 
   return (
@@ -146,6 +146,7 @@ const TimeKeeper: React.FC = () => {
                 displayTime={timerState.displayTime}
                 initialStartTime={timerState.initialStartTime}
                 handleDateChange={handleDateChange}
+                isTimerRunning={timerState.isRunning}
               />
               <TimerControls
                 isRunning={timerState.isRunning}
@@ -177,6 +178,7 @@ const TimeKeeper: React.FC = () => {
             totalTimeLoading={totalTimeLoading}
             totalTimeError={totalTimeError}
             totalTime={totalTimeData?.getTotalTimeForUserProject ?? 0}
+            isTimerRunning={timerState.isRunning}
           />
         </div>
       </div>
