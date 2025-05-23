@@ -44,6 +44,11 @@ export const useTimeKeeperHandlers = ({
   showResetMessage,
 }: HandlersConfig) => {
   const handleDateChange = (date: Date | null): void => {
+    if (timerState.isRunning) {
+      console.warn("Timer is active. Date/time change blocked.");
+      showDateAlert("Pause or submit timer to change start time.");
+      return;
+    }
     const now = new Date();
     if (date && date > now) {
       showDateAlert("Please select a current or past date/time.");

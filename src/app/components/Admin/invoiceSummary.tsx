@@ -3,15 +3,22 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@apollo/client";
 import gql from "graphql-tag";
-import DatePicker from "react-datepicker";
+import { format } from "date-fns/format";
 import { formatISO } from "date-fns/formatISO";
 import { isValid } from "date-fns/isValid";
 import ProjectSelector from "../ProjectSelector";
+import ErrorMessage from "@/app/components/Admin/ErrorMessage";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar as CalendarIcon } from "lucide-react";
 import { cn } from "@/app/lib/utils";
-import "react-datepicker/dist/react-datepicker.css";
-import "@/app/globals.css";
 
 interface QueryRateDetail {
   rateId: number;
@@ -101,9 +108,13 @@ const InvoiceSummary: React.FC = () => {
   } = useQuery<GetProjectsData>(GET_PROJECTS_FOR_SELECTOR);
 
   const formattedStartDate =
-    startDate && isValid(startDate) ? formatISO(startDate) : null;
+    startDate && isValid(startDate)
+      ? formatISO(startDate, { representation: "date" })
+      : null;
   const formattedEndDate =
-    endDate && isValid(endDate) ? formatISO(endDate) : null;
+    endDate && isValid(endDate)
+      ? formatISO(endDate, { representation: "date" })
+      : null;
 
   const { loading: loadingInvoice, error: errorInvoice } =
     useQuery<GetInvoiceData>(GET_INVOICE_FOR_PROJECT, {
@@ -154,6 +165,28 @@ const InvoiceSummary: React.FC = () => {
     errorInvoice,
   ]);
 
+  if (projectsLoading) {
+    return null;
+  }
+
+  if (projectsError) {
+    return (
+      <Card className="bg-black border-none p-6 shadow-md rounded-lg min-h-[150px]">
+        <CardHeader>
+          <CardTitle className="text-lg font-bold text-white whitespace-nowrap pt-1">
+            Invoice Summary
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ErrorMessage
+            error={projectsError}
+            context="loading projects for invoice summary"
+          />
+        </CardContent>
+      </Card>
+    );
+  }
+
   const formatCurrency = (value: number | null | undefined): string => {
     if (
       value === null ||
@@ -174,19 +207,6 @@ const InvoiceSummary: React.FC = () => {
       return String(value);
     }
   };
-
-  const isInitialLoading = projectsLoading;
-  const initialLoadingError = projectsError;
-
-  const datePickerInputClass = cn(
-    "w-full h-9 px-3 py-1 text-sm",
-    "border border-input",
-    "rounded-md",
-    "bg-background",
-    "shadow-sm",
-    "focus:outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
-    "placeholder:text-muted-foreground"
-  );
 
   const renderInvoiceDetails = () => {
     if (loadingInvoice) {
@@ -248,6 +268,9 @@ const InvoiceSummary: React.FC = () => {
     );
   };
 
+  const isDatePickerDisabled =
+    projectsForSelector.length === 0 || !selectedProject;
+
   return (
     <Card className="bg-black border-none p-6 shadow-md rounded-lg">
       <CardHeader className="flex flex-col md:flex-row justify-between items-start space-y-4 md:space-y-0 md:space-x-4 mb-4">
@@ -256,83 +279,89 @@ const InvoiceSummary: React.FC = () => {
         </CardTitle>
         {/* Project Selector container */}
         <div className="flex-grow w-full md:w-auto">
-          {isInitialLoading ? (
-            <select
-              disabled
-              className="w-full h-9 px-3 py-2 bg-gray-200 border border-gray-300 rounded-md text-gray-500 cursor-not-allowed"
-            >
-              <option>Loading Projects…</option>
-            </select>
-          ) : initialLoadingError ? (
-            <div className="p-2 bg-red-100 text-red-700 border border-red-300 rounded">
-              Error loading projects.
-            </div>
-          ) : (
-            <ProjectSelector
-              projects={projectsForSelector}
-              selectedProject={selectedProject}
-              onProjectChange={setSelectedProject}
-            />
-          )}
+          <ProjectSelector
+            projects={projectsForSelector}
+            selectedProject={selectedProject}
+            onProjectChange={setSelectedProject}
+          />
         </div>
         {/* Date Pickers container */}
         <div className="flex-grow flex flex-col md:flex-row gap-4 w-full md:w-auto">
-          <div className="flex-1 datepicker-wrapper">
+          <div className="flex-1">
             <Label htmlFor="startDatePicker" className="sr-only">
               Start Date
             </Label>
-            <DatePicker
-              id="startDatePicker"
-              selected={startDate}
-              onChange={(date: Date | null) => setStartDate(date)}
-              selectsStart
-              startDate={startDate}
-              endDate={endDate}
-              dateFormat="yyyy-MM-dd"
-              placeholderText="Start Date"
-              className={datePickerInputClass}
-              wrapperClassName="w-full"
-              disabled={isInitialLoading}
-              isClearable
-              maxDate={endDate || new Date()}
-              popperPlacement="bottom-start"
-            />
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  id="startDatePicker"
+                  variant={"outline"}
+                  className={cn(
+                    "w-full justify-start text-left font-normal h-9",
+                    !startDate && "text-muted-foreground"
+                  )}
+                  disabled={isDatePickerDisabled}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {startDate ? (
+                    format(startDate, "PPP")
+                  ) : (
+                    <span>Pick a start date</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={startDate || undefined}
+                  onSelect={(date) => setStartDate(date || null)}
+                  disabled={(date) =>
+                    (endDate && date > endDate) || date > new Date()
+                  }
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
           </div>
-          <div className="flex-1 datepicker-wrapper">
+          <div className="flex-1">
             <Label htmlFor="endDatePicker" className="sr-only">
               End Date
             </Label>
-            <DatePicker
-              id="endDatePicker"
-              selected={endDate}
-              onChange={(date: Date | null) => setEndDate(date)}
-              selectsEnd
-              startDate={startDate}
-              endDate={endDate}
-              minDate={startDate || undefined}
-              maxDate={new Date()}
-              dateFormat="yyyy-MM-dd"
-              placeholderText="End Date"
-              className={datePickerInputClass}
-              wrapperClassName="w-full"
-              disabled={isInitialLoading}
-              isClearable
-              popperPlacement="bottom-start"
-            />
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  id="endDatePicker"
+                  variant={"outline"}
+                  className={cn(
+                    "w-full justify-start text-left font-normal h-9",
+                    !endDate && "text-muted-foreground"
+                  )}
+                  disabled={isDatePickerDisabled}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {endDate ? (
+                    format(endDate, "PPP")
+                  ) : (
+                    <span>Pick an end date</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={endDate || undefined}
+                  onSelect={(date) => setEndDate(date || null)}
+                  disabled={(date) =>
+                    (startDate && date < startDate) || date > new Date()
+                  }
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
       </CardHeader>
-
-      {!isInitialLoading && !initialLoadingError ? (
-        <CardContent>{renderInvoiceDetails()}</CardContent>
-      ) : (
-        // Keep loading indicator simple if projects are loading
-        <CardContent>
-          <p className="text-gray-400 mt-4 italic text-center">
-            Loading projects...
-          </p>
-        </CardContent>
-      )}
+      <CardContent>{renderInvoiceDetails()}</CardContent>
     </Card>
   );
 };

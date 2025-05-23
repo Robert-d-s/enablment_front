@@ -12,6 +12,7 @@ import { setContext } from "@apollo/client/link/context";
 import { onError } from "@apollo/client/link/error";
 import { useAuthStore, getAccessToken } from "./authStore";
 import gql from "graphql-tag";
+import { TokenRefreshQueue } from "../utils/tokenRefreshQueue"; // Added import
 
 const REFRESH_TOKEN_MUTATION = gql`
   mutation RefreshToken {
@@ -23,9 +24,14 @@ const REFRESH_TOKEN_MUTATION = gql`
 
 export const loggedInUserTeamsVersion = makeVar(0);
 
-let isRefreshing = false;
-let refreshPromise: Promise<string | null> | null = null;
-let apolloClientInstance: ApolloClient<object> | null = null;
+// Remove old refresh logic variables
+// let isRefreshing = false;
+// let refreshPromise: Promise<string | null> | null = null;
+
+let apolloClientInstance: ApolloClient<object> | null = null; // Keep for now, used to initialize queue
+
+// Instantiate the token refresh queue
+const tokenRefreshQueue = new TokenRefreshQueue();
 
 const authLink = setContext((operation, { headers }) => {
   if (operation.operationName === "RefreshToken") {
@@ -48,29 +54,8 @@ const httpLink = createHttpLink({
   credentials: "include",
 });
 
-const triggerRefreshToken = (): Promise<string | null> => {
-  if (!apolloClientInstance) {
-    console.error("Apollo Client instance not available for token refresh."); // Essential error
-    return Promise.resolve(null);
-  }
-  return apolloClientInstance
-    .mutate<{ refreshToken: { access_token: string } }>({
-      mutation: REFRESH_TOKEN_MUTATION,
-      context: { credentials: "include" },
-    })
-    .then(({ data }) => {
-      const newAccessToken = data?.refreshToken.access_token;
-      if (!newAccessToken) {
-        throw new Error("New access token not received.");
-      }
-      useAuthStore.getState().setAccessToken(newAccessToken);
-      return newAccessToken;
-    })
-    .catch((refreshError) => {
-      console.error("Token refresh mutation failed:", refreshError); // Essential error
-      return null;
-    });
-};
+// Remove old triggerRefreshToken function
+// const triggerRefreshToken = (): Promise<string | null> => { ... };
 
 const errorLink = onError(
   ({ graphQLErrors, networkError, operation, forward }) => {
@@ -79,73 +64,53 @@ const errorLink = onError(
         const extensions = err.extensions || {};
         const originalError = extensions.originalError as
           | { statusCode?: number }
-          | undefined; // Keep for potential use
+          | undefined;
 
         const isAuthError =
-          extensions?.code === "UNAUTHENTICATED" ||
-          extensions?.code === "TOKEN_EXPIRED" ||
-          extensions?.code === "UNAUTHORIZED" ||
-          extensions?.httpStatus === 401 || // Check code from your filter
-          (originalError?.statusCode === 401 &&
-            operation.operationName !== "RefreshToken") || // Check originalError if available
-          err.message.toLowerCase().includes("expired token") || // Fallback message checks
-          err.message.toLowerCase().includes("no authentication token found");
+          (extensions?.code === "UNAUTHENTICATED" ||
+            extensions?.code === "TOKEN_EXPIRED" ||
+            extensions?.code === "UNAUTHORIZED" ||
+            extensions?.httpStatus === 401 ||
+            originalError?.statusCode === 401) &&
+          operation.operationName !== "RefreshToken"; // Ensure not to loop on refresh mutation itself
 
-        if (isAuthError && operation.operationName !== "RefreshToken") {
-          if (!isRefreshing) {
-            isRefreshing = true;
-            refreshPromise = triggerRefreshToken().finally(() => {
-              isRefreshing = false;
-              refreshPromise = null;
-            });
-          }
-
+        if (isAuthError) {
+          console.log(
+            "Auth error detected by errorLink, attempting refresh via queue."
+          );
           return new Observable((observer) => {
-            if (!refreshPromise) {
-              observer.error(
-                new Error("Token refresh not initiated correctly.")
-              );
-              return;
-            }
-            refreshPromise
+            tokenRefreshQueue
+              .processRequest()
               .then((newAccessToken) => {
-                if (newAccessToken) {
-                  operation.setContext(({ headers = {} }) => ({
-                    headers: {
-                      ...headers,
-                      Authorization: `Bearer ${newAccessToken}`,
-                    },
-                  }));
-                  forward(operation).subscribe(observer);
-                } else {
-                  // Refresh definitively failed, newAccessToken is null
-                  useAuthStore.getState().logout();
-                  if (
-                    typeof window !== "undefined" &&
-                    window.location.pathname !== "/login"
-                  ) {
-                    window.location.href = "/login";
-                  }
-                  observer.error(
-                    new Error("Token refresh failed. User logged out.")
-                  );
-                }
+                // Successfully refreshed token
+                operation.setContext(({ headers = {} }) => ({
+                  headers: {
+                    ...headers,
+                    Authorization: `Bearer ${newAccessToken}`,
+                  },
+                }));
+                // Retry the operation
+                forward(operation).subscribe(observer);
               })
-              .catch((error) => {
-                // Catch errors from the refreshPromise chain itself
-                useAuthStore.getState().logout(); // Ensure logout on unexpected promise errors
+              .catch((refreshError) => {
+                // Refresh failed, logout is handled by the queue or if not, here.
+                console.error("Token refresh process failed:", refreshError);
+                // Ensure logout is called if not already handled by queue's internal failure
+                if (useAuthStore.getState().isAuthenticated) {
+                  useAuthStore.getState().logout();
+                }
                 if (
                   typeof window !== "undefined" &&
                   window.location.pathname !== "/login"
                 ) {
                   window.location.href = "/login";
                 }
-                observer.error(error);
+                observer.error(refreshError); // Propagate the error to stop the operation
               });
           });
         }
 
-        // Handle Forbidden separately if needed
+        // Handle Forbidden separately if needed - Preserved logic
         if (
           extensions?.code === "FORBIDDEN" ||
           extensions?.httpStatus === 403 ||
@@ -158,8 +123,50 @@ const errorLink = onError(
     }
 
     if (networkError) {
-      console.error(`[Network error]: ${networkError.message}`, networkError); // Essential error
-      // Potentially handle global network error state here
+      // Check if network error is a 401
+      // Use ServerError or ServerParseError from @apollo/client which have statusCode
+      if (
+        "statusCode" in networkError &&
+        networkError.statusCode === 401 &&
+        operation.operationName !== "RefreshToken"
+      ) {
+        console.log(
+          "Network 401 error detected, attempting refresh via queue."
+        );
+        return new Observable((observer) => {
+          tokenRefreshQueue
+            .processRequest()
+            .then((newAccessToken) => {
+              operation.setContext(({ headers = {} }) => ({
+                headers: {
+                  ...headers,
+                  Authorization: `Bearer ${newAccessToken}`,
+                },
+              }));
+              forward(operation).subscribe(observer);
+            })
+            .catch((refreshError) => {
+              console.error(
+                "Token refresh process failed after network 401:",
+                refreshError
+              );
+              if (useAuthStore.getState().isAuthenticated) {
+                useAuthStore.getState().logout();
+              }
+              if (
+                typeof window !== "undefined" &&
+                window.location.pathname !== "/login"
+              ) {
+                window.location.href = "/login";
+              }
+              observer.error(refreshError);
+            });
+        });
+      }
+      console.error(
+        `[Network error]: ${(networkError as Error).message}`,
+        networkError
+      );
     }
   }
 );
@@ -190,6 +197,14 @@ const client = new ApolloClient({
 });
 
 apolloClientInstance = client;
+// Initialize the token refresh queue with the client instance and the mutation
+if (apolloClientInstance) {
+  tokenRefreshQueue.initialize(apolloClientInstance, REFRESH_TOKEN_MUTATION);
+} else {
+  console.error(
+    "Failed to initialize TokenRefreshQueue: Apollo Client instance is null."
+  );
+}
 
 export default client;
 
@@ -209,6 +224,7 @@ export const clientLogout = async () => {
     console.error("Error calling backend logout mutation:", error); // Essential error
   } finally {
     useAuthStore.getState().logout();
+    tokenRefreshQueue.reset(); // Reset the queue on logout
     await client.resetStore();
     if (
       typeof window !== "undefined" &&

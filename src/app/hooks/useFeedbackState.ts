@@ -1,4 +1,3 @@
-// src/app/hooks/useFeedbackState.ts
 import { useState } from "react";
 import type { FeedbackState } from "../types";
 
@@ -20,7 +19,7 @@ export const useFeedbackState = () => {
 
   const showDateAlert = (message: string) => {
     setDateAlertMessage(message);
-    setTimeout(() => setDateAlertMessage(null), 3000);
+    setTimeout(() => setDateAlertMessage(null), 2000);
   };
 
   return {

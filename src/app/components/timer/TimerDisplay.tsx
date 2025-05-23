@@ -20,6 +20,7 @@ interface TimerDisplayProps {
   displayTime: string;
   initialStartTime: Date | null;
   handleDateChange: (date: Date | null) => void;
+  isTimerRunning: boolean;
 }
 
 const DynamicDatePicker = dynamic<DatePickerProps>(
@@ -77,6 +78,7 @@ const TimerDisplay: React.FC<TimerDisplayProps> = ({
   displayTime,
   initialStartTime,
   handleDateChange,
+  isTimerRunning,
 }) => {
   return (
     <div className="flex flex-col items-center gap-3 w-full">
@@ -103,7 +105,7 @@ const TimerDisplay: React.FC<TimerDisplayProps> = ({
           <span className="italic">Not Started</span>
         )}
       </div>
-      <div className="p-1 border rounded-md bg-card shadow-sm w-full max-w-xl overflow-hidden">
+      <div className="datepicker-wrapper p-1 border rounded-md bg-card shadow-sm w-full max-w-xl overflow-hidden">
         <DynamicDatePicker
           inline
           id="startDate"
@@ -113,6 +115,7 @@ const TimerDisplay: React.FC<TimerDisplayProps> = ({
           dateFormat="MMMM d, yyyy h:mm aa"
           timeIntervals={15}
           preventOpenOnFocus
+          disabled={isTimerRunning}
           // --- Styling Props ---
           calendarClassName="bg-card rounded-lg shadow-lg border p-2"
           dayClassName={(date: Date) =>
@@ -145,7 +148,7 @@ const TimerDisplay: React.FC<TimerDisplayProps> = ({
               <button
                 type="button"
                 onClick={decreaseMonth}
-                disabled={prevMonthButtonDisabled}
+                disabled={prevMonthButtonDisabled || isTimerRunning}
                 className={cn(
                   buttonVariants({ variant: "outline", size: "icon" }),
                   "h-7 w-7 disabled:opacity-50 border"
@@ -164,7 +167,7 @@ const TimerDisplay: React.FC<TimerDisplayProps> = ({
               <button
                 type="button"
                 onClick={increaseMonth}
-                disabled={nextMonthButtonDisabled}
+                disabled={nextMonthButtonDisabled || isTimerRunning}
                 className={cn(
                   buttonVariants({ variant: "outline", size: "icon" }),
                   "h-7 w-7 disabled:opacity-50 border"
