@@ -25,7 +25,7 @@ const DynamicTotalTimeSpent = dynamic(
 );
 
 const DynamicRatesManager = dynamic(
-  () => import("@/app/components/Admin/ratesManager"),
+  () => import("@/app/components/Admin/RatesManager"),
   {
     loading: () => <RatesManagerSkeleton />,
     ssr: false,
