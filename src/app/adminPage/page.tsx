@@ -45,6 +45,13 @@ const DynamicDBSyncPage = dynamic(() => import("@/app/dbSynch/page"), {
   ssr: false,
 });
 
+const DynamicNetworkDebugPanel = dynamic(
+  () => import("@/app/components/Debug/NetworkDebugPanel"),
+  {
+    ssr: false,
+  }
+);
+
 const AdminPage: React.FC = () => {
   return (
     <>
@@ -66,17 +73,17 @@ const AdminPage: React.FC = () => {
         <div className="mb-6 shadow-md">
           <DynamicTotalTimeSpent />
         </div>
-
         <div className="mb-6 shadow-md">
           <DynamicRatesManager />
         </div>
         <div className="shadow-md">
           <DynamicInvoiceSummary />
-        </div>
+        </div>{" "}
         <div className="mb-6 shadow-lg">
           <DynamicDBSyncPage />
         </div>
       </div>
+      <DynamicNetworkDebugPanel />
     </>
   );
 };

@@ -7,12 +7,16 @@ import {
   makeVar,
   FieldPolicy,
   Reference,
+  ApolloLink,
+  NextLink,
+  Operation,
 } from "@apollo/client";
 import { setContext } from "@apollo/client/link/context";
 import { onError } from "@apollo/client/link/error";
 import { useAuthStore, getAccessToken } from "./authStore";
 import gql from "graphql-tag";
 import { TokenRefreshQueue } from "../utils/tokenRefreshQueue"; // Added import
+import { networkMonitor } from "../utils/networkMonitor";
 
 const REFRESH_TOKEN_MUTATION = gql`
   mutation RefreshToken {
@@ -32,6 +36,29 @@ let apolloClientInstance: ApolloClient<object> | null = null; // Keep for now, u
 
 // Instantiate the token refresh queue
 const tokenRefreshQueue = new TokenRefreshQueue();
+
+// Network monitoring link for debugging
+const networkMonitorLink = new ApolloLink(
+  (operation: Operation, forward: NextLink) => {
+    const operationName = operation.operationName;
+    const operationType =
+      operation.query.definitions[0]?.kind === "OperationDefinition"
+        ? operation.query.definitions[0].operation
+        : "unknown";
+
+    if (operationName) {
+      networkMonitor.logRequest({
+        operationName,
+        type: operationType as "query" | "mutation" | "subscription",
+        timestamp: Date.now(),
+        variables: operation.variables,
+        fetchPolicy: operation.getContext().fetchPolicy,
+      });
+    }
+
+    return forward(operation);
+  }
+);
 
 const authLink = setContext((operation, { headers }) => {
   if (operation.operationName === "RefreshToken") {
@@ -187,12 +214,21 @@ const cache = new InMemoryCache({
 });
 
 const client = new ApolloClient({
-  link: from([errorLink, authLink, httpLink]),
+  link: from([networkMonitorLink, errorLink, authLink, httpLink]),
   cache: cache,
   defaultOptions: {
-    watchQuery: { fetchPolicy: "cache-and-network" },
-    query: { fetchPolicy: "network-only", errorPolicy: "all" },
-    mutate: { errorPolicy: "all" },
+    watchQuery: {
+      fetchPolicy: "cache-and-network",
+      nextFetchPolicy: "cache-first",
+    },
+    query: {
+      fetchPolicy: "cache-first",
+      errorPolicy: "all",
+    },
+    mutate: {
+      errorPolicy: "all",
+      fetchPolicy: "no-cache",
+    },
   },
 });
 

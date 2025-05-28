@@ -1,24 +1,14 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useQuery } from "@apollo/client";
 import gql from "graphql-tag";
-import { format } from "date-fns/format";
 import { formatISO } from "date-fns/formatISO";
 import { isValid } from "date-fns/isValid";
 import ProjectSelector from "../ProjectSelector";
 import ErrorMessage from "@/app/components/Admin/ErrorMessage";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Calendar as CalendarIcon } from "lucide-react";
-import { cn } from "@/app/lib/utils";
+import { DateRangePicker } from "./DateRangePicker";
 
 interface QueryRateDetail {
   rateId: number;
@@ -100,6 +90,16 @@ const InvoiceSummary: React.FC = () => {
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [invoiceData, setInvoiceData] = useState<InvoiceData | null>(null);
+
+  // Callback functions for DateRangePicker
+  const onStartDateChange = useCallback(
+    (date: Date | null) => setStartDate(date),
+    []
+  );
+  const onEndDateChange = useCallback(
+    (date: Date | null) => setEndDate(date),
+    []
+  );
 
   const {
     loading: projectsLoading,
@@ -284,82 +284,18 @@ const InvoiceSummary: React.FC = () => {
             selectedProject={selectedProject}
             onProjectChange={setSelectedProject}
           />
-        </div>
+        </div>{" "}
         {/* Date Pickers container */}
-        <div className="flex-grow flex flex-col md:flex-row gap-4 w-full md:w-auto">
-          <div className="flex-1">
-            <Label htmlFor="startDatePicker" className="sr-only">
-              Start Date
-            </Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  id="startDatePicker"
-                  variant={"outline"}
-                  className={cn(
-                    "w-full justify-start text-left font-normal h-9",
-                    !startDate && "text-muted-foreground"
-                  )}
-                  disabled={isDatePickerDisabled}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {startDate ? (
-                    format(startDate, "PPP")
-                  ) : (
-                    <span>Pick a start date</span>
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={startDate || undefined}
-                  onSelect={(date) => setStartDate(date || null)}
-                  disabled={(date) =>
-                    (endDate && date > endDate) || date > new Date()
-                  }
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-          <div className="flex-1">
-            <Label htmlFor="endDatePicker" className="sr-only">
-              End Date
-            </Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  id="endDatePicker"
-                  variant={"outline"}
-                  className={cn(
-                    "w-full justify-start text-left font-normal h-9",
-                    !endDate && "text-muted-foreground"
-                  )}
-                  disabled={isDatePickerDisabled}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {endDate ? (
-                    format(endDate, "PPP")
-                  ) : (
-                    <span>Pick an end date</span>
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={endDate || undefined}
-                  onSelect={(date) => setEndDate(date || null)}
-                  disabled={(date) =>
-                    (startDate && date < startDate) || date > new Date()
-                  }
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-        </div>
+        <DateRangePicker
+          startDate={startDate}
+          endDate={endDate}
+          onStartDateChange={onStartDateChange}
+          onEndDateChange={onEndDateChange}
+          disabled={isDatePickerDisabled}
+          startLabel="Start Date"
+          endLabel="End Date"
+          className="flex-grow"
+        />
       </CardHeader>
       <CardContent>{renderInvoiceDetails()}</CardContent>
     </Card>

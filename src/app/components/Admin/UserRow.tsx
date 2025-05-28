@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { useMutation, gql, ApolloError } from "@apollo/client";
 import { toast } from "react-toastify";
 import {
@@ -57,7 +57,7 @@ interface UserRowProps {
   loggedInUserId: number | undefined;
 }
 
-const UserRow: React.FC<UserRowProps> = React.memo(
+const UserRow: React.FC<UserRowProps> = React.memo<UserRowProps>(
   ({ user, allTeams, loggedInUserId }) => {
     console.log(
       `UserRow for ${user.email} received allTeams:`,
@@ -69,6 +69,16 @@ const UserRow: React.FC<UserRowProps> = React.memo(
       string | null
     >(null);
     const [rowError, setRowError] = useState<string | null>(null);
+    const [localRole, setLocalRole] = useState<UserRole>(user.role); // Sync local role with user prop when it changes from external updates
+    useEffect(() => {
+      // Only update if the actual role value has changed, not just the object reference
+      if (user.role !== localRole) {
+        console.log(
+          `UserRow ${user.id}: Syncing localRole from ${localRole} to ${user.role} due to user prop change`
+        );
+        setLocalRole(user.role);
+      }
+    }, [user.role, localRole, user.id]);
 
     const handleMutationError = (
       action: string,
@@ -95,7 +105,9 @@ const UserRow: React.FC<UserRowProps> = React.memo(
     const [addUserToTeamMutation, { loading: isAddingTeam }] = useMutation(
       ADD_USER_TO_TEAM,
       {
-        optimisticResponse: (variables) => {
+        optimisticResponse: (variables: {
+          input: { teamId: string; userId: number };
+        }) => {
           const teamIdToAdd = variables.input.teamId;
           const userId = variables.input.userId;
           const teamToAdd = allTeams.find((t) => t.id === teamIdToAdd);
@@ -196,7 +208,9 @@ const UserRow: React.FC<UserRowProps> = React.memo(
 
     const [removeUserFromTeamMutation, { loading: isRemovingTeam }] =
       useMutation(REMOVE_USER_FROM_TEAM, {
-        optimisticResponse: (variables) => {
+        optimisticResponse: (variables: {
+          input: { teamId: string; userId: number };
+        }) => {
           const teamIdToRemove = variables.input.teamId;
           const userId = variables.input.userId;
           const optimisticTeams = user.teams
@@ -273,28 +287,17 @@ const UserRow: React.FC<UserRowProps> = React.memo(
           setConfirmingRemoveTeamId(null);
         },
       });
-
     const [updateUserRoleMutation, { loading: isChangingRole }] = useMutation(
       UPDATE_USER_ROLE,
       {
-        optimisticResponse: (variables) => {
-          const userId = variables.input.userId;
-          const newRole = variables.input.newRole;
-
-          const optimisticTeams = user.teams.map((t) => ({
-            __typename: "Team" as const,
-            id: t.id,
-            name: t.name,
-          }));
-
+        optimisticResponse: (variables: {
+          input: { userId: number; newRole: UserRole };
+        }) => {
           const result = {
             updateUserRole: {
               __typename: "User",
-              id: userId,
-
-              email: user.email,
-              role: newRole,
-              teams: optimisticTeams,
+              id: variables.input.userId,
+              role: variables.input.newRole,
             },
           };
           console.log(
@@ -324,20 +327,27 @@ const UserRow: React.FC<UserRowProps> = React.memo(
             );
             return;
           }
+
+          // Read existing user data from cache
           const existingUser = cache.readFragment<User>({
             id: userIdCacheId,
             fragment: USER_ROW_FRAGMENT,
           });
+
           if (existingUser) {
             console.log(
               `Writing fragment for user ${userIdCacheId} with data (UpdateRole):`,
               JSON.stringify(data.updateUserRole, null, 2)
             );
             try {
+              // Only update the role, preserve all other user data
               cache.writeFragment({
                 id: userIdCacheId,
                 fragment: USER_ROW_FRAGMENT,
-                data: { ...existingUser, role: data.updateUserRole.role },
+                data: {
+                  ...existingUser,
+                  role: data.updateUserRole.role,
+                },
               });
               console.log(
                 `Successfully wrote fragment for user ${userIdCacheId} (UpdateRole)`
@@ -355,13 +365,51 @@ const UserRow: React.FC<UserRowProps> = React.memo(
           }
         },
         onCompleted: (data) => {
+          console.log(
+            "Role update completed successfully:",
+            JSON.stringify(data, null, 2)
+          );
           if (data?.updateUserRole) {
+            const backendRole = data.updateUserRole.role;
+            console.log(
+              `Backend returned role: ${backendRole}, expected: ${localRole}`
+            );
+
+            // Check if backend returned the correct role
+            if (backendRole !== localRole) {
+              console.error(
+                `⚠️ BACKEND ROLE UPDATE ISSUE: Expected ${localRole}, but backend returned ${backendRole}`
+              );
+              console.error(
+                `This indicates a backend authorization, validation, or persistence issue.`
+              );
+              console.error(`User ID: ${user.id}, Mutation Variables:`, {
+                input: { userId: user.id, newRole: localRole },
+              });
+
+              // Show user-friendly error
+              toast.error(
+                `Role update failed: Backend returned ${backendRole} instead of ${localRole}. Please check your permissions.`
+              );
+
+              // Reset to backend value
+              setLocalRole(backendRole);
+              return;
+            }
+
+            // Update local role to match the server response
+            setLocalRole(data.updateUserRole.role);
             toast.success(
               `Role for ${user.email} updated to ${data.updateUserRole.role}!`
             );
           }
         },
-        onError: (error) => handleMutationError("updating role", error),
+        onError: (error) => {
+          console.error("Role update failed:", error);
+          handleMutationError("updating role", error);
+          // Reset local role to the original value on error
+          setLocalRole(user.role);
+        },
       }
     );
 
@@ -405,16 +453,34 @@ const UserRow: React.FC<UserRowProps> = React.memo(
       },
       [removeUserFromTeamMutation, user.id]
     );
-
     const handleRoleChange = useCallback(
       (newRole: UserRole) => {
-        if (newRole === user.role) return;
+        console.log(
+          `handleRoleChange: User ID: ${user.id}, Current Local Role: ${localRole}, Current Prop Role: ${user.role}, New Role from Select: ${newRole}`
+        );
+        if (newRole === localRole) {
+          console.log(
+            `Role change for User ID: ${user.id} skipped: New role ${newRole} is same as current local role ${localRole}.`
+          );
+          return;
+        }
         setRowError(null);
+
+        // Update local role immediately to prevent duplicate calls and provide immediate UI feedback
+        setLocalRole(newRole);
+        console.log(`Setting localRole to ${newRole} for user ${user.id}`);
+
+        const mutationVariables = { input: { userId: user.id, newRole } };
+        console.log(
+          "Sending mutation with variables:",
+          JSON.stringify(mutationVariables, null, 2)
+        );
+
         updateUserRoleMutation({
-          variables: { input: { userId: user.id, newRole } },
+          variables: mutationVariables,
         });
       },
-      [updateUserRoleMutation, user.id, user.role]
+      [updateUserRoleMutation, user.id, user.role, localRole]
     );
 
     const isProcessingAnyRemove =
@@ -541,7 +607,7 @@ const UserRow: React.FC<UserRowProps> = React.memo(
             </div>
           ) : (
             <UserRoleSelect
-              currentRole={user.role}
+              currentRole={localRole}
               onRoleChange={handleRoleChange}
               disabled={isAnyActionLoading}
               className="h-8 text-sm"

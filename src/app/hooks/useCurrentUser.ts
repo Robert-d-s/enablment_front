@@ -22,7 +22,8 @@ export const useCurrentUser = () => {
   } = useAuthStore();
 
   const { data, loading, error, refetch } = useQuery<MeQueryResult>(ME_QUERY, {
-    fetchPolicy: "network-only",
+    fetchPolicy: "cache-and-network",
+    nextFetchPolicy: "cache-first", // Use cache for subsequent calls
     skip: !accessToken,
     context: {
       credentials: "include",

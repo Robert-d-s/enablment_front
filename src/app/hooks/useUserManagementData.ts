@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery, gql, NetworkStatus } from "@apollo/client";
 import { useDebounce } from "use-debounce";
 import { User as UserTableRowType } from "@/app/components/Admin/UserRow";
@@ -78,7 +78,6 @@ export const useUserManagementData = () => {
     search: debouncedSearchTerm || undefined,
     role: roleFilter || undefined,
   };
-
   const {
     loading: loadingUsers,
     error: errorUsers,
@@ -89,8 +88,8 @@ export const useUserManagementData = () => {
     variables: userQueryVariables,
     notifyOnNetworkStatusChange: true,
     fetchPolicy: "cache-and-network",
+    nextFetchPolicy: "cache-first", // Use cache-first for subsequent requests
   });
-
   const {
     data: countData,
     error: countError,
@@ -98,14 +97,17 @@ export const useUserManagementData = () => {
   } = useQuery<GetUsersCountQueryData>(GET_USERS_COUNT, {
     variables: countQueryVariables,
     fetchPolicy: "cache-and-network",
+    nextFetchPolicy: "cache-first",
   });
-
   const {
     loading: loadingTeams,
     data: dataTeams,
     error: teamsError,
     refetch: refetchTeams,
-  } = useQuery<GetSimpleTeamsQueryData>(GET_SIMPLE_TEAMS);
+  } = useQuery<GetSimpleTeamsQueryData>(GET_SIMPLE_TEAMS, {
+    fetchPolicy: "cache-and-network",
+    nextFetchPolicy: "cache-first",
+  });
 
   const totalUsers = countData?.usersCount ?? 0;
   const totalPages = Math.ceil(totalUsers / pageSize);
@@ -125,7 +127,7 @@ export const useUserManagementData = () => {
     role: user.role as UserRole,
   }));
 
-  const teams = dataTeams?.getAllSimpleTeams || [];
+  const teams = useMemo(() => dataTeams?.getAllSimpleTeams || [], [dataTeams]);
 
   const refetchAll = async () => {
     try {

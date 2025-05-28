@@ -15,17 +15,8 @@ import { loggedInUserTeamsVersion } from "@/app/lib/apolloClient";
 import ErrorMessage from "@/app/components/Admin/ErrorMessage";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Calendar as CalendarIcon } from "lucide-react";
-import { cn } from "@/app/lib/utils";
-import { Label } from "@/components/ui/label";
 import ProjectSelector from "../ProjectSelector";
+import { DateRangePicker } from "./DateRangePicker";
 
 interface MyProject {
   id: string;
@@ -71,13 +62,13 @@ export const GET_MY_PROJECTS = gql`
   }
 `;
 
-const getCurrentDate = () => new Date().toISOString().split("T")[0];
+const getCurrentDate = () => new Date();
 
 const TotalTimeSpent: React.FC = () => {
   const [totalTime, setTotalTime] = useState<number | null>(null);
   const [selectedProject, setSelectedProject] = useState<string>("");
-  const [startDate, setStartDate] = useState(getCurrentDate());
-  const [endDate, setEndDate] = useState(getCurrentDate());
+  const [startDate, setStartDate] = useState<Date | null>(getCurrentDate());
+  const [endDate, setEndDate] = useState<Date | null>(getCurrentDate());
 
   const [userProjects, setUserProjects] = useState<MyProject[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -85,7 +76,6 @@ const TotalTimeSpent: React.FC = () => {
   const loggedInUser = useAuthStore((state) => state.user);
   const loggedInUserId = loggedInUser?.id;
   const teamsVersion = useReactiveVar(loggedInUserTeamsVersion);
-
   const deferredProject = useDeferredValue(selectedProject);
   const onProjectChange = useCallback(
     (id: string) => {
@@ -93,8 +83,14 @@ const TotalTimeSpent: React.FC = () => {
     },
     [selectedProject]
   );
-  const onStart = useCallback((d: string) => setStartDate(d), []);
-  const onEnd = useCallback((d: string) => setEndDate(d), []);
+  const onStartDateChange = useCallback(
+    (date: Date | null) => setStartDate(date),
+    []
+  );
+  const onEndDateChange = useCallback(
+    (date: Date | null) => setEndDate(date),
+    []
+  );
 
   const {
     data: projectsData,
@@ -159,7 +155,6 @@ const TotalTimeSpent: React.FC = () => {
       setTotalTime(0);
     }
   }, [timeData, errorTime]);
-
   // Fetch total time only when all selectors have valid values
   useEffect(() => {
     if (loggedInUserId && deferredProject && startDate && endDate) {
@@ -167,8 +162,8 @@ const TotalTimeSpent: React.FC = () => {
         variables: {
           userId: loggedInUserId,
           projectId: deferredProject,
-          startDate,
-          endDate,
+          startDate: format(startDate, "yyyy-MM-dd"),
+          endDate: format(endDate, "yyyy-MM-dd"),
         },
       });
     }
@@ -178,19 +173,9 @@ const TotalTimeSpent: React.FC = () => {
   if (loadingUserProjects) {
     return null;
   }
-
   const isLoading = loadingUserProjects || loadingTime;
   const displayError =
     errorMessage || errorUserProjects?.message || errorTime?.message;
-
-  interface DateFiltersProps {
-    startDate: string;
-    endDate: string;
-    onStart: (val: string) => void;
-    onEnd: (val: string) => void;
-    disabled?: boolean;
-  }
-
   interface TimeDisplayProps {
     isLoading: boolean;
     displayError?: string;
@@ -198,112 +183,6 @@ const TotalTimeSpent: React.FC = () => {
     onRetry: () => void;
     totalTime: number | null;
   }
-
-  const DateFilters: React.FC<DateFiltersProps> = memo(
-    ({
-      startDate,
-      endDate,
-      onStart,
-      onEnd,
-      disabled = false,
-    }: DateFiltersProps) => {
-      const parseLocalDateString = (dateString: string | null): Date | null => {
-        if (!dateString) return null;
-        const parts = dateString.split("-").map((part) => parseInt(part, 10));
-        if (parts.length === 3) {
-          return new Date(parts[0], parts[1] - 1, parts[2]);
-        }
-        return new Date(dateString);
-      };
-
-      const startDateObj = parseLocalDateString(startDate);
-      const endDateObj = parseLocalDateString(endDate);
-
-      return (
-        <div className="flex-grow flex flex-col md:flex-row gap-4 w-full md:w-auto">
-          <div className="flex-1">
-            <Label htmlFor="total-start-date" className="sr-only">
-              Start Date
-            </Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  id="total-start-date"
-                  variant={"outline"}
-                  className={cn(
-                    "w-full justify-start text-left font-normal h-9",
-                    !startDateObj && "text-muted-foreground"
-                  )}
-                  disabled={disabled}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {startDateObj ? (
-                    format(startDateObj, "PPP")
-                  ) : (
-                    <span>Pick a start date</span>
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={startDateObj || undefined}
-                  onSelect={(date) => {
-                    onStart(date ? format(date, "yyyy-MM-dd") : "");
-                  }}
-                  disabled={(date) =>
-                    (endDateObj && date > endDateObj) || date > new Date()
-                  }
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-          <div className="flex-1">
-            {" "}
-            {/* Removed datepicker-wrapper */}
-            <Label htmlFor="total-end-date" className="sr-only">
-              End Date
-            </Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  id="total-end-date"
-                  variant={"outline"}
-                  className={cn(
-                    "w-full justify-start text-left font-normal h-9",
-                    !endDateObj && "text-muted-foreground"
-                  )}
-                  disabled={disabled}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {endDateObj ? (
-                    format(endDateObj, "PPP")
-                  ) : (
-                    <span>Pick an end date</span>
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={endDateObj || undefined}
-                  onSelect={(date) => {
-                    onEnd(date ? format(date, "yyyy-MM-dd") : "");
-                  }}
-                  disabled={(date) =>
-                    (startDateObj && date < startDateObj) || date > new Date()
-                  }
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-        </div>
-      );
-    }
-  );
-  DateFilters.displayName = "DateFilters";
 
   const TimeDisplay: React.FC<TimeDisplayProps> = memo(
     ({
@@ -333,7 +212,6 @@ const TotalTimeSpent: React.FC = () => {
   TimeDisplay.displayName = "TimeDisplay";
 
   const MemoProjectSelector = memo(ProjectSelector);
-
   return (
     <div className="flex flex-col sm:flex-row items-end gap-4 p-4 bg-white rounded shadow">
       {errorUserProjects ? (
@@ -352,12 +230,15 @@ const TotalTimeSpent: React.FC = () => {
           />
         </div>
       )}
-      <DateFilters
+      <DateRangePicker
         startDate={startDate}
         endDate={endDate}
-        onStart={onStart}
-        onEnd={onEnd}
+        onStartDateChange={onStartDateChange}
+        onEndDateChange={onEndDateChange}
         disabled={!deferredProject}
+        startLabel="Start Date"
+        endLabel="End Date"
+        className="flex-grow"
       />
       <TimeDisplay
         isLoading={isLoading}
@@ -368,8 +249,8 @@ const TotalTimeSpent: React.FC = () => {
             variables: {
               userId: loggedInUserId,
               projectId: deferredProject,
-              startDate,
-              endDate,
+              startDate: startDate ? format(startDate, "yyyy-MM-dd") : "",
+              endDate: endDate ? format(endDate, "yyyy-MM-dd") : "",
             },
           })
         }
