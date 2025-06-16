@@ -224,7 +224,7 @@ export const useTimer = (
   // --- Control Functions (Dispatch actions to the store) ---
   const start = () => {
     if (!selectedProjectId || !selectedRateId) {
-      console.error("Cannot start timer: Project and Rate must be selected.");
+      console.log("Cannot start timer: Project and Rate must be selected.");
       return;
     }
     const now = new Date();

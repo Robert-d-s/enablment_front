@@ -2,7 +2,7 @@ import * as React from "react";
 import { cn } from "@/app/lib/utils";
 
 const Separator = React.forwardRef<
-  React.ElementRef<"div">,
+  React.ComponentRef<"div">,
   React.ComponentPropsWithoutRef<"div"> & {
     orientation?: "horizontal" | "vertical";
     decorative?: boolean;

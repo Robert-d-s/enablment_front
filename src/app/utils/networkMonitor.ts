@@ -1,7 +1,3 @@
-/**
- * Network monitoring utility for debugging excessive network requests
- */
-
 interface NetworkRequest {
   operationName: string;
   type: "query" | "mutation" | "subscription";

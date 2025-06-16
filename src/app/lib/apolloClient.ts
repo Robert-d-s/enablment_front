@@ -15,7 +15,7 @@ import { setContext } from "@apollo/client/link/context";
 import { onError } from "@apollo/client/link/error";
 import { useAuthStore, getAccessToken } from "./authStore";
 import gql from "graphql-tag";
-import { TokenRefreshQueue } from "../utils/tokenRefreshQueue"; // Added import
+import { TokenRefreshQueue } from "../utils/tokenRefreshQueue";
 import { networkMonitor } from "../utils/networkMonitor";
 
 const REFRESH_TOKEN_MUTATION = gql`
@@ -28,16 +28,10 @@ const REFRESH_TOKEN_MUTATION = gql`
 
 export const loggedInUserTeamsVersion = makeVar(0);
 
-// Remove old refresh logic variables
-// let isRefreshing = false;
-// let refreshPromise: Promise<string | null> | null = null;
+let apolloClientInstance: ApolloClient<object> | null = null;
 
-let apolloClientInstance: ApolloClient<object> | null = null; // Keep for now, used to initialize queue
-
-// Instantiate the token refresh queue
 const tokenRefreshQueue = new TokenRefreshQueue();
 
-// Network monitoring link for debugging
 const networkMonitorLink = new ApolloLink(
   (operation: Operation, forward: NextLink) => {
     const operationName = operation.operationName;
@@ -81,9 +75,6 @@ const httpLink = createHttpLink({
   credentials: "include",
 });
 
-// Remove old triggerRefreshToken function
-// const triggerRefreshToken = (): Promise<string | null> => { ... };
-
 const errorLink = onError(
   ({ graphQLErrors, networkError, operation, forward }) => {
     if (graphQLErrors) {
@@ -99,7 +90,7 @@ const errorLink = onError(
             extensions?.code === "UNAUTHORIZED" ||
             extensions?.httpStatus === 401 ||
             originalError?.statusCode === 401) &&
-          operation.operationName !== "RefreshToken"; // Ensure not to loop on refresh mutation itself
+          operation.operationName !== "RefreshToken";
 
         if (isAuthError) {
           console.log(
@@ -109,20 +100,16 @@ const errorLink = onError(
             tokenRefreshQueue
               .processRequest()
               .then((newAccessToken) => {
-                // Successfully refreshed token
                 operation.setContext(({ headers = {} }) => ({
                   headers: {
                     ...headers,
                     Authorization: `Bearer ${newAccessToken}`,
                   },
                 }));
-                // Retry the operation
                 forward(operation).subscribe(observer);
               })
               .catch((refreshError) => {
-                // Refresh failed, logout is handled by the queue or if not, here.
                 console.error("Token refresh process failed:", refreshError);
-                // Ensure logout is called if not already handled by queue's internal failure
                 if (useAuthStore.getState().isAuthenticated) {
                   useAuthStore.getState().logout();
                 }
@@ -132,26 +119,21 @@ const errorLink = onError(
                 ) {
                   window.location.href = "/login";
                 }
-                observer.error(refreshError); // Propagate the error to stop the operation
+                observer.error(refreshError);
               });
           });
         }
-
-        // Handle Forbidden separately if needed - Preserved logic
         if (
           extensions?.code === "FORBIDDEN" ||
           extensions?.httpStatus === 403 ||
           originalError?.statusCode === 403
         ) {
           useAuthStore.getState().setForbidden(true);
-          // Allow Forbidden errors to propagate to components without retrying
         }
       }
     }
 
     if (networkError) {
-      // Check if network error is a 401
-      // Use ServerError or ServerParseError from @apollo/client which have statusCode
       if (
         "statusCode" in networkError &&
         networkError.statusCode === 401 &&
@@ -233,7 +215,6 @@ const client = new ApolloClient({
 });
 
 apolloClientInstance = client;
-// Initialize the token refresh queue with the client instance and the mutation
 if (apolloClientInstance) {
   tokenRefreshQueue.initialize(apolloClientInstance, REFRESH_TOKEN_MUTATION);
 } else {
@@ -257,10 +238,10 @@ export const clientLogout = async () => {
       context: { credentials: "include" },
     });
   } catch (error) {
-    console.error("Error calling backend logout mutation:", error); // Essential error
+    console.error("Error calling backend logout mutation:", error);
   } finally {
     useAuthStore.getState().logout();
-    tokenRefreshQueue.reset(); // Reset the queue on logout
+    tokenRefreshQueue.reset();
     await client.resetStore();
     if (
       typeof window !== "undefined" &&
