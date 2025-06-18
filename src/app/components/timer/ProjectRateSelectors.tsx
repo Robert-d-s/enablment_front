@@ -43,6 +43,7 @@ interface ProjectRateSelectorsProps {
   totalTimeError: ApolloError | undefined;
   totalTime: number;
   isTimerRunning: boolean;
+  ratesError?: ApolloError | undefined;
 }
 
 const ProjectRateSelectors: React.FC<ProjectRateSelectorsProps> = ({
@@ -56,6 +57,7 @@ const ProjectRateSelectors: React.FC<ProjectRateSelectorsProps> = ({
   totalTimeError,
   totalTime,
   isTimerRunning,
+  ratesError,
 }) => {
   return (
     <Card className="overflow-visible">
@@ -95,21 +97,29 @@ const ProjectRateSelectors: React.FC<ProjectRateSelectorsProps> = ({
               )}
             </SelectContent>
           </Select>
-        </div>
-
+        </div>{" "}
         {/* Rate Selector */}
         <div className="space-y-2">
           <Label htmlFor="rate-select">Rate</Label>
           <Select
             value={selectedRate ?? ""}
             onValueChange={setSelectedRate}
-            disabled={!selectedProject || rates.length === 0 || isTimerRunning}
+            disabled={
+              !selectedProject ||
+              rates.length === 0 ||
+              isTimerRunning ||
+              !!ratesError
+            }
           >
             <SelectTrigger id="rate-select" className="w-full border-input">
               <SelectValue placeholder="Select a rate..." />
             </SelectTrigger>
             <SelectContent position="popper">
-              {rates.length > 0 ? (
+              {ratesError ? (
+                <div className="p-2 text-sm text-red-600">
+                  Error loading rates: {ratesError.message}
+                </div>
+              ) : rates.length > 0 ? (
                 rates.map((rate) => (
                   <SelectItem key={rate.id} value={rate.id}>
                     {rate.name} ({rate.rate} DKK/h)
@@ -124,8 +134,12 @@ const ProjectRateSelectors: React.FC<ProjectRateSelectorsProps> = ({
               )}
             </SelectContent>
           </Select>
+          {ratesError && (
+            <p className="text-xs text-red-500 mt-1">
+              Failed to load rates. Please try selecting the project again.
+            </p>
+          )}
         </div>
-
         {/* Total Time Display */}
         <div className="border-t pt-4 mt-4">
           <Label className="text-sm font-medium">Total Time on Project</Label>

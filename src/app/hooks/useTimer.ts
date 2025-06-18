@@ -283,9 +283,7 @@ export const useTimer = (
   const handleManualSetStartTime = (date: Date | null) => {
     console.log("useTimer handleManualSetStartTime:", date?.toISOString());
     if (!selectedProjectId || !selectedRateId) {
-      console.error(
-        "Cannot set start time: Project and Rate must be selected."
-      );
+      console.log("Cannot set start time: Project and Rate must be selected.");
       return;
     }
     const currentlyRunning = useTimerStore.getState().isRunning;

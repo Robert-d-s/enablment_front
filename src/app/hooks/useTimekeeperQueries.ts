@@ -25,11 +25,18 @@ export const useTimeKeeperQueries = (
   selectedProject: string,
   userId: string
 ) => {
-  const { data: ratesData } = useQuery<{ rates: Rate[] }>(RATES_QUERY, {
-    variables: { teamId: currentTeamId },
-    skip: !currentTeamId,
-    context: { credentials: "include" },
-  });
+  const { data: ratesData, error: ratesError } = useQuery<{ rates: Rate[] }>(
+    RATES_QUERY,
+    {
+      variables: { teamId: currentTeamId },
+      skip: !currentTeamId,
+      context: { credentials: "include" },
+      errorPolicy: "all", // Return partial data even if there are errors
+      onError: (error) => {
+        console.error("Error fetching rates:", error);
+      },
+    }
+  );
 
   const {
     data: totalTimeData,
@@ -43,18 +50,31 @@ export const useTimeKeeperQueries = (
     },
     skip: !userId || !selectedProject,
     context: { credentials: "include" },
+    errorPolicy: "all", // Return partial data even if there are errors
+    onError: (error) => {
+      console.error("Error fetching total time:", error);
+    },
   });
-
   const [createTimeEntryMutation] = useMutation<
     { createTime: TimeEntry },
     CreateTimeMutationVariables
-  >(CREATE_TIME_MUTATION);
+  >(CREATE_TIME_MUTATION, {
+    onError: (error) => {
+      console.error("Error creating time entry:", error);
+    },
+  });
   const [updateTimeEntryMutation] = useMutation<{ updateTime: TimeEntry }>(
-    UPDATE_TIME_MUTATION
+    UPDATE_TIME_MUTATION,
+    {
+      onError: (error) => {
+        console.error("Error updating time entry:", error);
+      },
+    }
   );
 
   return {
     ratesData,
+    ratesError,
     totalTimeData,
     totalTimeLoading,
     totalTimeError,

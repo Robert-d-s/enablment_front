@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { useTimer } from "@/app/hooks/useTimer";
 import { useAuthStore } from "@/app/lib/authStore";
 import useCurrentUser from "@/app/hooks/useCurrentUser";
@@ -12,6 +12,9 @@ import NavigationBar from "@/app/components/Admin/NavigationBar";
 import TimerDisplay from "@/app/components/timer/TimerDisplay";
 import TimerControls from "@/app/components/timer/TimerControls";
 import ProjectRateSelectors from "@/app/components/timer/ProjectRateSelectors";
+import ErrorBoundary from "@/app/components/ErrorBoundary";
+import AuthError from "@/app/components/AuthError";
+import LoadingError from "@/app/components/LoadingError";
 import { useTimerStore } from "@/app/lib/timerStore";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -37,14 +40,24 @@ const TimeKeeper: React.FC = () => {
     (state) => state.initialStartTimeISO
   );
   const setCurrentEntryId = useTimerStore((state) => state.setCurrentEntryId);
+
+  // All hooks must be called before any conditional returns
   const timerState = useTimer(uiSelectedProject, uiSelectedRate);
-  const { userProjects, currentTeamId } = useTimeKeeperData(uiSelectedProject);
+  const {
+    isAuthenticated,
+    isLoading: authLoading,
+    error: authError,
+  } = useCurrentUser();
+  const {
+    userProjects,
+    currentTeamId,
+    loadingUserProjects,
+    errorUserProjects,
+  } = useTimeKeeperData(uiSelectedProject);
   const feedbackState = useFeedbackState();
-
-  useCurrentUser();
-
   const {
     ratesData,
+    ratesError,
     totalTimeData,
     totalTimeLoading,
     totalTimeError,
@@ -67,17 +80,6 @@ const TimeKeeper: React.FC = () => {
     []
   );
 
-  useEffect(() => {
-    if (feedbackState.state.submissionError) {
-      showErrorToast(feedbackState.state.submissionError);
-      feedbackState.actions.setSubmissionError("");
-    }
-  }, [
-    feedbackState.state.submissionError,
-    showErrorToast,
-    feedbackState.actions,
-  ]);
-
   const { handleDateChange, handleSubmit, handleReset } = useTimeKeeperHandlers(
     {
       timerState,
@@ -95,6 +97,26 @@ const TimeKeeper: React.FC = () => {
     }
   );
 
+  const processedUserProjects = useMemo(
+    () =>
+      userProjects.map((p) => ({
+        ...p,
+        teamName: p.teamName ?? "Unknown Team",
+      })),
+    [userProjects]
+  );
+
+  useEffect(() => {
+    if (feedbackState.state.submissionError) {
+      showErrorToast(feedbackState.state.submissionError);
+      feedbackState.actions.setSubmissionError("");
+    }
+  }, [
+    feedbackState.state.submissionError,
+    showErrorToast,
+    feedbackState.actions,
+  ]);
+
   useEffect(() => {
     if (initialStartTimeISO) {
       setUiSelectedProject(activeTimerProjectId ?? "");
@@ -110,6 +132,59 @@ const TimeKeeper: React.FC = () => {
       refetch();
     }
   }, [uiSelectedProject, refetch, loggedInUser?.id]);
+
+  if (authError && !isAuthenticated) {
+    return (
+      <>
+        <NavigationBar />
+        <AuthError message="Authentication failed. Please log in to access the time tracker." />
+      </>
+    );
+  }
+
+  // Early return for authentication loading
+  if (authLoading || (!isAuthenticated && !loggedInUser)) {
+    return (
+      <>
+        <NavigationBar />
+        <LoadingError error={null} isLoading={true} context="authentication" />
+      </>
+    );
+  }
+
+  // Early return for missing user ID (should not happen if authenticated, but safety check)
+  if (!userIdString || userIdString === "") {
+    return (
+      <>
+        <NavigationBar />
+        <AuthError message="User authentication is incomplete. Please log out and log back in." />
+      </>
+    );
+  }
+
+  // Early return for user projects loading error
+  if (errorUserProjects) {
+    return (
+      <>
+        <NavigationBar />
+        <LoadingError
+          error={errorUserProjects}
+          context="user projects"
+          onRetry={() => window.location.reload()}
+        />
+      </>
+    );
+  }
+
+  // Show loading state for user projects
+  if (loadingUserProjects) {
+    return (
+      <>
+        <NavigationBar />
+        <LoadingError error={null} isLoading={true} context="projects" />
+      </>
+    );
+  }
 
   const isStartPauseDisabled = !uiSelectedProject || !uiSelectedRate;
   const isResetDisabled = !timerState.initialStartTime || timerState.isRunning;
@@ -161,15 +236,12 @@ const TimeKeeper: React.FC = () => {
               />
             </CardContent>
           </Card>
-        </div>
-
+        </div>{" "}
         {/* Right Column (Selectors & Info) */}
         <div className="lg:col-span-1 flex flex-col gap-6">
+          {" "}
           <ProjectRateSelectors
-            userProjects={userProjects.map((p) => ({
-              ...p,
-              teamName: p.teamName ?? "Unknown Team",
-            }))}
+            userProjects={processedUserProjects}
             selectedProject={uiSelectedProject}
             setSelectedProject={setUiSelectedProject}
             rates={ratesData?.rates ?? []}
@@ -179,6 +251,7 @@ const TimeKeeper: React.FC = () => {
             totalTimeError={totalTimeError}
             totalTime={totalTimeData?.getTotalTimeForUserProject ?? 0}
             isTimerRunning={timerState.isRunning}
+            ratesError={ratesError}
           />
         </div>
       </div>
@@ -186,4 +259,20 @@ const TimeKeeper: React.FC = () => {
   );
 };
 
-export default TimeKeeper;
+const TimeKeeperWithErrorBoundary: React.FC = () => {
+  return (
+    <ErrorBoundary
+      onError={(error, errorInfo) => {
+        console.error(
+          "TimeKeeper Error Boundary caught an error:",
+          error,
+          errorInfo
+        );
+      }}
+    >
+      <TimeKeeper />
+    </ErrorBoundary>
+  );
+};
+
+export default TimeKeeperWithErrorBoundary;
