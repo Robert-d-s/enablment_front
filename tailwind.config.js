@@ -84,7 +84,6 @@ const config = {
         mono: ["var(--font-geist-mono)"],
         "roboto-condensed": ["var(--font-roboto-condensed)"],
         "pt-sans": ["var(--font-pt-sans)"],
-        rubik: ["var(--font-rubik)"],
       },
     },
   },

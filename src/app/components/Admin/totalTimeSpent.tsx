@@ -17,6 +17,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import ProjectSelector from "../ProjectSelector";
 import { DateRangePicker } from "./DateRangePicker";
+import { GET_MY_PROJECTS } from "@/app/graphql/fragments";
 
 interface MyProject {
   id: string;
@@ -50,17 +51,8 @@ const GET_TOTAL_TIME_SPENT = gql`
   }
 `;
 
-export const GET_MY_PROJECTS = gql`
-  query GetMyProjects {
-    myProjects {
-      id
-      name
-      teamId
-      teamName
-      __typename
-    }
-  }
-`;
+// Re-export the shared query for backward compatibility
+export { GET_MY_PROJECTS };
 
 const getCurrentDate = () => new Date();
 

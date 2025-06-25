@@ -4,6 +4,7 @@ import { useDebounce } from "use-debounce";
 import { User as UserTableRowType } from "@/app/components/Admin/UserRow";
 import { UserRole } from "@/app/components/Admin/UserRoleSelect";
 import { GET_SIMPLE_TEAMS } from "@/app/graphql/adminOperations";
+import { USER_WITH_TEAMS_FRAGMENT } from "@/app/graphql/fragments";
 import { useAuthStore } from "@/app/lib/authStore";
 
 const GET_MANAGEMENT_USERS = gql`
@@ -16,17 +17,10 @@ const GET_MANAGEMENT_USERS = gql`
     users(
       args: { page: $page, pageSize: $pageSize, search: $search, role: $role }
     ) {
-      id
-      email
-      role
-      teams {
-        id
-        name
-        __typename
-      }
-      __typename
+      ...UserWithTeams
     }
   }
+  ${USER_WITH_TEAMS_FRAGMENT}
 `;
 
 const GET_USERS_COUNT = gql`

@@ -6,8 +6,10 @@ import React, {
   useCallback,
   useMemo, // Added useMemo import
 } from "react";
-import { gql, useQuery /* useApolloClient */ } from "@apollo/client"; // useApolloClient is used by hooks
+import { useQuery /* useApolloClient */ } from "@apollo/client"; // useApolloClient is used by hooks
 import NavigationBar from "@/app/components/Admin/NavigationBar";
+import PageErrorBoundary from "@/app/components/ErrorBoundaries/PageErrorBoundary";
+import QueryErrorBoundary from "@/app/components/ErrorBoundaries/QueryErrorBoundary";
 // import { io, Socket } from "socket.io-client"; // Moved to useWebSocket
 
 // Import the new hooks
@@ -17,38 +19,11 @@ import { useIssueCacheUpdates } from "../hooks/useIssueCacheUpdates";
 import { Issue, IssueUpdatePayload } from "../types";
 import IssueBoard from "../components/Issues/IssueBoard";
 import FilterControls from "../components/Issues/FilterControls"; // Import the new FilterControls component
+import { GET_ISSUES } from "../graphql/fragments";
 
 type GroupedIssues = {
   [key: string]: Issue[];
 };
-
-const GET_ISSUES = gql`
-  query GetIssues {
-    issues {
-      id
-      createdAt
-      updatedAt
-      title
-      dueDate
-      projectId
-      priorityLabel
-      identifier
-      assigneeName
-      projectName
-      state
-      teamKey
-      teamName
-      labels {
-        id
-        name
-        color
-        parentId
-        __typename
-      }
-      __typename
-    }
-  }
-`;
 
 const IssuesComponent: React.FC = () => {
   const { loading, error, data, refetch } = useQuery<{ issues: Issue[] }>(
@@ -153,7 +128,7 @@ const IssuesComponent: React.FC = () => {
   }, [refetch]); // socketConnected is from useWebSocket, if needed here, pass it or rely on its own updates.
 
   return (
-    <>
+    <PageErrorBoundary pageName="Issues">
       <NavigationBar />
       <div className="container mx-auto p-4 font-roboto-condensed">
         {/* Use the new FilterControls component */}
@@ -170,14 +145,16 @@ const IssuesComponent: React.FC = () => {
           connectionStatusMessage={connectionStatusMessage}
         />
 
-        {/* Use the new IssueBoard component */}
-        <IssueBoard
-          groupedIssues={groupedIssues}
-          loading={loading}
-          error={error?.message ? new Error(error.message) : undefined}
-        />
+        {/* Use the new IssueBoard component with query error boundary */}
+        <QueryErrorBoundary queryName="Issues" refetch={refetch}>
+          <IssueBoard
+            groupedIssues={groupedIssues}
+            loading={loading}
+            error={error?.message ? new Error(error.message) : undefined}
+          />
+        </QueryErrorBoundary>
       </div>
-    </>
+    </PageErrorBoundary>
   );
 };
 

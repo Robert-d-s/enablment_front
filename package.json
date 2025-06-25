@@ -8,7 +8,12 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "analyze": "cross-env ANALYZE=true next build"
+    "type-check": "tsc --noEmit",
+    "analyze": "cross-env ANALYZE=true next build",
+    "analyze:clean": "rm -rf .next/analyze && npm run analyze",
+    "quality-check": "npm run lint && npm run type-check",
+    "build:ci": "npm run quality-check && npm run build",
+    "build:analyze": "npm run quality-check && npm run analyze:clean"
   },
   "dependencies": {
     "@apollo/client": "^3.12.9",
@@ -25,7 +30,7 @@
     "graphql": "^16.10.0",
     "graphql-tag": "^2.12.6",
     "lucide-react": "^0.475.0",
-    "next": "15.1.6",
+    "next": "^15.3.4",
     "react": "^19.0.0",
     "react-datepicker": "^8.0.0",
     "react-day-picker": "^9.7.0",

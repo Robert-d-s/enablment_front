@@ -1,34 +1,7 @@
 import { useCallback } from "react";
-import { useApolloClient, gql, DocumentNode } from "@apollo/client"; // Added DocumentNode
+import { useApolloClient, DocumentNode } from "@apollo/client"; // Added DocumentNode
 import { Issue, Label, IssueUpdatePayload } from "../types"; // Assuming types are defined here
-
-const GET_ISSUES = gql`
-  query GetIssues_CacheUpdateHook {
-    issues {
-      id
-      createdAt
-      updatedAt
-      title
-      dueDate
-      projectId
-      priorityLabel
-      identifier
-      assigneeName
-      projectName
-      state
-      teamKey
-      teamName
-      labels {
-        id
-        name
-        color
-        parentId
-        __typename
-      }
-      __typename
-    }
-  }
-`;
+import { GET_ISSUES } from "../graphql/fragments";
 
 interface UseIssueCacheUpdatesOptions {
   queryToUpdate?: DocumentNode; // Allow overriding the default query

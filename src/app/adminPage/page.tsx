@@ -8,6 +8,8 @@ import TotalTimeSpentSkeleton from "@/app/components/Admin/skeletons/TotalTimeSp
 import RatesManagerSkeleton from "@/app/components/Admin/skeletons/RatesManagerSkeleton";
 import InvoiceSummarySkeleton from "@/app/components/Admin/skeletons/InvoiceSummarySkeleton";
 import DBSyncPageSkeleton from "@/app/components/Admin/skeletons/DBSyncPageSkeleton";
+import AdminFeatureBoundary from "@/app/components/ErrorBoundaries/AdminFeatureBoundary";
+import PageErrorBoundary from "@/app/components/ErrorBoundaries/PageErrorBoundary";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -54,7 +56,7 @@ const DynamicNetworkDebugPanel = dynamic(
 
 const AdminPage: React.FC = () => {
   return (
-    <>
+    <PageErrorBoundary pageName="Admin Dashboard">
       <NavigationBar />
       <ToastContainer
         position="top-right"
@@ -69,22 +71,36 @@ const AdminPage: React.FC = () => {
         theme="dark"
       />
       <div className="container mx-auto p-4 font-roboto-condensed">
-        <DynamicUserManagementSection />
+        <AdminFeatureBoundary featureName="User Management">
+          <DynamicUserManagementSection />
+        </AdminFeatureBoundary>
+        
         <div className="mb-6 shadow-md">
-          <DynamicTotalTimeSpent />
+          <AdminFeatureBoundary featureName="Time Tracking">
+            <DynamicTotalTimeSpent />
+          </AdminFeatureBoundary>
         </div>
+        
         <div className="mb-6 shadow-md">
-          <DynamicRatesManager />
+          <AdminFeatureBoundary featureName="Rates Manager">
+            <DynamicRatesManager />
+          </AdminFeatureBoundary>
         </div>
+        
         <div className="shadow-md">
-          <DynamicInvoiceSummary />
-        </div>{" "}
+          <AdminFeatureBoundary featureName="Invoice Summary">
+            <DynamicInvoiceSummary />
+          </AdminFeatureBoundary>
+        </div>
+        
         <div className="mb-6 shadow-lg">
-          <DynamicDBSyncPage />
+          <AdminFeatureBoundary featureName="Database Sync">
+            <DynamicDBSyncPage />
+          </AdminFeatureBoundary>
         </div>
       </div>
       <DynamicNetworkDebugPanel />
-    </>
+    </PageErrorBoundary>
   );
 };
 

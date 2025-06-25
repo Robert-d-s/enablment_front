@@ -1,23 +1,27 @@
 import { gql } from "@apollo/client";
+import { 
+  PROJECT_FRAGMENT, 
+  RATE_FRAGMENT, 
+  TIME_ENTRY_FRAGMENT, 
+  USER_PROJECTS_FRAGMENT 
+} from "./fragments";
 
 export const PROJECTS_QUERY = gql`
   query GetProjects {
     projects {
-      id
-      name
-      teamId
+      ...Project
     }
   }
+  ${PROJECT_FRAGMENT}
 `;
 
 export const RATES_QUERY = gql`
   query GetRates($teamId: String!) {
     rates(teamId: $teamId) {
-      id
-      name
-      rate
+      ...Rate
     }
   }
+  ${RATE_FRAGMENT}
 `;
 
 export const TOTAL_TIME_QUERY = gql`
@@ -29,36 +33,26 @@ export const TOTAL_TIME_QUERY = gql`
 export const USER_PROJECTS_QUERY = gql`
   query GetUserProjects {
     users {
-      id
-      teams {
-        name
-        projects {
-          id
-          name
-        }
-      }
+      ...UserProjects
     }
   }
+  ${USER_PROJECTS_FRAGMENT}
 `;
 
 export const CREATE_TIME_MUTATION = gql`
   mutation CreateTime($timeInputCreate: TimeInputCreate!) {
     createTime(timeInputCreate: $timeInputCreate) {
-      id
-      startTime
-      endTime
-      totalElapsedTime
+      ...TimeEntry
     }
   }
+  ${TIME_ENTRY_FRAGMENT}
 `;
 
 export const UPDATE_TIME_MUTATION = gql`
   mutation UpdateTime($timeInputUpdate: TimeInputUpdate!) {
     updateTime(timeInputUpdate: $timeInputUpdate) {
-      id
-      startTime
-      endTime
-      totalElapsedTime
+      ...TimeEntry
     }
   }
+  ${TIME_ENTRY_FRAGMENT}
 `;

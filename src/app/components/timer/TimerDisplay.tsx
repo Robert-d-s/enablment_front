@@ -5,10 +5,7 @@ import {
   formatDateForDisplay,
   formatTimeFromISOString,
 } from "@/app/utils/timeUtils";
-import { formatISO } from "date-fns/formatISO";
-import { isToday } from "date-fns/isToday";
-import { isSameDay } from "date-fns/isSameDay";
-import { getMonth } from "date-fns/getMonth";
+import { formatISO, isToday, isSameDay, getMonth } from "date-fns";
 import { Timer, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/app/lib/utils";
 import { buttonVariants } from "@/components/ui/button";

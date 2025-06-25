@@ -12,7 +12,7 @@ import NavigationBar from "@/app/components/Admin/NavigationBar";
 import TimerDisplay from "@/app/components/timer/TimerDisplay";
 import TimerControls from "@/app/components/timer/TimerControls";
 import ProjectRateSelectors from "@/app/components/timer/ProjectRateSelectors";
-import ErrorBoundary from "@/app/components/ErrorBoundary";
+import PageErrorBoundary from "@/app/components/ErrorBoundaries/PageErrorBoundary";
 import AuthError from "@/app/components/AuthError";
 import LoadingError from "@/app/components/LoadingError";
 import { useTimerStore } from "@/app/lib/timerStore";
@@ -261,17 +261,9 @@ const TimeKeeper: React.FC = () => {
 
 const TimeKeeperWithErrorBoundary: React.FC = () => {
   return (
-    <ErrorBoundary
-      onError={(error, errorInfo) => {
-        console.error(
-          "TimeKeeper Error Boundary caught an error:",
-          error,
-          errorInfo
-        );
-      }}
-    >
+    <PageErrorBoundary pageName="Time Keeper">
       <TimeKeeper />
-    </ErrorBoundary>
+    </PageErrorBoundary>
   );
 };
 

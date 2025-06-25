@@ -9,6 +9,7 @@ import ProjectSelector from "../ProjectSelector";
 import ErrorMessage from "@/app/components/Admin/ErrorMessage";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { DateRangePicker } from "./DateRangePicker";
+import { PROJECT_WITH_TEAM_FRAGMENT, INVOICE_DATA_FRAGMENT } from "@/app/graphql/fragments";
 
 interface QueryRateDetail {
   rateId: number;
@@ -55,34 +56,19 @@ interface GetInvoiceData {
 const GET_PROJECTS_FOR_SELECTOR = gql`
   query GetProjectsForInvoiceSelector {
     projects {
-      id
-      name
-      teamName
-      __typename
+      ...ProjectWithTeam
     }
   }
+  ${PROJECT_WITH_TEAM_FRAGMENT}
 `;
 
 const GET_INVOICE_FOR_PROJECT = gql`
   query InvoiceForProject($input: InvoiceInput!) {
     invoiceForProject(input: $input) {
-      projectId
-      projectName
-      teamId
-      teamName
-      totalHours
-      totalCost
-      rates {
-        rateId
-        rateName
-        hours
-        cost
-        ratePerHour
-        __typename
-      }
-      __typename
+      ...InvoiceData
     }
   }
+  ${INVOICE_DATA_FRAGMENT}
 `;
 
 const InvoiceSummary: React.FC = () => {

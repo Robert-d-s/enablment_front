@@ -1,6 +1,6 @@
 import { useQuery } from "@apollo/client";
 import { useEffect, useState } from "react";
-import { GET_MY_PROJECTS } from "@/app/components/Admin/totalTimeSpent";
+import { GET_MY_PROJECTS } from "@/app/graphql/fragments";
 import { useAuthStore } from "@/app/lib/authStore";
 import { useReactiveVar } from "@apollo/client";
 import { loggedInUserTeamsVersion } from "@/app/lib/apolloClient";
