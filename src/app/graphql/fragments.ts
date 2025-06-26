@@ -116,7 +116,7 @@ export const ISSUE_FRAGMENT = gql`
 `;
 
 export const INVOICE_RATE_DETAIL_FRAGMENT = gql`
-  fragment InvoiceRateDetail on InvoiceRateDetail {
+  fragment InvoiceRateDetail on RateDetail {
     rateId
     rateName
     hours
@@ -127,7 +127,7 @@ export const INVOICE_RATE_DETAIL_FRAGMENT = gql`
 `;
 
 export const INVOICE_DATA_FRAGMENT = gql`
-  fragment InvoiceData on InvoiceData {
+  fragment InvoiceData on Invoice {
     projectId
     projectName
     teamId
