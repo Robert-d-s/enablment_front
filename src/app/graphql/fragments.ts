@@ -73,7 +73,7 @@ export const RATE_WITH_TEAM_FRAGMENT = gql`
 `;
 
 export const TIME_ENTRY_FRAGMENT = gql`
-  fragment TimeEntry on TimeEntry {
+  fragment TimeEntry on Time {
     id
     startTime
     endTime
@@ -116,7 +116,7 @@ export const ISSUE_FRAGMENT = gql`
 `;
 
 export const INVOICE_RATE_DETAIL_FRAGMENT = gql`
-  fragment InvoiceRateDetail on InvoiceRateDetail {
+  fragment InvoiceRateDetail on RateDetail {
     rateId
     rateName
     hours
@@ -127,7 +127,7 @@ export const INVOICE_RATE_DETAIL_FRAGMENT = gql`
 `;
 
 export const INVOICE_DATA_FRAGMENT = gql`
-  fragment InvoiceData on InvoiceData {
+  fragment InvoiceData on Invoice {
     projectId
     projectName
     teamId
@@ -143,7 +143,7 @@ export const INVOICE_DATA_FRAGMENT = gql`
 `;
 
 export const SYNC_RESULT_FRAGMENT = gql`
-  fragment SyncResult on SyncResult {
+  fragment SyncResult on SyncResponse {
     status
     message
     timestamp
@@ -151,13 +151,13 @@ export const SYNC_RESULT_FRAGMENT = gql`
 `;
 
 export const LOGOUT_RESULT_FRAGMENT = gql`
-  fragment LogoutResult on LogoutResult {
+  fragment LogoutResult on LogoutResponse {
     success
   }
 `;
 
 export const AUTH_PAYLOAD_FRAGMENT = gql`
-  fragment AuthPayload on AuthPayload {
+  fragment AuthPayload on AuthResponse {
     access_token
     user {
       ...AuthUser
