@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useMutation } from "@apollo/client";
 import { SIGNUP_MUTATION } from "@/app/graphql/authOperations";
 import { useAuthStore } from "@/app/lib/authStore";
+import { isPasswordValid, PASSWORD_ERROR_MESSAGE } from "@/app/utils/passwordValidation";
 
 interface SignUpData {
   signup: {
@@ -36,8 +37,6 @@ const Signup: React.FC = () => {
     password?: string;
     general?: string;
   }>({});
-  const passwordRegex =
-    /^(?=.*[A-Z])(?=.*[!@#$%^&*()_+{}\[\]:;<>,.?~\\/-]).{8,}$/;
 
   const setAuth = useAuthStore((state) => state.setAuth);
 
@@ -108,9 +107,8 @@ const Signup: React.FC = () => {
       valid = false;
     }
 
-    if (!password || !passwordRegex.test(password)) {
-      newErrors.password =
-        "Password must be at least 8 characters long, have at least one uppercase letter, and one special character.";
+    if (!password || !isPasswordValid(password)) {
+      newErrors.password = PASSWORD_ERROR_MESSAGE;
       valid = false;
     }
 
