@@ -61,6 +61,8 @@ export const useTimeKeeperQueries = (
   >(CREATE_TIME_MUTATION, {
     onError: (error) => {
       console.error("Error creating time entry:", error);
+      console.error("GraphQL errors:", error.graphQLErrors);
+      console.error("Network error:", error.networkError);
     },
   });
   const [updateTimeEntryMutation] = useMutation<{ updateTime: TimeEntry }>(
@@ -81,13 +83,17 @@ export const useTimeKeeperQueries = (
     refetch,
     createTimeEntry: (
       timeData: CreateTimeData
-    ): Promise<{ data: { createTime: TimeEntry } }> =>
-      createTimeEntryMutation({
+    ): Promise<{ data: { createTime: TimeEntry } }> => {
+      console.log("Sending GraphQL CREATE_TIME_MUTATION with variables:", {
+        timeInputCreate: timeData,
+      });
+      return createTimeEntryMutation({
         variables: {
           timeInputCreate: timeData,
         },
         context: { credentials: "include" },
-      }) as Promise<{ data: { createTime: TimeEntry } }>,
+      }) as Promise<{ data: { createTime: TimeEntry } }>;
+    },
 
     updateTime: (options: {
       timeInputUpdate: {

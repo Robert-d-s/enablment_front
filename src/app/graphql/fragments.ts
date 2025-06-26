@@ -11,7 +11,7 @@ export const BASIC_USER_FRAGMENT = gql`
 `;
 
 export const AUTH_USER_FRAGMENT = gql`
-  fragment AuthUser on User {
+  fragment AuthUser on UserProfileDto {
     id
     email
     role
