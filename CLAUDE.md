@@ -157,6 +157,14 @@ See `.env.example` for all available configuration options.
 - ✅ Error boundary hierarchy established
 - ✅ Bundle splitting and tree-shaking configured
 - ✅ Performance monitoring infrastructure added
+- ✅ Password validation standardized between frontend and backend
+
+## Security Standards
+
+### Password Validation
+- **Requirements**: Minimum 6 characters, uppercase letter, lowercase letter, and either number or special character
+- **Implementation**: Use `/app/utils/passwordValidation.ts` utilities for consistent validation
+- **Backend Reference**: Matches validation in `/root/tracking-exam/src/auth/auth.service.ts:validatePassword()`
 
 ## Notes for Claude
 - Always run lint and type checks after making changes
