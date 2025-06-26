@@ -32,6 +32,24 @@ let apolloClientInstance: ApolloClient<object> | null = null;
 
 const tokenRefreshQueue = new TokenRefreshQueue();
 
+// Debug link to log all requests for troubleshooting
+const debugLink = new ApolloLink((operation: Operation, forward: NextLink) => {
+  console.log("🚀 GraphQL Request:", {
+    operationName: operation.operationName,
+    variables: operation.variables,
+    query: operation.query.loc?.source.body,
+  });
+
+  return forward(operation).map((response) => {
+    console.log("✅ GraphQL Response:", {
+      operationName: operation.operationName,
+      data: response.data,
+      errors: response.errors,
+    });
+    return response;
+  });
+});
+
 const networkMonitorLink = new ApolloLink(
   (operation: Operation, forward: NextLink) => {
     const operationName = operation.operationName;
@@ -196,7 +214,7 @@ const cache = new InMemoryCache({
 });
 
 const client = new ApolloClient({
-  link: from([networkMonitorLink, errorLink, authLink, httpLink]),
+  link: from([debugLink, networkMonitorLink, errorLink, authLink, httpLink]),
   cache: cache,
   defaultOptions: {
     watchQuery: {

@@ -107,13 +107,43 @@ export const useTimeKeeperHandlers = ({
         console.log(
           `Creating new time entry for project ${timerProjectId}, rate ${timerRateId}`
         );
-        const result = await createTimeEntry({
-          startTime: formatISO(timerState.initialStartTime),
+
+        const parsedUserId = parseInt(userId, 10);
+        const parsedRateId = parseInt(timerRateId, 10);
+        const roundedElapsedTime = Math.round(totalElapsedTimeMs);
+
+        // Validate all required fields
+        if (!timerState.initialStartTime) {
+          throw new Error("Initial start time is missing");
+        }
+        if (!timerProjectId) {
+          throw new Error("Project ID is missing");
+        }
+        if (isNaN(parsedUserId)) {
+          throw new Error(`Invalid user ID: ${userId}`);
+        }
+        if (isNaN(parsedRateId)) {
+          throw new Error(`Invalid rate ID: ${timerRateId}`);
+        }
+        if (isNaN(roundedElapsedTime) || roundedElapsedTime < 0) {
+          throw new Error(`Invalid elapsed time: ${totalElapsedTimeMs}`);
+        }
+
+        const timeEntryData = {
+          startTime: timerState.initialStartTime.toISOString(),
           projectId: timerProjectId,
-          userId: parseFloat(userId),
-          rateId: parseFloat(timerRateId),
-          totalElapsedTime: totalElapsedTimeMs,
-        });
+          userId: parsedUserId,
+          rateId: parsedRateId,
+          totalElapsedTime: roundedElapsedTime,
+        };
+
+        console.log("Time entry data being sent:", timeEntryData);
+
+        const result = await createTimeEntry(timeEntryData);
+
+        console.log("createTimeEntry result:", result);
+        console.log("result.data:", result?.data);
+        console.log("result.data.createTime:", result?.data?.createTime);
 
         if (result?.data?.createTime?.id) {
           const newEntryId = result.data.createTime.id;

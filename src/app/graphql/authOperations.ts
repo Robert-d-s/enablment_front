@@ -1,9 +1,9 @@
 import { gql } from "@apollo/client";
-import { 
-  AUTH_PAYLOAD_FRAGMENT, 
-  AUTH_USER_FRAGMENT, 
-  LOGOUT_RESULT_FRAGMENT, 
-  SYNC_RESULT_FRAGMENT 
+import {
+  AUTH_PAYLOAD_FRAGMENT,
+  AUTH_USER_FRAGMENT,
+  LOGOUT_RESULT_FRAGMENT,
+  SYNC_RESULT_FRAGMENT,
 } from "./fragments";
 
 export const LOGIN_MUTATION = gql`

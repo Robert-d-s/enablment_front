@@ -11,7 +11,7 @@ export const BASIC_USER_FRAGMENT = gql`
 `;
 
 export const AUTH_USER_FRAGMENT = gql`
-  fragment AuthUser on User {
+  fragment AuthUser on UserProfileDto {
     id
     email
     role
@@ -73,7 +73,7 @@ export const RATE_WITH_TEAM_FRAGMENT = gql`
 `;
 
 export const TIME_ENTRY_FRAGMENT = gql`
-  fragment TimeEntry on TimeEntry {
+  fragment TimeEntry on Time {
     id
     startTime
     endTime
@@ -143,7 +143,7 @@ export const INVOICE_DATA_FRAGMENT = gql`
 `;
 
 export const SYNC_RESULT_FRAGMENT = gql`
-  fragment SyncResult on SyncResult {
+  fragment SyncResult on SyncResponse {
     status
     message
     timestamp
@@ -151,13 +151,13 @@ export const SYNC_RESULT_FRAGMENT = gql`
 `;
 
 export const LOGOUT_RESULT_FRAGMENT = gql`
-  fragment LogoutResult on LogoutResult {
+  fragment LogoutResult on LogoutResponse {
     success
   }
 `;
 
 export const AUTH_PAYLOAD_FRAGMENT = gql`
-  fragment AuthPayload on AuthPayload {
+  fragment AuthPayload on AuthResponse {
     access_token
     user {
       ...AuthUser
