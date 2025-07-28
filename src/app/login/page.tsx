@@ -11,7 +11,7 @@ import client from "@/app/lib/apolloClient";
 
 interface LoginData {
   login: {
-    access_token: string;
+    accessToken: string;
     user: {
       id: number;
       email: string;
@@ -30,10 +30,10 @@ const Login: React.FC = () => {
   const [login, { loading }] = useMutation<LoginData>(LOGIN_MUTATION, {
     client: client,
     onCompleted: (data) => {
-      if (data?.login?.access_token && data?.login?.user) {
-        const { access_token, user } = data.login;
+      if (data?.login?.accessToken && data?.login?.user) {
+        const { accessToken, user } = data.login;
         console.log("Login successful. Storing token and user data.");
-        setAuth(access_token, user);
+        setAuth(accessToken, user);
         router.push("/timeKeeper");
       } else {
         const errorMsg = "Login failed: Incomplete data received from server.";

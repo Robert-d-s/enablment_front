@@ -6,11 +6,14 @@ import Image from "next/image";
 import { useMutation } from "@apollo/client";
 import { SIGNUP_MUTATION } from "@/app/graphql/authOperations";
 import { useAuthStore } from "@/app/lib/authStore";
-import { isPasswordValid, PASSWORD_ERROR_MESSAGE } from "@/app/utils/passwordValidation";
+import {
+  isPasswordValid,
+  PASSWORD_ERROR_MESSAGE,
+} from "@/app/utils/passwordValidation";
 
 interface SignUpData {
   signup: {
-    access_token: string;
+    accessToken: string;
     user: {
       id: number;
       email: string;
@@ -42,9 +45,9 @@ const Signup: React.FC = () => {
 
   const [signup, { loading }] = useMutation<SignUpData>(SIGNUP_MUTATION, {
     onCompleted: (data) => {
-      if (data?.signup?.access_token && data?.signup?.user) {
+      if (data?.signup?.accessToken && data?.signup?.user) {
         console.log("Signup successful. Redirecting to login...");
-        setAuth(data.signup.access_token, data.signup.user);
+        setAuth(data.signup.accessToken, data.signup.user);
         router.push("/timeKeeper");
       } else {
         console.error("Signup completed but response data is missing.", data);

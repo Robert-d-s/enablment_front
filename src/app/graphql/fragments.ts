@@ -158,7 +158,7 @@ export const LOGOUT_RESULT_FRAGMENT = gql`
 
 export const AUTH_PAYLOAD_FRAGMENT = gql`
   fragment AuthPayload on AuthResponse {
-    access_token
+    accessToken
     user {
       ...AuthUser
     }
