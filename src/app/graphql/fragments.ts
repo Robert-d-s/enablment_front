@@ -210,10 +210,15 @@ export const GET_MY_PROJECTS = gql`
   ${PROJECT_WITH_TEAM_FRAGMENT}
 `;
 
+// CORRECTED QUERY
 export const GET_ISSUES = gql`
   query GetIssues {
     issues {
-      ...Issue
+      issues {
+        ...Issue
+      }
+      total
+      hasNext
     }
   }
   ${ISSUE_FRAGMENT}

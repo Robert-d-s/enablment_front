@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { useQuery, useMutation, gql } from "@apollo/client";
 import { motion } from "framer-motion";
 import { SYNC_DATABASE_MUTATION } from "@/app/graphql/authOperations";
+import { GET_ISSUES } from "@/app/graphql/fragments";
 
 export interface SimpleTeam {
   id: string;
@@ -48,24 +49,6 @@ const GET_PROJECTS = gql`
       id
       name
       teamId
-    }
-  }
-`;
-
-const GET_ISSUES = gql`
-  query GetIssues {
-    issues {
-      id
-      title
-      teamKey
-      projectId
-      projectName
-      state
-      labels {
-        id
-        name
-        color
-      }
     }
   }
 `;
@@ -297,13 +280,13 @@ const DBSyncPage: React.FC = () => {
             <div className="bg-gray-100 px-4 py-3 border-b">
               <h3 className="text-lg font-medium">Issues</h3>
               <p className="text-sm text-gray-500">
-                Total: {issuesData?.issues?.length || 0}
+                Total: {issuesData?.issues?.issues?.length || 0}
               </p>
             </div>
             <div className="p-4 overflow-y-auto" style={{ maxHeight: "400px" }}>
-              {issuesData?.issues?.length > 0 ? (
+              {issuesData?.issues?.issues?.length > 0 ? (
                 <ul className="space-y-2">
-                  {issuesData.issues.map(
+                  {issuesData.issues.issues.map(
                     (issue: DBSyncIssue, index: number) => (
                       <motion.li
                         key={issue.id}
@@ -444,7 +427,7 @@ const DBSyncPage: React.FC = () => {
                   </span>
                   <span className="inline-block">
                     <span className="font-semibold">Issues:</span>{" "}
-                    {issuesData?.issues?.length || 0}
+                    {issuesData?.issues?.issues?.length || 0}
                   </span>
                 </div>
               </div>
