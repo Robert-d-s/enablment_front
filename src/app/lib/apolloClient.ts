@@ -32,7 +32,6 @@ let apolloClientInstance: ApolloClient<object> | null = null;
 
 const tokenRefreshQueue = new TokenRefreshQueue();
 
-// Debug link to log all requests for troubleshooting
 const debugLink = new ApolloLink((operation: Operation, forward: NextLink) => {
   console.log("🚀 GraphQL Request:", {
     operationName: operation.operationName,
@@ -260,7 +259,7 @@ export const clientLogout = async () => {
   } finally {
     useAuthStore.getState().logout();
     tokenRefreshQueue.reset();
-    await client.resetStore();
+    await client.clearStore();
     if (
       typeof window !== "undefined" &&
       window.location.pathname !== "/login"

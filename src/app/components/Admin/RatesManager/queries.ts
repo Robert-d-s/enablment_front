@@ -1,5 +1,9 @@
 import { gql } from "@apollo/client";
-import { GET_ALL_SIMPLE_TEAMS, RATE_WITH_TEAM_FRAGMENT, RATE_FRAGMENT } from "../../../graphql/fragments";
+import {
+  GET_ALL_SIMPLE_TEAMS,
+  RATE_WITH_TEAM_FRAGMENT,
+  RATE_FRAGMENT,
+} from "../../../graphql/fragments";
 
 // Re-export shared query instead of duplicating
 export { GET_ALL_SIMPLE_TEAMS };
@@ -7,7 +11,7 @@ export { GET_ALL_SIMPLE_TEAMS };
 export const CREATE_RATE = gql`
   mutation CreateRate_RatesManager(
     $name: String!
-    $rate: Int!
+    $rate: Float!
     $teamId: String!
   ) {
     createRate(rateInputCreate: { name: $name, rate: $rate, teamId: $teamId }) {
