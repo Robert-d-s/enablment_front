@@ -1,7 +1,7 @@
 {
   "yaml.schemas": {
     "file:///Users/rds/enablment_front/.vscode/codegen-config.schema.json": [
-      "/Users/rds/enablment_front/codegen.yml"
+      "/Users/rds/enablment_front/graphql-codegen.config.yml"
     ]
   }
 }

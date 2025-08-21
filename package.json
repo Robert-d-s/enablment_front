@@ -10,7 +10,7 @@
     "lint": "next lint",
     "type-check": "tsc --noEmit",
     "download:schema": "sh -c \"if [ -f ../tracking-exam/schema.graphql ]; then cp ../tracking-exam/schema.graphql ./schema.graphql && echo 'copied schema from backend'; else npx apollo client:download-schema --endpoint=http://localhost:3000/graphql ./schema.graphql; fi\"",
-    "codegen": "graphql-codegen --config codegen.yml",
+    "codegen": "graphql-codegen --config graphql-codegen.config.yml",
     "analyze": "cross-env ANALYZE=true next build",
     "analyze:clean": "rm -rf .next/analyze && npm run analyze",
     "quality-check": "npm run lint && npm run type-check",
