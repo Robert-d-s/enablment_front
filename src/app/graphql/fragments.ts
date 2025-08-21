@@ -178,19 +178,6 @@ export const USER_WITH_TEAMS_FRAGMENT = gql`
   ${TEAM_FRAGMENT}
 `;
 
-export const USER_PROJECTS_FRAGMENT = gql`
-  fragment UserProjects on User {
-    id
-    teams {
-      name
-      projects {
-        ...Project
-      }
-    }
-  }
-  ${PROJECT_FRAGMENT}
-`;
-
 // Shared queries to eliminate duplicates
 export const GET_ALL_SIMPLE_TEAMS = gql`
   query GetAllSimpleTeams {

@@ -1,9 +1,8 @@
 import { gql } from "@apollo/client";
-import { 
-  PROJECT_FRAGMENT, 
-  RATE_FRAGMENT, 
-  TIME_ENTRY_FRAGMENT, 
-  USER_PROJECTS_FRAGMENT 
+import {
+  PROJECT_FRAGMENT,
+  RATE_FRAGMENT,
+  TIME_ENTRY_FRAGMENT,
 } from "./fragments";
 
 export const PROJECTS_QUERY = gql`
@@ -30,14 +29,7 @@ export const TOTAL_TIME_QUERY = gql`
   }
 `;
 
-export const USER_PROJECTS_QUERY = gql`
-  query GetUserProjects {
-    users {
-      ...UserProjects
-    }
-  }
-  ${USER_PROJECTS_FRAGMENT}
-`;
+// USER_PROJECTS_QUERY removed — projects for a user should be fetched via GetMyProjects or similar dedicated queries
 
 export const CREATE_TIME_MUTATION = gql`
   mutation CreateTime($timeInputCreate: TimeInputCreate!) {
