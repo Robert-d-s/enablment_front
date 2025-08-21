@@ -1,10 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
-import { useQuery, useMutation, gql } from "@apollo/client";
+import { useQuery, useMutation } from "@apollo/client";
 import { motion } from "framer-motion";
 import { SYNC_DATABASE_MUTATION } from "@/app/graphql/authOperations";
-import { GET_ISSUES } from "@/app/graphql/fragments";
+import { GET_ISSUES, GET_ALL_SIMPLE_TEAMS } from "@/app/graphql/fragments";
+import { PROJECTS_QUERY } from "@/app/graphql/timeKeeperOperations";
 
 export interface SimpleTeam {
   id: string;
@@ -33,25 +34,7 @@ export interface SimpleLabel {
   color: string;
 }
 
-// GraphQL queries to fetch data
-const GET_TEAMS = gql`
-  query GetAllSimpleTeams {
-    getAllSimpleTeams {
-      id
-      name
-    }
-  }
-`;
-
-const GET_PROJECTS = gql`
-  query GetProjects {
-    projects {
-      id
-      name
-      teamId
-    }
-  }
-`;
+// (Queries are imported from shared fragments/operations to avoid duplicate operation names)
 
 const DBSyncPage: React.FC = () => {
   const [syncStatus, setSyncStatus] = useState<string>("");
@@ -67,14 +50,14 @@ const DBSyncPage: React.FC = () => {
     error: teamsError,
     data: teamsData,
     refetch: refetchTeams,
-  } = useQuery(GET_TEAMS);
+  } = useQuery(GET_ALL_SIMPLE_TEAMS);
 
   const {
     loading: projectsLoading,
     error: projectsError,
     data: projectsData,
     refetch: refetchProjects,
-  } = useQuery(GET_PROJECTS);
+  } = useQuery(PROJECTS_QUERY);
 
   const {
     loading: issuesLoading,

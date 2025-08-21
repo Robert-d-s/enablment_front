@@ -1,0 +1,17 @@
+# Note: $schema was removed because the remote JSON schema contains fields
+# that the editor's YAML validator rejects. This file is still valid for
+# graphql-codegen CLI.
+"$schema": "file:///Users/rds/enablment_front/.vscode/codegen-config.schema.json"
+schema: ./schema.graphql
+documents: "src/**/*.{ts,tsx,graphql,gql}"
+generates:
+  ./src/generated/graphql.ts:
+    plugins:
+      - typescript
+      - typescript-operations
+      - typescript-react-apollo
+    config:
+      withComponent: false
+      withHooks: true
+      withHOC: false
+      addDocBlocks: false

@@ -1,9 +1,13 @@
 import { gql } from "@apollo/client";
-import { USER_WITH_TEAMS_FRAGMENT, BASIC_USER_FRAGMENT, GET_ALL_SIMPLE_TEAMS } from "./fragments";
+import {
+  USER_WITH_TEAMS_FRAGMENT,
+  BASIC_USER_FRAGMENT,
+  GET_ALL_SIMPLE_TEAMS,
+} from "./fragments";
 
 export const GET_USERS = gql`
-  query GetUsers {
-    users {
+  query GetUsers($args: UserQueryArgs!) {
+    users(args: $args) {
       ...UserWithTeams
     }
   }
