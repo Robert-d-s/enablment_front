@@ -13,6 +13,9 @@
     "codegen": "graphql-codegen --config graphql-codegen.config.yml",
     "analyze": "cross-env ANALYZE=true next build",
     "analyze:clean": "rm -rf .next/analyze && npm run analyze",
+    "analyze:size": "cross-env ANALYZE=true next build --profile",
+    "analyze:chunks": "cross-env ANALYZE=true WEBPACK_ANALYZE=true next build",
+    "bundle:inspect": "npx @next/bundle-analyzer",
     "quality-check": "npm run lint && npm run type-check",
     "build:ci": "npm run quality-check && npm run build",
     "build:analyze": "npm run quality-check && npm run analyze:clean"
