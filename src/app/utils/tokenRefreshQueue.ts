@@ -9,7 +9,7 @@ interface QueuedRequest {
 // Define the expected structure of the refresh mutation's result
 interface RefreshMutationResult {
   refreshToken?: {
-    access_token: string;
+    accessToken: string;
   };
   // Add other possible top-level fields from your mutation if they exist
   // e.g., if your mutation is nested under a different key
@@ -88,7 +88,7 @@ export class TokenRefreshQueue {
         context: { credentials: "include" },
       });
 
-      const newAccessToken = data?.refreshToken?.access_token;
+      const newAccessToken = data?.refreshToken?.accessToken;
 
       if (!newAccessToken) {
         console.error("New access token not received from mutation.");

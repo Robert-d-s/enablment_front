@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { io, Socket } from "socket.io-client";
 import { IssueUpdatePayload } from "@/app/types"; // Assuming IssueUpdatePayload is in types
+import { useAuthStore } from "../lib/authStore";
 
 interface UseWebSocketOptions {
   wsUrl: string;
@@ -21,6 +22,7 @@ export const useWebSocket = ({
   maxReconnectAttempts = DEFAULT_MAX_RECONNECT_ATTEMPTS,
   onIssueUpdate,
 }: UseWebSocketOptions): UseWebSocketReturn => {
+  const accessToken = useAuthStore((s) => s.accessToken);
   const [socketConnected, setSocketConnected] = useState(false);
   const socketRef = useRef<Socket | null>(null);
   const [reconnectAttempts, setReconnectAttempts] = useState(0); // State for UI display
@@ -34,6 +36,17 @@ export const useWebSocket = ({
     if (!wsUrl) {
       setSocketConnected(false);
       setConnectionStatusMessage("WebSocket URL not provided");
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
+      return;
+    }
+
+    // Require auth token to connect to authenticated websocket
+    if (!accessToken) {
+      setSocketConnected(false);
+      setConnectionStatusMessage("Not authenticated");
       if (socketRef.current) {
         socketRef.current.disconnect();
         socketRef.current = null;
@@ -89,6 +102,9 @@ export const useWebSocket = ({
         path: "/socket.io",
         reconnection: false, // Manual reconnection handling
         timeout: 10000, // Connection timeout
+        withCredentials: true,
+        auth: { token: accessToken },
+        extraHeaders: { Authorization: `Bearer ${accessToken}` },
       });
       socketRef.current = newSocket; // Assign new socket to ref immediately
 
@@ -171,7 +187,7 @@ export const useWebSocket = ({
       }
     };
 
-    // Initial connection attempt for this effect lifecycle (e.g. wsUrl changed or mount)
+    // Initial connection attempt for this effect lifecycle (e.g. wsUrl or token changed or mount)
     attemptConnection(0);
 
     return () => {
@@ -193,7 +209,12 @@ export const useWebSocket = ({
       // setConnectionStatusMessage("Disconnected"); // Optionally update status message
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [wsUrl, maxReconnectAttempts, onIssueUpdate]); // Dependencies that trigger a full reconnect cycle. `reconnectAttempts` is intentionally omitted to break the loop
+  }, [
+    wsUrl,
+    maxReconnectAttempts,
+    onIssueUpdate,
+    useAuthStore.getState().accessToken,
+  ]); // Reconnect when the access token changes
 
   return {
     socket: socketRef.current, // Expose the current socket instance (can be null)
