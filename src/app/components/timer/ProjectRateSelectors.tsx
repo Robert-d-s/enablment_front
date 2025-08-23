@@ -3,6 +3,7 @@
 import React from "react";
 import { ApolloError } from "@apollo/client";
 import { formatTimeFromMilliseconds } from "@/app/utils/timeUtils";
+import { useTimerSelectionStore } from "@/app/lib/timerSelectionStore";
 import {
   Select,
   SelectContent,
@@ -34,31 +35,32 @@ interface Rate {
 
 interface ProjectRateSelectorsProps {
   userProjects: Project[];
-  selectedProject: string | null;
-  setSelectedProject: (projectId: string) => void;
   rates: Rate[];
-  selectedRate: string | null;
-  setSelectedRate: (rateId: string) => void;
   totalTimeLoading: boolean;
   totalTimeError: ApolloError | undefined;
   totalTime: number;
   isTimerRunning: boolean;
   ratesError?: ApolloError | undefined;
+  // Removed: selectedProject, setSelectedProject, selectedRate, setSelectedRate
 }
 
 const ProjectRateSelectors: React.FC<ProjectRateSelectorsProps> = ({
   userProjects,
-  selectedProject,
-  setSelectedProject,
   rates,
-  selectedRate,
-  setSelectedRate,
   totalTimeLoading,
   totalTimeError,
   totalTime,
   isTimerRunning,
   ratesError,
 }) => {
+  // Get selection state and actions from store
+  const {
+    selectedProjectId,
+    selectedRateId,
+    setSelectedProject,
+    setSelectedRate,
+  } = useTimerSelectionStore();
+
   return (
     <Card className="overflow-visible">
       <CardHeader>
@@ -72,7 +74,7 @@ const ProjectRateSelectors: React.FC<ProjectRateSelectorsProps> = ({
         <div className="space-y-2">
           <Label htmlFor="project-select">Project</Label>
           <Select
-            value={selectedProject ?? ""}
+            value={selectedProjectId ?? ""}
             onValueChange={setSelectedProject}
             disabled={userProjects.length === 0 || isTimerRunning}
           >
@@ -102,10 +104,10 @@ const ProjectRateSelectors: React.FC<ProjectRateSelectorsProps> = ({
         <div className="space-y-2">
           <Label htmlFor="rate-select">Rate</Label>
           <Select
-            value={selectedRate ?? ""}
+            value={selectedRateId ?? ""}
             onValueChange={setSelectedRate}
             disabled={
-              !selectedProject ||
+              !selectedProjectId ||
               rates.length === 0 ||
               isTimerRunning ||
               !!ratesError
@@ -127,7 +129,7 @@ const ProjectRateSelectors: React.FC<ProjectRateSelectorsProps> = ({
                 ))
               ) : (
                 <div className="p-2 text-sm text-muted-foreground">
-                  {selectedProject
+                  {selectedProjectId
                     ? "No rates for this project."
                     : "Select a project first."}
                 </div>

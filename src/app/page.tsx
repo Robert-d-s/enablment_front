@@ -3,32 +3,27 @@
 import React from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import type { NextPage } from "next";
-import { useState } from "react";
 import NavBar from "@/app/components/navBar";
 import { BackgroundBeams } from "@/components/ui/background-beams";
 import ContactForm from "@/app/components/landingPage/contactForm";
 import ClientColab from "@/app/components/landingPage/clientColab";
 import Footer from "@/app/components/footer";
 import SectionAnimation from "@/app/components/landingPage/sectionAnimation";
+import { useNavigationStore } from "@/app/lib/navigationStore";
 
 const Home: NextPage = () => {
-  const sections = [
-    "Home",
-    "About",
-    "Services",
-    "People",
-    "Contact",
-    "Client-Portal",
-  ];
+  const {
+    sections,
+    activeSection,
+    navigationDirection,
+    navigateToSection,
+    closeContactForm: storeCloseContactForm,
+  } = useNavigationStore();
 
-  const [activeSection, setActiveSection] = useState<string>(sections[0]);
   const isContactActive = activeSection === "Contact";
-  const [navigationDirection, setNavigationDirection] = useState<
-    "forward" | "backward"
-  >("forward");
 
   const closeContactForm = () => {
-    setActiveSection("Home");
+    storeCloseContactForm();
   };
 
   const handleFormSubmit = (data: {
@@ -37,28 +32,14 @@ const Home: NextPage = () => {
     message: string;
   }) => {
     console.log("Form Data:", data);
-    setActiveSection("Home");
-  };
-
-  const handleSectionChange = (section: string) => {
-    // Determine direction based on section index
-    const currentIndex = sections.indexOf(activeSection);
-    const nextIndex = sections.indexOf(section);
-    setNavigationDirection(nextIndex > currentIndex ? "forward" : "backward");
-    setActiveSection(section);
+    storeCloseContactForm();
   };
 
   return (
     <>
       <BackgroundBeams />
       <div className="relative overflow-hidden" style={{ minHeight: "100vh" }}>
-        <NavBar
-          sections={sections}
-          setActiveSection={handleSectionChange}
-          activeSection={activeSection}
-        />
-
-        {/* Contact form overlay */}
+        <NavBar /> {/* Contact form overlay */}
         <AnimatePresence>
           {isContactActive && (
             <ContactForm
@@ -67,7 +48,6 @@ const Home: NextPage = () => {
             />
           )}
         </AnimatePresence>
-
         <div className="grid grid-cols-12 pt-6" style={{ minHeight: "60vh" }}>
           {/* Client collaboration component for Home section - Take 3 columns on the left */}
           <div className="col-span-3">
@@ -81,7 +61,9 @@ const Home: NextPage = () => {
                   transition={{ duration: 0.3 }}
                 >
                   <ClientColab
-                    onContactClick={() => setActiveSection("Contact")}
+                    onContactClick={() =>
+                      navigateToSection("Contact", sections)
+                    }
                   />
                 </motion.div>
               )}

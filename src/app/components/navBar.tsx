@@ -1,33 +1,31 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { useNavigationStore } from "@/app/lib/navigationStore";
 import logo from "../../../public/logo.svg";
 
-interface NavbarProps {
-  sections: string[];
-  setActiveSection: (section: string) => void;
-  activeSection: string;
-}
-
-const NavBar: React.FC<NavbarProps> = ({
-  sections = [],
-  setActiveSection,
-  activeSection,
-}) => {
-  const [hoveredSection, setHoveredSection] = useState<string | null>(null);
+const NavBar: React.FC = () => {
   const router = useRouter();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const {
+    sections,
+    activeSection,
+    hoveredSection,
+    isMenuOpen,
+    setHoveredSection,
+    setMenuOpen,
+    navigateToSection,
+  } = useNavigationStore();
 
   // Automatically set the menu open on desktop and closed on mobile.
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 1024) {
-        setIsMenuOpen(true);
+        setMenuOpen(true);
       } else {
-        setIsMenuOpen(false);
+        setMenuOpen(false);
       }
     };
 
@@ -36,17 +34,26 @@ const NavBar: React.FC<NavbarProps> = ({
 
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, []);
+  }, [setMenuOpen]);
 
   const handleSectionClick = (section: string) => {
     if (section === "Client-Portal") {
       router.push("/login");
     } else {
-      setActiveSection(section);
+      navigateToSection(
+        section as
+          | "Home"
+          | "About"
+          | "Services"
+          | "People"
+          | "Contact"
+          | "Client-Portal",
+        sections
+      );
     }
     // On mobile, close the menu after selection.
     if (window.innerWidth < 1024) {
-      setIsMenuOpen(false);
+      setMenuOpen(false);
     }
   };
 
@@ -97,7 +104,7 @@ const NavBar: React.FC<NavbarProps> = ({
       {/* Burger Icon – visible on mobile only */}
       <motion.div
         className="lg:hidden z-20 absolute right-4 cursor-pointer"
-        onClick={() => setIsMenuOpen(!isMenuOpen)}
+        onClick={() => setMenuOpen(!isMenuOpen)}
         variants={menuIconVariants}
         animate={isMenuOpen ? "opened" : "closed"}
       >

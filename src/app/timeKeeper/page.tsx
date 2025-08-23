@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import React, { useEffect, useCallback, useMemo } from "react";
 import { useTimer } from "@/app/hooks/useTimer";
 import { useAuthStore } from "@/app/lib/authStore";
 import useCurrentUser from "@/app/hooks/useCurrentUser";
@@ -16,6 +16,7 @@ import PageErrorBoundary from "@/app/components/ErrorBoundaries/PageErrorBoundar
 import AuthError from "@/app/components/AuthError";
 import LoadingError from "@/app/components/LoadingError";
 import { useTimerStore } from "@/app/lib/timerStore";
+import { useTimerSelectionStore } from "@/app/lib/timerSelectionStore";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import {
@@ -27,8 +28,6 @@ import {
 } from "@/components/ui/card";
 
 const TimeKeeper: React.FC = () => {
-  const [uiSelectedProject, setUiSelectedProject] = useState<string>("");
-  const [uiSelectedRate, setUiSelectedRate] = useState<string>("");
   const loggedInUser = useAuthStore((state) => state.user);
   const userIdString = loggedInUser?.id?.toString() ?? "";
   const currentEntryId = useTimerStore((state) => state.currentEntryId);
@@ -41,8 +40,16 @@ const TimeKeeper: React.FC = () => {
   );
   const setCurrentEntryId = useTimerStore((state) => state.setCurrentEntryId);
 
+  // Use timer selection store instead of local state
+  const {
+    selectedProjectId,
+    selectedRateId,
+    setSelectedProject,
+    setSelectedRate,
+  } = useTimerSelectionStore();
+
   // All hooks must be called before any conditional returns
-  const timerState = useTimer(uiSelectedProject, uiSelectedRate);
+  const timerState = useTimer(selectedProjectId, selectedRateId);
   const {
     isAuthenticated,
     isLoading: authLoading,
@@ -53,7 +60,7 @@ const TimeKeeper: React.FC = () => {
     currentTeamId,
     loadingUserProjects,
     errorUserProjects,
-  } = useTimeKeeperData(uiSelectedProject);
+  } = useTimeKeeperData(selectedProjectId);
   const feedbackState = useFeedbackState();
   const {
     ratesData,
@@ -64,7 +71,7 @@ const TimeKeeper: React.FC = () => {
     refetch,
     createTimeEntry,
     updateTime,
-  } = useTimeKeeperQueries(currentTeamId, uiSelectedProject, userIdString);
+  } = useTimeKeeperQueries(currentTeamId, selectedProjectId, userIdString);
 
   const showSuccessToast = useCallback(
     () => toast.success("Time entry saved!"),
@@ -119,19 +126,25 @@ const TimeKeeper: React.FC = () => {
 
   useEffect(() => {
     if (initialStartTimeISO) {
-      setUiSelectedProject(activeTimerProjectId ?? "");
-      setUiSelectedRate(activeTimerRateId ?? "");
+      setSelectedProject(activeTimerProjectId ?? "");
+      setSelectedRate(activeTimerRateId ?? "");
     } else {
-      setUiSelectedProject("");
-      setUiSelectedRate("");
+      setSelectedProject("");
+      setSelectedRate("");
     }
-  }, [activeTimerProjectId, activeTimerRateId, initialStartTimeISO]);
+  }, [
+    activeTimerProjectId,
+    activeTimerRateId,
+    initialStartTimeISO,
+    setSelectedProject,
+    setSelectedRate,
+  ]);
 
   useEffect(() => {
-    if (uiSelectedProject && loggedInUser?.id) {
+    if (selectedProjectId && loggedInUser?.id) {
       refetch();
     }
-  }, [uiSelectedProject, refetch, loggedInUser?.id]);
+  }, [selectedProjectId, refetch, loggedInUser?.id]);
 
   if (authError && !isAuthenticated) {
     return (
@@ -186,7 +199,7 @@ const TimeKeeper: React.FC = () => {
     );
   }
 
-  const isStartPauseDisabled = !uiSelectedProject || !uiSelectedRate;
+  const isStartPauseDisabled = !selectedProjectId || !selectedRateId;
   const isResetDisabled = !timerState.initialStartTime || timerState.isRunning;
   const isSubmitDisabled = timerState.isRunning || !timerState.initialStartTime;
 
@@ -242,11 +255,7 @@ const TimeKeeper: React.FC = () => {
           {" "}
           <ProjectRateSelectors
             userProjects={processedUserProjects}
-            selectedProject={uiSelectedProject}
-            setSelectedProject={setUiSelectedProject}
             rates={ratesData?.rates ?? []}
-            selectedRate={uiSelectedRate}
-            setSelectedRate={setUiSelectedRate}
             totalTimeLoading={totalTimeLoading}
             totalTimeError={totalTimeError}
             totalTime={totalTimeData?.getTotalTimeForUserProject ?? 0}

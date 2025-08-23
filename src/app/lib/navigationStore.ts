@@ -15,6 +15,7 @@ interface NavigationState {
   isContactFormOpen: boolean;
   hoveredSection: string | null;
   isMenuOpen: boolean;
+  sections: NavigationSection[];
 }
 
 interface NavigationActions {
@@ -36,6 +37,7 @@ const initialState: NavigationState = {
   isContactFormOpen: false,
   hoveredSection: null,
   isMenuOpen: false,
+  sections: ["Home", "About", "Services", "People", "Contact", "Client-Portal"],
 };
 
 export const useNavigationStore = create<NavigationState & NavigationActions>(
