@@ -209,12 +209,7 @@ export const useWebSocket = ({
       // setConnectionStatusMessage("Disconnected"); // Optionally update status message
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    wsUrl,
-    maxReconnectAttempts,
-    onIssueUpdate,
-    useAuthStore.getState().accessToken,
-  ]); // Reconnect when the access token changes
+  }, [wsUrl, maxReconnectAttempts, onIssueUpdate, accessToken]); // Reconnect when the access token changes
 
   return {
     socket: socketRef.current, // Expose the current socket instance (can be null)

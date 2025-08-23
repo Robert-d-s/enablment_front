@@ -98,19 +98,12 @@ const errorLink = onError(
     if (graphQLErrors) {
       for (const err of graphQLErrors) {
         const extensions = err.extensions || {};
-        const originalError = extensions.originalError as
-          | { statusCode?: number }
-          | undefined;
+        const httpStatus = (extensions as { httpStatus?: number }).httpStatus;
 
-        const isAuthError =
-          (extensions?.code === "UNAUTHENTICATED" ||
-            extensions?.code === "TOKEN_EXPIRED" ||
-            extensions?.code === "UNAUTHORIZED" ||
-            extensions?.httpStatus === 401 ||
-            originalError?.statusCode === 401) &&
-          operation.operationName !== "RefreshToken";
+        const isUnauth =
+          extensions?.code === "UNAUTHENTICATED" || httpStatus === 401;
 
-        if (isAuthError) {
+        if (isUnauth && operation.operationName !== "RefreshToken") {
           console.log(
             "Auth error detected by errorLink, attempting refresh via queue."
           );
@@ -141,22 +134,17 @@ const errorLink = onError(
               });
           });
         }
-        if (
-          extensions?.code === "FORBIDDEN" ||
-          extensions?.httpStatus === 403 ||
-          originalError?.statusCode === 403
-        ) {
+
+        if (extensions?.code === "FORBIDDEN" || httpStatus === 403) {
           useAuthStore.getState().setForbidden(true);
         }
       }
     }
 
     if (networkError) {
-      if (
-        "statusCode" in networkError &&
-        networkError.statusCode === 401 &&
-        operation.operationName !== "RefreshToken"
-      ) {
+      const statusCode =
+        (networkError as { statusCode?: number }).statusCode ?? undefined;
+      if (statusCode === 401 && operation.operationName !== "RefreshToken") {
         console.log(
           "Network 401 error detected, attempting refresh via queue."
         );
