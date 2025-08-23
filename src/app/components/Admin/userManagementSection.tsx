@@ -1,34 +1,45 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import UserTable from "./UserTable";
 import UserManagementControls from "./UserManagementControls";
 import { useUserManagementData } from "@/app/hooks/useUserManagementData";
-// import LoadingIndicator from "@/app/components/Admin/LoadingIndicator";
+import { useUserManagementStore } from "@/app/lib/userManagementStore";
 import ErrorMessage from "@/app/components/Admin/ErrorMessage";
-// import { Loader2 } from "lucide-react";
 import UserManagementSkeleton from "./skeletons/UserManagementSkeleton";
 
 const UserManagementSection: React.FC = () => {
+  const { setTotalItems, setTotalPages, setLoading, setRefetching } =
+    useUserManagementStore();
+
   const {
     users,
     teams,
     totalUsers,
-    page,
-    pageSize,
     totalPages,
     isLoading,
     isRefetching,
     error,
-    setPage,
-    setPageSize,
-    setSearchTerm,
-    setRoleFilter,
-    searchTerm,
-    roleFilter,
     loggedInUser,
     refetch,
   } = useUserManagementData();
+
+  // Sync data from hook to store
+  useEffect(() => {
+    setTotalItems(totalUsers);
+  }, [totalUsers, setTotalItems]);
+
+  useEffect(() => {
+    setTotalPages(totalPages);
+  }, [totalPages, setTotalPages]);
+
+  useEffect(() => {
+    setLoading(isLoading);
+  }, [isLoading, setLoading]);
+
+  useEffect(() => {
+    setRefetching(isRefetching);
+  }, [isRefetching, setRefetching]);
 
   if (isLoading && !isRefetching) {
     return <UserManagementSkeleton />;
@@ -41,19 +52,7 @@ const UserManagementSection: React.FC = () => {
     <div className="mb-6 shadow-md p-4 border rounded-lg bg-white relative">
       <h2 className="text-xl font-semibold mb-4">User Management</h2>
 
-      <UserManagementControls
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        roleFilter={roleFilter}
-        setRoleFilter={setRoleFilter}
-        pageSize={pageSize}
-        setPageSize={setPageSize}
-        currentPage={page}
-        totalItems={totalUsers}
-        totalPages={totalPages}
-        setPage={setPage}
-        isLoading={isRefetching || isLoading}
-      />
+      <UserManagementControls />
 
       <div className="relative mt-4">
         {isRefetching && (

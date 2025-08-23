@@ -1,5 +1,5 @@
 "use client";
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useMemo, useEffect } from "react";
 import { useQuery } from "@apollo/client";
 import NavigationBar from "@/app/components/Admin/NavigationBar";
 import PageErrorBoundary from "@/app/components/ErrorBoundaries/PageErrorBoundary";
@@ -7,6 +7,7 @@ import QueryErrorBoundary from "@/app/components/ErrorBoundaries/QueryErrorBound
 import { useWebSocket } from "../hooks/useWebSocket";
 import { useIssueFilters } from "../hooks/useIssueFilters";
 import { useIssueCacheUpdates } from "../hooks/useIssueCacheUpdates";
+import { useIssuesFilterStore } from "../lib/issuesFilterStore";
 import { Issue, IssueUpdatePayload } from "../types";
 import IssueBoard from "../components/Issues/IssueBoard";
 import FilterControls from "../components/Issues/FilterControls";
@@ -25,6 +26,9 @@ interface GetIssuesData {
 }
 
 const IssuesComponent: React.FC = () => {
+  const { setSocketConnected, setConnectionStatusMessage, setRefreshing } =
+    useIssuesFilterStore();
+
   const { loading, error, data, refetch } = useQuery<GetIssuesData>(
     GET_ISSUES,
     {
@@ -56,15 +60,25 @@ const IssuesComponent: React.FC = () => {
     onIssueUpdate: memoizedOnIssueUpdate,
   });
 
-  const {
-    filteredIssues,
-    uniqueTeams,
-    uniqueAssignees,
-    selectedTeam,
-    selectedAssignee,
-    handleSelectTeam,
-    handleSelectAssignee,
-  } = useIssueFilters(data?.issues.issues);
+  // Sync WebSocket state to store
+  useEffect(() => {
+    setSocketConnected(socketConnected);
+    setConnectionStatusMessage(connectionStatusMessage);
+  }, [
+    socketConnected,
+    connectionStatusMessage,
+    setSocketConnected,
+    setConnectionStatusMessage,
+  ]);
+
+  // Sync loading state to store
+  useEffect(() => {
+    setRefreshing(loading);
+  }, [loading, setRefreshing]);
+
+  const { filteredIssues, uniqueTeams, uniqueAssignees } = useIssueFilters(
+    data?.issues.issues
+  );
 
   const groupedIssues = useMemo(() => {
     const groups: GroupedIssues = {};
@@ -105,15 +119,8 @@ const IssuesComponent: React.FC = () => {
       <div className="container mx-auto p-4 font-roboto-condensed">
         <FilterControls
           uniqueTeams={uniqueTeams}
-          selectedTeam={selectedTeam}
-          onSelectTeam={handleSelectTeam}
           uniqueAssignees={uniqueAssignees}
-          selectedAssignee={selectedAssignee}
-          onSelectAssignee={handleSelectAssignee}
           onRefresh={handleRefresh}
-          isRefreshing={loading}
-          socketConnected={socketConnected}
-          connectionStatusMessage={connectionStatusMessage}
         />
         <QueryErrorBoundary queryName="Issues" refetch={refetch}>
           <IssueBoard

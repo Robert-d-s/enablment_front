@@ -1,37 +1,33 @@
 import React from "react";
+import { useIssuesFilterStore } from "@/app/lib/issuesFilterStore";
 
 interface FilterControlsProps {
   uniqueTeams: string[];
-  selectedTeam: string | null;
-  onSelectTeam: (team: string | null) => void;
   uniqueAssignees: string[];
-  selectedAssignee: string | null;
-  onSelectAssignee: (assignee: string | null) => void;
   onRefresh: () => void;
-  isRefreshing: boolean;
-  socketConnected: boolean;
-  connectionStatusMessage: string;
 }
 
 const FilterControls: React.FC<FilterControlsProps> = ({
   uniqueTeams,
-  selectedTeam,
-  onSelectTeam,
   uniqueAssignees,
-  selectedAssignee,
-  onSelectAssignee,
   onRefresh,
-  isRefreshing,
-  socketConnected,
-  connectionStatusMessage,
 }) => {
+  const {
+    selectedTeam,
+    selectedAssignee,
+    isRefreshing,
+    socketConnected,
+    connectionStatusMessage,
+    setSelectedTeam,
+    setSelectedAssignee,
+  } = useIssuesFilterStore();
   return (
     <div className="flex mb-4 flex-wrap items-start gap-2 border-b pb-4">
       {/* Team Filters */}
       <div className="flex items-center flex-wrap gap-1">
         <span className="text-sm font-medium mr-2 flex-shrink-0">Teams:</span>
         <button
-          onClick={() => onSelectTeam(null)}
+          onClick={() => setSelectedTeam(null)}
           className={`p-1 px-2 m-1 text-xs ${
             !selectedTeam
               ? "bg-blue-500 text-white"
@@ -43,7 +39,7 @@ const FilterControls: React.FC<FilterControlsProps> = ({
         {uniqueTeams.map((team: string) => (
           <button
             key={team}
-            onClick={() => onSelectTeam(team)}
+            onClick={() => setSelectedTeam(team)}
             className={`p-1 px-2 m-1 uppercase text-xs ${
               selectedTeam === team
                 ? "bg-green-500 text-white"
@@ -61,7 +57,7 @@ const FilterControls: React.FC<FilterControlsProps> = ({
           Assignees:
         </span>
         <button
-          onClick={() => onSelectAssignee(null)}
+          onClick={() => setSelectedAssignee(null)}
           className={`p-1 px-2 m-1 text-xs ${
             !selectedAssignee
               ? "bg-blue-500 text-white"
@@ -73,7 +69,7 @@ const FilterControls: React.FC<FilterControlsProps> = ({
         {uniqueAssignees.map((assignee: string) => (
           <button
             key={assignee}
-            onClick={() => onSelectAssignee(assignee)}
+            onClick={() => setSelectedAssignee(assignee)}
             className={`p-1 px-2 m-1 text-xs ${
               selectedAssignee === assignee
                 ? "bg-purple-500 text-white"

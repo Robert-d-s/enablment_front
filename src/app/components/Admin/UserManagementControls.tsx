@@ -1,7 +1,10 @@
 "use client";
 
 import React from "react";
-import { UserRole } from "./UserRoleSelect";
+import {
+  useUserManagementStore,
+  UserRole,
+} from "@/app/lib/userManagementStore";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -12,33 +15,21 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 
-interface UserManagementControlsProps {
-  searchTerm: string;
-  setSearchTerm: (term: string) => void;
-  roleFilter: UserRole | "";
-  setRoleFilter: (role: UserRole | "") => void;
-  pageSize: number;
-  setPageSize: (size: number) => void;
-  currentPage: number;
-  totalItems: number;
-  totalPages: number;
-  setPage: (page: number) => void;
-  isLoading: boolean;
-}
+const UserManagementControls: React.FC = () => {
+  const {
+    searchTerm,
+    setSearchTerm,
+    roleFilter,
+    setRoleFilter,
+    pageSize,
+    setPageSize,
+    currentPage,
+    totalItems,
+    totalPages,
+    setCurrentPage,
+    isLoading,
+  } = useUserManagementStore();
 
-const UserManagementControls: React.FC<UserManagementControlsProps> = ({
-  searchTerm,
-  setSearchTerm,
-  roleFilter,
-  setRoleFilter,
-  pageSize,
-  setPageSize,
-  currentPage,
-  totalItems,
-  totalPages,
-  setPage,
-  isLoading,
-}) => {
   const startItem = totalItems > 0 ? (currentPage - 1) * pageSize + 1 : 0;
   const endItem = Math.min(currentPage * pageSize, totalItems);
 
@@ -72,11 +63,9 @@ const UserManagementControls: React.FC<UserManagementControlsProps> = ({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Roles</SelectItem>
-              {Object.values(UserRole).map((role) => (
-                <SelectItem key={role} value={role}>
-                  {role}
-                </SelectItem>
-              ))}
+              <SelectItem value="USER">User</SelectItem>
+              <SelectItem value="ADMIN">Admin</SelectItem>
+              <SelectItem value="SUPER_ADMIN">Super Admin</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -110,7 +99,7 @@ const UserManagementControls: React.FC<UserManagementControlsProps> = ({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setPage(1)}
+              onClick={() => setCurrentPage(1)}
               disabled={currentPage === 1 || isLoading}
               aria-label="First Page"
             >
@@ -119,7 +108,7 @@ const UserManagementControls: React.FC<UserManagementControlsProps> = ({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setPage(Math.max(1, currentPage - 1))}
+              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
               disabled={currentPage === 1 || isLoading}
               aria-label="Previous Page"
             >
@@ -131,7 +120,9 @@ const UserManagementControls: React.FC<UserManagementControlsProps> = ({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setPage(Math.min(totalPages, currentPage + 1))}
+              onClick={() =>
+                setCurrentPage(Math.min(totalPages, currentPage + 1))
+              }
               disabled={
                 currentPage === totalPages || totalPages === 0 || isLoading
               }
@@ -142,7 +133,7 @@ const UserManagementControls: React.FC<UserManagementControlsProps> = ({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setPage(totalPages)}
+              onClick={() => setCurrentPage(totalPages)}
               disabled={
                 currentPage === totalPages || totalPages === 0 || isLoading
               }
