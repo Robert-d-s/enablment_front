@@ -14,18 +14,10 @@ import {
 import { setContext } from "@apollo/client/link/context";
 import { onError } from "@apollo/client/link/error";
 import { useAuthStore, getAccessToken } from "./authStore";
-import gql from "graphql-tag";
 import { LOGOUT_MUTATION } from "@/app/graphql/authOperations";
 import { TokenRefreshQueue } from "../utils/tokenRefreshQueue";
 import { networkMonitor } from "../utils/networkMonitor";
-
-const REFRESH_TOKEN_MUTATION = gql`
-  mutation RefreshToken {
-    refreshToken {
-      accessToken
-    }
-  }
-`;
+import { RefreshTokenDocument } from "@/generated/graphql";
 
 export const loggedInUserTeamsVersion = makeVar(0);
 
@@ -222,7 +214,7 @@ const client = new ApolloClient({
 
 apolloClientInstance = client;
 if (apolloClientInstance) {
-  tokenRefreshQueue.initialize(apolloClientInstance, REFRESH_TOKEN_MUTATION);
+  tokenRefreshQueue.initialize(apolloClientInstance, RefreshTokenDocument);
 } else {
   console.error(
     "Failed to initialize TokenRefreshQueue: Apollo Client instance is null."
