@@ -1,16 +1,13 @@
 import { useEffect, useState } from "react";
-import { useGetMyProjectsQuery } from "@/generated/graphql";
+import {
+  useGetMyProjectsQuery,
+  type GetMyProjectsQuery,
+} from "@/generated/graphql";
 import { useAuthStore } from "@/app/lib/authStore";
 import { useReactiveVar } from "@apollo/client";
 import { loggedInUserTeamsVersion } from "@/app/lib/apolloClient";
 
-export interface MyProject {
-  id: string;
-  name: string;
-  teamName?: string | null;
-  teamId: string;
-  __typename?: "Project";
-}
+export type MyProject = GetMyProjectsQuery["myProjects"][0];
 
 const useTimeKeeperData = (selectedProject: string | null) => {
   const user = useAuthStore((state) => state.user);

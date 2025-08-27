@@ -11,33 +11,11 @@ import {
   useGetProjectsForInvoiceSelectorQuery,
   useInvoiceForProjectLazyQuery,
   type InvoiceForProjectQuery,
+  type InvoiceDataFragment,
 } from "@/generated/graphql";
 
-interface QueryRateDetail {
-  rateId: number;
-  rateName: string;
-  hours: number;
-  cost: number;
-  ratePerHour: number;
-  __typename?: string;
-}
-
-interface InvoiceData {
-  projectId: string;
-  projectName: string;
-  teamId: string;
-  teamName: string;
-  totalHours: number;
-  totalCost: number;
-  rates?: QueryRateDetail[] | null;
-  __typename?: string;
-}
-
-interface ProjectForSelector {
-  id: string;
-  name: string;
-  teamName?: string;
-}
+type InvoiceData = InvoiceDataFragment;
+type ProjectForSelector = { id: string; name: string; teamName?: string };
 
 const InvoiceSummary: React.FC = () => {
   const [selectedProject, setSelectedProject] = useState<string>("");

@@ -19,15 +19,10 @@ import { DateRangePicker } from "./DateRangePicker";
 import {
   useGetMyProjectsQuery,
   useGetTotalTimeSpentLazyQuery,
+  type GetMyProjectsQuery,
 } from "@/generated/graphql";
 
-interface MyProject {
-  id: string;
-  name: string;
-  teamName?: string | null;
-  teamId: string;
-  __typename?: "Project";
-}
+type MyProject = GetMyProjectsQuery["myProjects"][0];
 
 const getCurrentDate = () => new Date();
 

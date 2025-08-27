@@ -1,34 +1,10 @@
-export interface TimeEntry {
-  id: number;
-  startTime: string;
-  endTime: string;
-  totalElapsedTime: number;
-}
-
-export interface CreateTimeEntryVariables {
-  timeInputCreate: {
-    startTime: string;
-    endTime?: string;
-    projectId: string;
-    userId: number;
-    rateId: number;
-    totalElapsedTime: number;
-  };
-}
-
-export interface UpdateTimeEntryVariables {
-  timeInputUpdate: {
-    id: number;
-    endTime: string;
-    totalElapsedTime: number;
-  };
-}
-
-export interface Rate {
-  id: string;
-  name: string;
-  rate: number;
-}
+// Re-export types from generated GraphQL for consistency
+export type {
+  Time as TimeEntry,
+  TimeInputCreate as CreateTimeEntryVariables,
+  TimeInputUpdate as UpdateTimeEntryVariables,
+  Rate,
+} from "../generated/graphql";
 
 export interface FeedbackState {
   submissionSuccess: boolean;

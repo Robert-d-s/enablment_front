@@ -1,5 +1,6 @@
 import { formatISO } from "date-fns/formatISO";
-import type { TimerState, TimeEntry } from "../types";
+import type { TimerState } from "../types";
+import type { Time } from "../../generated/graphql";
 
 interface HandlersConfig {
   timerState: TimerState & {
@@ -17,10 +18,10 @@ interface HandlersConfig {
     userId: number;
     rateId: number;
     totalElapsedTime: number;
-  }) => Promise<{ data: { createTime: TimeEntry } }>;
+  }) => Promise<{ data: { createTime: Time } }>;
   updateTime: (options: {
     timeInputUpdate: { id: number; endTime: string; totalElapsedTime: number };
-  }) => Promise<{ data: { updateTime: TimeEntry } }>;
+  }) => Promise<{ data: { updateTime: Time } }>;
   currentEntryId: number | null;
   setCurrentEntryId: (id: number | null) => void;
   showSuccessMessage: () => void;

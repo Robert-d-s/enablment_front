@@ -1,6 +1,5 @@
 "use client";
 import React, { useCallback, useMemo, useEffect } from "react";
-import { useQuery } from "@apollo/client";
 import NavigationBar from "@/app/components/Admin/NavigationBar";
 import PageErrorBoundary from "@/app/components/ErrorBoundaries/PageErrorBoundary";
 import QueryErrorBoundary from "@/app/components/ErrorBoundaries/QueryErrorBoundary";
@@ -8,37 +7,32 @@ import { useWebSocket } from "../hooks/useWebSocket";
 import { useIssueFilters } from "../hooks/useIssueFilters";
 import { useIssueCacheUpdates } from "../hooks/useIssueCacheUpdates";
 import { useIssuesFilterStore } from "../lib/issuesFilterStore";
-import { Issue, IssueUpdatePayload } from "../types";
+import { type IssueUpdatePayload } from "../types";
 import IssueBoard from "../components/Issues/IssueBoard";
 import FilterControls from "../components/Issues/FilterControls";
-import { GET_ISSUES } from "../graphql/fragments";
+import {
+  useGetIssuesQuery,
+  GetIssuesDocument,
+  type GetIssuesQuery,
+} from "@/generated/graphql";
 
+// Use the generated types instead of manual ones
+type Issue = GetIssuesQuery["issues"]["issues"][0];
 type GroupedIssues = {
   [key: string]: Issue[];
 };
-
-interface GetIssuesData {
-  issues: {
-    issues: Issue[];
-    total: number;
-    hasNext: boolean;
-  };
-}
 
 const IssuesComponent: React.FC = () => {
   const { setSocketConnected, setConnectionStatusMessage, setRefreshing } =
     useIssuesFilterStore();
 
-  const { loading, error, data, refetch } = useQuery<GetIssuesData>(
-    GET_ISSUES,
-    {
-      fetchPolicy: "cache-and-network",
-      nextFetchPolicy: "cache-first",
-    }
-  );
+  const { loading, error, data, refetch } = useGetIssuesQuery({
+    fetchPolicy: "cache-and-network",
+    nextFetchPolicy: "cache-first",
+  });
 
   const { handleIssueUpdateEvent } = useIssueCacheUpdates({
-    queryToUpdate: GET_ISSUES,
+    queryToUpdate: GetIssuesDocument,
   });
 
   const wsUrl =

@@ -1,16 +1,7 @@
-export interface Team {
-  id: string;
-  name: string;
-  __typename?: "SimpleTeamDTO";
-}
+// Re-export types from generated GraphQL
+import type { Rate, RateInputCreate, SimpleTeamDto } from "@/generated/graphql";
 
-export interface Rate {
-  id: number;
-  name: string;
-  rate: number;
-  teamId?: string;
-  __typename?: "Rate";
-}
+export type Team = SimpleTeamDto;
 
 export interface GetRatesQueryData {
   rates: Rate[];
@@ -19,6 +10,8 @@ export interface GetRatesQueryData {
 export interface GetAllTeamsQueryData {
   getAllSimpleTeams: Team[];
 }
+
+export { Rate, RateInputCreate };
 
 export interface RateFormData {
   name: string;

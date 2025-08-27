@@ -1,7 +1,10 @@
 import { useCallback } from "react";
-import { useApolloClient, DocumentNode } from "@apollo/client"; // Added DocumentNode
-import { Issue, Label, IssueUpdatePayload } from "../types"; // Assuming types are defined here
-import { GET_ISSUES } from "../graphql/fragments";
+import { useApolloClient, DocumentNode } from "@apollo/client";
+import { IssueUpdatePayload } from "../types";
+import { type GetIssuesQuery, GetIssuesDocument } from "@/generated/graphql";
+
+// Use the generated types
+type Issue = GetIssuesQuery["issues"]["issues"][0];
 
 interface UseIssueCacheUpdatesOptions {
   queryToUpdate?: DocumentNode; // Allow overriding the default query
@@ -9,7 +12,7 @@ interface UseIssueCacheUpdatesOptions {
 
 export const useIssueCacheUpdates = (options?: UseIssueCacheUpdatesOptions) => {
   const client = useApolloClient();
-  const query = options?.queryToUpdate || GET_ISSUES;
+  const query = options?.queryToUpdate || GetIssuesDocument;
 
   const handleIssueUpdateEvent = useCallback(
     (payload: IssueUpdatePayload) => {
@@ -89,23 +92,35 @@ export const useIssueCacheUpdates = (options?: UseIssueCacheUpdatesOptions) => {
                   ...existingData.issues[existingIssueIndex],
                 };
 
-                let finalLabels: Label[];
+                let finalLabels: Issue["labels"];
                 if (incomingUpdateData.labels !== undefined) {
-                  finalLabels = (incomingUpdateData.labels || []).map((l) => ({
-                    ...l,
-                    __typename: "Label",
-                  }));
+                  finalLabels = (incomingUpdateData.labels || []).map((l) =>
+                    l
+                      ? {
+                          __typename: "Label" as const,
+                          id: l.id || "",
+                          name: l.name || "",
+                          color: l.color || "",
+                          parentId: l.parentId || null,
+                        }
+                      : null
+                  );
                 } else {
-                  finalLabels = (issueToUpdate.labels || []).map((l) => ({
-                    ...l,
-                    __typename: "Label",
-                  }));
+                  finalLabels = issueToUpdate.labels;
                 }
 
                 const mergedUpdatedIssue: Issue = {
                   ...issueToUpdate,
                   ...incomingUpdateData,
-                  __typename: "Issue",
+                  __typename: "Issue" as const,
+                  assigneeName:
+                    incomingUpdateData.assigneeName ??
+                    issueToUpdate.assigneeName,
+                  teamKey:
+                    (incomingUpdateData.teamKey ?? issueToUpdate.teamKey) || "",
+                  teamName:
+                    (incomingUpdateData.teamName ?? issueToUpdate.teamName) ||
+                    "",
                   labels: finalLabels,
                 };
 

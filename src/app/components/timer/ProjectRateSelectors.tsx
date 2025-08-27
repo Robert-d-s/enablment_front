@@ -20,18 +20,7 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Hourglass, Loader2 } from "lucide-react";
-
-interface Project {
-  id: string;
-  name: string;
-  teamName?: string;
-}
-
-interface Rate {
-  id: string;
-  name: string;
-  rate: number;
-}
+import type { Project, Rate } from "@/generated/graphql";
 
 interface ProjectRateSelectorsProps {
   userProjects: Project[];
@@ -123,7 +112,7 @@ const ProjectRateSelectors: React.FC<ProjectRateSelectorsProps> = ({
                 </div>
               ) : rates.length > 0 ? (
                 rates.map((rate) => (
-                  <SelectItem key={rate.id} value={rate.id}>
+                  <SelectItem key={rate.id} value={rate.id.toString()}>
                     {rate.name} ({rate.rate} DKK/h)
                   </SelectItem>
                 ))

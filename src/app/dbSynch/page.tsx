@@ -7,34 +7,16 @@ import {
   useGetIssuesQuery,
   useGetAllSimpleTeamsQuery,
   useGetProjectsQuery,
+  type SimpleTeamDto,
+  type Project,
+  type Issue,
+  type Label,
 } from "@/generated/graphql";
 
-export interface SimpleTeam {
-  id: string;
-  name: string;
-}
-
-export interface SimpleProject {
-  id: string;
-  name: string;
-  teamId: string;
-}
-
-export interface DBSyncIssue {
-  id: string;
-  title: string;
-  teamKey?: string;
-  projectId?: string;
-  projectName?: string;
-  state?: string;
-  labels?: SimpleLabel[];
-}
-
-export interface SimpleLabel {
-  id: string;
-  name: string;
-  color: string;
-}
+export type SimpleTeam = SimpleTeamDto;
+export type SimpleProject = Project;
+export type DBSyncIssue = Issue;
+export type SimpleLabel = Label;
 
 // (Queries are imported from shared fragments/operations to avoid duplicate operation names)
 

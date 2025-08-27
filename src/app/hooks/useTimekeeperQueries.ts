@@ -3,17 +3,9 @@ import {
   useGetTotalTimeForUserProjectQuery,
   useCreateTimeMutation,
   useUpdateTimeMutation,
+  type TimeInputCreate,
+  type Time,
 } from "@/generated/graphql";
-import type { TimeEntry } from "../types";
-
-interface CreateTimeData {
-  startTime: string;
-  endTime?: string;
-  projectId: string;
-  userId: number;
-  rateId: number;
-  totalElapsedTime: number;
-}
 
 export const useTimeKeeperQueries = (
   currentTeamId: string | undefined,
@@ -70,8 +62,8 @@ export const useTimeKeeperQueries = (
     totalTimeError,
     refetch,
     createTimeEntry: (
-      timeData: CreateTimeData
-    ): Promise<{ data: { createTime: TimeEntry } }> => {
+      timeData: TimeInputCreate
+    ): Promise<{ data: { createTime: Time } }> => {
       console.log("Sending GraphQL CREATE_TIME_MUTATION with variables:", {
         timeInputCreate: timeData,
       });
@@ -80,7 +72,7 @@ export const useTimeKeeperQueries = (
           timeInputCreate: timeData,
         },
         context: { credentials: "include" },
-      }) as Promise<{ data: { createTime: TimeEntry } }>;
+      }) as Promise<{ data: { createTime: Time } }>;
     },
 
     updateTime: (options: {
@@ -89,10 +81,10 @@ export const useTimeKeeperQueries = (
         endTime: string;
         totalElapsedTime: number;
       };
-    }): Promise<{ data: { updateTime: TimeEntry } }> =>
+    }): Promise<{ data: { updateTime: Time } }> =>
       updateTimeEntryMutation({
         variables: options,
         context: { credentials: "include" },
-      }) as Promise<{ data: { updateTime: TimeEntry } }>,
+      }) as Promise<{ data: { updateTime: Time } }>,
   };
 };

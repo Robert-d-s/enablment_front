@@ -1,5 +1,8 @@
 import React from "react";
-import { Issue, Label } from "@/app/types"; // Adjusted import path
+import { type GetIssuesQuery } from "@/generated/graphql";
+
+// Use the generated types
+type Issue = GetIssuesQuery["issues"]["issues"][0];
 
 type GroupedIssues = {
   [key: string]: Issue[];
@@ -23,15 +26,17 @@ const IssueCard: React.FC<{ issue: Issue }> = ({ issue }) => (
       {issue.identifier} | Prj: {issue.projectName}
     </p>
     <div className="flex flex-wrap gap-1 mb-2 min-h-[18px]">
-      {issue.labels?.map((label: Label) => (
-        <span
-          key={label.id}
-          style={{ backgroundColor: label.color || "#cccccc" }}
-          className="text-white text-xxs font-semibold px-1.5 py-0.5 rounded"
-        >
-          {label.name}
-        </span>
-      ))}
+      {issue.labels
+        ?.filter((label): label is NonNullable<typeof label> => label !== null)
+        .map((label) => (
+          <span
+            key={label.id}
+            style={{ backgroundColor: label.color || "#cccccc" }}
+            className="text-white text-xxs font-semibold px-1.5 py-0.5 rounded"
+          >
+            {label.name}
+          </span>
+        ))}
     </div>
     <div className="mt-1 text-xs text-gray-600 space-y-0.5">
       <p>

@@ -1,5 +1,8 @@
 import { useMemo, useState, useCallback } from "react";
-import { Issue } from "../types"; // Assuming your Issue type is in types.ts
+import { type GetIssuesQuery } from "@/generated/graphql";
+
+// Use the generated Issue type
+type Issue = GetIssuesQuery["issues"]["issues"][0];
 
 interface UseIssueFiltersReturn {
   selectedAssignee: string | null;
