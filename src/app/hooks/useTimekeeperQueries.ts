@@ -1,11 +1,10 @@
-import { useQuery, useMutation } from "@apollo/client";
 import {
-  RATES_QUERY,
-  TOTAL_TIME_QUERY,
-  CREATE_TIME_MUTATION,
-  UPDATE_TIME_MUTATION,
-} from "@/app/graphql/timeKeeperOperations";
-import type { TimeEntry, Rate } from "../types";
+  useGetRatesQuery,
+  useGetTotalTimeForUserProjectQuery,
+  useCreateTimeMutation,
+  useUpdateTimeMutation,
+} from "@/generated/graphql";
+import type { TimeEntry } from "../types";
 
 interface CreateTimeData {
   startTime: string;
@@ -16,34 +15,27 @@ interface CreateTimeData {
   totalElapsedTime: number;
 }
 
-interface CreateTimeMutationVariables {
-  timeInputCreate: CreateTimeData;
-}
-
 export const useTimeKeeperQueries = (
   currentTeamId: string | undefined,
   selectedProject: string,
   userId: string
 ) => {
-  const { data: ratesData, error: ratesError } = useQuery<{ rates: Rate[] }>(
-    RATES_QUERY,
-    {
-      variables: { teamId: currentTeamId },
-      skip: !currentTeamId,
-      context: { credentials: "include" },
-      errorPolicy: "all", // Return partial data even if there are errors
-      onError: (error) => {
-        console.error("Error fetching rates:", error);
-      },
-    }
-  );
+  const { data: ratesData, error: ratesError } = useGetRatesQuery({
+    variables: { teamId: currentTeamId! },
+    skip: !currentTeamId,
+    context: { credentials: "include" },
+    errorPolicy: "all", // Return partial data even if there are errors
+    onError: (error) => {
+      console.error("Error fetching rates:", error);
+    },
+  });
 
   const {
     data: totalTimeData,
     loading: totalTimeLoading,
     error: totalTimeError,
     refetch,
-  } = useQuery(TOTAL_TIME_QUERY, {
+  } = useGetTotalTimeForUserProjectQuery({
     variables: {
       userId: !isNaN(parseFloat(userId)) ? parseFloat(userId) : 0,
       projectId: selectedProject,
@@ -55,24 +47,20 @@ export const useTimeKeeperQueries = (
       console.error("Error fetching total time:", error);
     },
   });
-  const [createTimeEntryMutation] = useMutation<
-    { createTime: TimeEntry },
-    CreateTimeMutationVariables
-  >(CREATE_TIME_MUTATION, {
+
+  const [createTimeEntryMutation] = useCreateTimeMutation({
     onError: (error) => {
       console.error("Error creating time entry:", error);
       console.error("GraphQL errors:", error.graphQLErrors);
       console.error("Network error:", error.networkError);
     },
   });
-  const [updateTimeEntryMutation] = useMutation<{ updateTime: TimeEntry }>(
-    UPDATE_TIME_MUTATION,
-    {
-      onError: (error) => {
-        console.error("Error updating time entry:", error);
-      },
-    }
-  );
+
+  const [updateTimeEntryMutation] = useUpdateTimeMutation({
+    onError: (error) => {
+      console.error("Error updating time entry:", error);
+    },
+  });
 
   return {
     ratesData,

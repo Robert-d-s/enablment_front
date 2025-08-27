@@ -1,11 +1,13 @@
 "use client";
 
 import React, { useState } from "react";
-import { useQuery, useMutation } from "@apollo/client";
 import { motion } from "framer-motion";
-import { SYNC_DATABASE_MUTATION } from "@/app/graphql/authOperations";
-import { GET_ISSUES, GET_ALL_SIMPLE_TEAMS } from "@/app/graphql/fragments";
-import { PROJECTS_QUERY } from "@/app/graphql/timeKeeperOperations";
+import {
+  useSyncDatabaseMutation,
+  useGetIssuesQuery,
+  useGetAllSimpleTeamsQuery,
+  useGetProjectsQuery,
+} from "@/generated/graphql";
 
 export interface SimpleTeam {
   id: string;
@@ -50,24 +52,24 @@ const DBSyncPage: React.FC = () => {
     error: teamsError,
     data: teamsData,
     refetch: refetchTeams,
-  } = useQuery(GET_ALL_SIMPLE_TEAMS);
+  } = useGetAllSimpleTeamsQuery();
 
   const {
     loading: projectsLoading,
     error: projectsError,
     data: projectsData,
     refetch: refetchProjects,
-  } = useQuery(PROJECTS_QUERY);
+  } = useGetProjectsQuery();
 
   const {
     loading: issuesLoading,
     error: issuesError,
     data: issuesData,
     refetch: refetchIssues,
-  } = useQuery(GET_ISSUES);
+  } = useGetIssuesQuery();
 
   // GraphQL mutation for database sync
-  const [syncDatabase] = useMutation(SYNC_DATABASE_MUTATION, {
+  const [syncDatabase] = useSyncDatabaseMutation({
     onCompleted: (data) => {
       setSyncStatus("Database synchronization completed successfully!");
       setSyncDetails((prev) => [
@@ -181,23 +183,22 @@ const DBSyncPage: React.FC = () => {
               </p>
             </div>
             <div className="p-4 overflow-y-auto" style={{ maxHeight: "400px" }}>
-              {teamsData?.getAllSimpleTeams?.length > 0 ? (
+              {teamsData?.getAllSimpleTeams &&
+              teamsData.getAllSimpleTeams.length > 0 ? (
                 <ul className="space-y-2">
-                  {teamsData.getAllSimpleTeams.map(
-                    (team: SimpleTeam, index: number) => (
-                      <motion.li
-                        key={team.id}
-                        variants={itemVariants}
-                        custom={index}
-                        className="bg-gray-50 p-3 rounded-lg hover:bg-gray-100 transition-colors"
-                      >
-                        <div className="font-medium">{team.name}</div>
-                        <div className="text-sm text-gray-500 mt-1">
-                          ID: {team.id}
-                        </div>
-                      </motion.li>
-                    )
-                  )}
+                  {teamsData.getAllSimpleTeams.map((team, index: number) => (
+                    <motion.li
+                      key={team.id}
+                      variants={itemVariants}
+                      custom={index}
+                      className="bg-gray-50 p-3 rounded-lg hover:bg-gray-100 transition-colors"
+                    >
+                      <div className="font-medium">{team.name}</div>
+                      <div className="text-sm text-gray-500 mt-1">
+                        ID: {team.id}
+                      </div>
+                    </motion.li>
+                  ))}
                 </ul>
               ) : (
                 <p className="text-gray-500 text-center py-8">
@@ -223,25 +224,23 @@ const DBSyncPage: React.FC = () => {
               </p>
             </div>
             <div className="p-4 overflow-y-auto" style={{ maxHeight: "400px" }}>
-              {projectsData?.projects?.length > 0 ? (
+              {projectsData?.projects && projectsData.projects.length > 0 ? (
                 <ul className="space-y-2">
-                  {projectsData.projects.map(
-                    (project: SimpleProject, index: number) => (
-                      <motion.li
-                        key={project.id}
-                        variants={itemVariants}
-                        custom={index}
-                        className="bg-gray-50 p-3 rounded-lg hover:bg-gray-100 transition-colors"
-                      >
-                        <div className="font-medium">{project.name}</div>
-                        <div className="text-sm text-gray-500 mt-1">
-                          ID: {project.id}
-                          <br />
-                          Team ID: {project.teamId}
-                        </div>
-                      </motion.li>
-                    )
-                  )}
+                  {projectsData.projects.map((project, index: number) => (
+                    <motion.li
+                      key={project.id}
+                      variants={itemVariants}
+                      custom={index}
+                      className="bg-gray-50 p-3 rounded-lg hover:bg-gray-100 transition-colors"
+                    >
+                      <div className="font-medium">{project.name}</div>
+                      <div className="text-sm text-gray-500 mt-1">
+                        ID: {project.id}
+                        <br />
+                        Team ID: {project.teamId}
+                      </div>
+                    </motion.li>
+                  ))}
                 </ul>
               ) : (
                 <p className="text-gray-500 text-center py-8">
@@ -267,40 +266,41 @@ const DBSyncPage: React.FC = () => {
               </p>
             </div>
             <div className="p-4 overflow-y-auto" style={{ maxHeight: "400px" }}>
-              {issuesData?.issues?.issues?.length > 0 ? (
+              {issuesData?.issues?.issues &&
+              issuesData.issues.issues.length > 0 ? (
                 <ul className="space-y-2">
-                  {issuesData.issues.issues.map(
-                    (issue: DBSyncIssue, index: number) => (
-                      <motion.li
-                        key={issue.id}
-                        variants={itemVariants}
-                        custom={index}
-                        className="bg-gray-50 p-3 rounded-lg hover:bg-gray-100 transition-colors"
-                      >
-                        <div className="font-medium">{issue.title}</div>
-                        <div className="text-sm text-gray-500 mt-1">
-                          Project: {issue.projectName || "N/A"}
-                          <br />
-                          State: {issue.state || "N/A"}
-                        </div>
-                        {issue.labels && issue.labels.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mt-2">
-                            {issue.labels.map((label) => (
+                  {issuesData.issues.issues.map((issue, index: number) => (
+                    <motion.li
+                      key={issue.id}
+                      variants={itemVariants}
+                      custom={index}
+                      className="bg-gray-50 p-3 rounded-lg hover:bg-gray-100 transition-colors"
+                    >
+                      <div className="font-medium">{issue.title}</div>
+                      <div className="text-sm text-gray-500 mt-1">
+                        Project: {issue.projectName || "N/A"}
+                        <br />
+                        State: {issue.state || "N/A"}
+                      </div>
+                      {issue.labels && issue.labels.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {issue.labels
+                            .filter((label) => label !== null)
+                            .map((label) => (
                               <span
-                                key={label.id}
+                                key={label!.id}
                                 className="text-xs px-2 py-1 rounded-full text-white"
                                 style={{
-                                  backgroundColor: label.color || "#888",
+                                  backgroundColor: label!.color || "#888",
                                 }}
                               >
-                                {label.name}
+                                {label!.name}
                               </span>
                             ))}
-                          </div>
-                        )}
-                      </motion.li>
-                    )
-                  )}
+                        </div>
+                      )}
+                    </motion.li>
+                  ))}
                 </ul>
               ) : (
                 <p className="text-gray-500 text-center py-8">

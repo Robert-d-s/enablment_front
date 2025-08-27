@@ -14,10 +14,9 @@ import {
 import { setContext } from "@apollo/client/link/context";
 import { onError } from "@apollo/client/link/error";
 import { useAuthStore, getAccessToken } from "./authStore";
-import { LOGOUT_MUTATION } from "@/app/graphql/authOperations";
 import { TokenRefreshQueue } from "../utils/tokenRefreshQueue";
 import { networkMonitor } from "../utils/networkMonitor";
-import { RefreshTokenDocument } from "@/generated/graphql";
+import { RefreshTokenDocument, LogoutDocument } from "@/generated/graphql";
 
 export const loggedInUserTeamsVersion = makeVar(0);
 
@@ -226,7 +225,7 @@ export default client;
 export const clientLogout = async () => {
   try {
     await client.mutate({
-      mutation: LOGOUT_MUTATION,
+      mutation: LogoutDocument,
       context: { credentials: "include" },
     });
   } catch (error) {

@@ -1,16 +1,7 @@
 "use client";
 
-import { useQuery } from "@apollo/client";
-import { ME_QUERY } from "@/app/graphql/authOperations";
+import { useMeQuery } from "@/generated/graphql";
 import { useAuthStore } from "@/app/lib/authStore";
-
-interface MeQueryResult {
-  me: {
-    id: number;
-    email: string;
-    role: string;
-  } | null;
-}
 
 export const useCurrentUser = () => {
   const {
@@ -21,7 +12,7 @@ export const useCurrentUser = () => {
     logout,
   } = useAuthStore();
 
-  const { data, loading, error, refetch } = useQuery<MeQueryResult>(ME_QUERY, {
+  const { data, loading, error, refetch } = useMeQuery({
     fetchPolicy: "cache-and-network",
     nextFetchPolicy: "cache-first", // Use cache for subsequent calls
     skip: !accessToken,

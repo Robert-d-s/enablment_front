@@ -3,24 +3,12 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { useMutation } from "@apollo/client";
-import { SIGNUP_MUTATION } from "@/app/graphql/authOperations";
+import { useSignUpMutation } from "@/generated/graphql";
 import { useAuthStore } from "@/app/lib/authStore";
 import {
   isPasswordValid,
   PASSWORD_ERROR_MESSAGE,
 } from "@/app/utils/passwordValidation";
-
-interface SignUpData {
-  signup: {
-    accessToken: string;
-    user: {
-      id: number;
-      email: string;
-      role: string;
-    };
-  };
-}
 
 interface ValidationErrorOriginalError {
   message?: string | string[];
@@ -43,7 +31,7 @@ const Signup: React.FC = () => {
 
   const setAuth = useAuthStore((state) => state.setAuth);
 
-  const [signup, { loading }] = useMutation<SignUpData>(SIGNUP_MUTATION, {
+  const [signup, { loading }] = useSignUpMutation({
     onCompleted: (data) => {
       if (data?.signup?.accessToken && data?.signup?.user) {
         console.log("Signup successful. Redirecting to login...");

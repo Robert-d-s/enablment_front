@@ -4,21 +4,9 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { useMutation } from "@apollo/client";
-import { LOGIN_MUTATION } from "@/app/graphql/authOperations";
+import { useLoginMutation } from "@/generated/graphql";
 import { useAuthStore } from "@/app/lib/authStore";
 import client from "@/app/lib/apolloClient";
-
-interface LoginData {
-  login: {
-    accessToken: string;
-    user: {
-      id: number;
-      email: string;
-      role: string;
-    };
-  };
-}
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState<string>("");
@@ -27,7 +15,7 @@ const Login: React.FC = () => {
   const router = useRouter();
   const setAuth = useAuthStore((state) => state.setAuth);
 
-  const [login, { loading }] = useMutation<LoginData>(LOGIN_MUTATION, {
+  const [login, { loading }] = useLoginMutation({
     client: client,
     onCompleted: (data) => {
       if (data?.login?.accessToken && data?.login?.user) {

@@ -1,56 +1,31 @@
 import { useState, useEffect, useMemo } from "react";
-import { useQuery, gql, NetworkStatus } from "@apollo/client";
+import { NetworkStatus } from "@apollo/client";
 import { useDebounce } from "use-debounce";
 import { User as UserTableRowType } from "@/app/components/Admin/UserRow";
-import { UserRole } from "@/app/components/Admin/UserRoleSelect";
-import { GET_SIMPLE_TEAMS } from "@/app/graphql/adminOperations";
-import { USER_WITH_TEAMS_FRAGMENT } from "@/app/graphql/fragments";
+import { UserRole as LocalUserRole } from "@/app/components/Admin/UserRoleSelect";
 import { useAuthStore } from "@/app/lib/authStore";
+import {
+  useGetManagementUsersQuery,
+  useGetUsersManagementCountQuery,
+  useGetAllSimpleTeamsQuery,
+  UserRole,
+} from "@/generated/graphql";
 
-const GET_MANAGEMENT_USERS = gql`
-  query GetManagementUsers(
-    $page: Int
-    $pageSize: Int
-    $search: String
-    $role: UserRole
-  ) {
-    users(
-      args: { page: $page, pageSize: $pageSize, search: $search, role: $role }
-    ) {
-      ...UserWithTeams
-    }
+// Helper function to convert GraphQL UserRole to Local UserRole
+const convertUserRole = (role: UserRole): LocalUserRole => {
+  switch (role) {
+    case UserRole.Admin:
+      return LocalUserRole.ADMIN;
+    case UserRole.Enabler:
+      return LocalUserRole.ENABLER;
+    case UserRole.Collaborator:
+      return LocalUserRole.COLLABORATOR;
+    case UserRole.Pending:
+      return LocalUserRole.PENDING;
+    default:
+      return LocalUserRole.PENDING;
   }
-  ${USER_WITH_TEAMS_FRAGMENT}
-`;
-
-const GET_USERS_COUNT = gql`
-  query GetUsersManagementCount($search: String, $role: UserRole) {
-    usersCount(search: $search, role: $role)
-  }
-`;
-
-// Keep interfaces
-interface GetUsersQueryData {
-  users: Array<{
-    id: number;
-    email: string;
-    role: string;
-    teams: Array<{ id: string; name: string; __typename: "Team" }>;
-    __typename: "User";
-  }>;
-}
-
-interface GetSimpleTeamsQueryData {
-  getAllSimpleTeams: Array<{
-    id: string;
-    name: string;
-    __typename: "SimpleTeamDTO";
-  }>;
-}
-
-interface GetUsersCountQueryData {
-  usersCount: number;
-}
+};
 
 // The Custom Hook
 export const useUserManagementData = () => {
@@ -78,7 +53,7 @@ export const useUserManagementData = () => {
     data: dataUsers,
     networkStatus,
     refetch: refetchUsers,
-  } = useQuery<GetUsersQueryData>(GET_MANAGEMENT_USERS, {
+  } = useGetManagementUsersQuery({
     variables: userQueryVariables,
     notifyOnNetworkStatusChange: true,
     fetchPolicy: "cache-and-network",
@@ -88,7 +63,7 @@ export const useUserManagementData = () => {
     data: countData,
     error: countError,
     refetch: refetchCount,
-  } = useQuery<GetUsersCountQueryData>(GET_USERS_COUNT, {
+  } = useGetUsersManagementCountQuery({
     variables: countQueryVariables,
     fetchPolicy: "cache-and-network",
     nextFetchPolicy: "cache-first",
@@ -98,7 +73,7 @@ export const useUserManagementData = () => {
     data: dataTeams,
     error: teamsError,
     refetch: refetchTeams,
-  } = useQuery<GetSimpleTeamsQueryData>(GET_SIMPLE_TEAMS, {
+  } = useGetAllSimpleTeamsQuery({
     fetchPolicy: "cache-and-network",
     nextFetchPolicy: "cache-first",
   });
@@ -118,7 +93,7 @@ export const useUserManagementData = () => {
 
   const users: UserTableRowType[] = (dataUsers?.users ?? []).map((user) => ({
     ...user,
-    role: user.role as UserRole,
+    role: convertUserRole(user.role),
   }));
 
   const teams = useMemo(() => dataTeams?.getAllSimpleTeams || [], [dataTeams]);
