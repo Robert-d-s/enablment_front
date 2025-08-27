@@ -1,15 +1,17 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { useQuery } from "@apollo/client";
-import gql from "graphql-tag";
 import { formatISO } from "date-fns/formatISO";
 import { isValid } from "date-fns/isValid";
 import ProjectSelector from "../ProjectSelector";
 import ErrorMessage from "@/app/components/Admin/ErrorMessage";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { DateRangePicker } from "./DateRangePicker";
-import { PROJECT_WITH_TEAM_FRAGMENT, INVOICE_DATA_FRAGMENT } from "@/app/graphql/fragments";
+import {
+  useGetProjectsForInvoiceSelectorQuery,
+  useInvoiceForProjectLazyQuery,
+  type InvoiceForProjectQuery,
+} from "@/generated/graphql";
 
 interface QueryRateDetail {
   rateId: number;
@@ -27,7 +29,7 @@ interface InvoiceData {
   teamName: string;
   totalHours: number;
   totalCost: number;
-  rates: QueryRateDetail[];
+  rates?: QueryRateDetail[] | null;
   __typename?: string;
 }
 
@@ -36,40 +38,6 @@ interface ProjectForSelector {
   name: string;
   teamName?: string;
 }
-
-interface RawProject {
-  id: string;
-  name: string;
-  teamId: string;
-  teamName?: string;
-  __typename?: string;
-}
-
-interface GetProjectsData {
-  projects: RawProject[];
-}
-
-interface GetInvoiceData {
-  invoiceForProject: InvoiceData | null;
-}
-
-const GET_PROJECTS_FOR_SELECTOR = gql`
-  query GetProjectsForInvoiceSelector {
-    projects {
-      ...ProjectWithTeam
-    }
-  }
-  ${PROJECT_WITH_TEAM_FRAGMENT}
-`;
-
-const GET_INVOICE_FOR_PROJECT = gql`
-  query InvoiceForProject($input: InvoiceInput!) {
-    invoiceForProject(input: $input) {
-      ...InvoiceData
-    }
-  }
-  ${INVOICE_DATA_FRAGMENT}
-`;
 
 const InvoiceSummary: React.FC = () => {
   const [selectedProject, setSelectedProject] = useState<string>("");
@@ -91,7 +59,7 @@ const InvoiceSummary: React.FC = () => {
     loading: projectsLoading,
     data: projectsData,
     error: projectsError,
-  } = useQuery<GetProjectsData>(GET_PROJECTS_FOR_SELECTOR);
+  } = useGetProjectsForInvoiceSelectorQuery();
 
   const formattedStartDate =
     startDate && isValid(startDate)
@@ -102,27 +70,42 @@ const InvoiceSummary: React.FC = () => {
       ? formatISO(endDate, { representation: "date" })
       : null;
 
-  const { loading: loadingInvoice, error: errorInvoice } =
-    useQuery<GetInvoiceData>(GET_INVOICE_FOR_PROJECT, {
-      variables: {
-        input: {
-          projectId: selectedProject,
-          startDate: formattedStartDate,
-          endDate: formattedEndDate,
-        },
-      },
+  const [
+    getInvoiceForProject,
+    { loading: loadingInvoice, error: errorInvoice },
+  ] = useInvoiceForProjectLazyQuery({
+    fetchPolicy: "network-only",
+    notifyOnNetworkStatusChange: true,
+    onCompleted: (data: InvoiceForProjectQuery) => {
+      setInvoiceData(data?.invoiceForProject ?? null);
+    },
+    onError: (error: Error) => {
+      console.error("Error fetching invoice:", error);
+      setInvoiceData(null);
+    },
+  });
 
-      skip: !selectedProject || !startDate || !endDate,
-      fetchPolicy: "network-only",
-      notifyOnNetworkStatusChange: true,
-      onCompleted: (data) => {
-        setInvoiceData(data?.invoiceForProject ?? null);
-      },
-      onError: (error) => {
-        console.error("Error fetching invoice:", error);
-        setInvoiceData(null);
-      },
-    });
+  // Trigger the lazy query when parameters change
+  useEffect(() => {
+    if (selectedProject && startDate && endDate) {
+      getInvoiceForProject({
+        variables: {
+          input: {
+            projectId: selectedProject,
+            startDate: formattedStartDate,
+            endDate: formattedEndDate,
+          },
+        },
+      });
+    }
+  }, [
+    selectedProject,
+    startDate,
+    endDate,
+    formattedStartDate,
+    formattedEndDate,
+    getInvoiceForProject,
+  ]);
 
   const projectsForSelector = useMemo<ProjectForSelector[]>(() => {
     if (!projectsData?.projects) return [];
@@ -215,7 +198,7 @@ const InvoiceSummary: React.FC = () => {
             </p>
             <div className="mt-4">
               <h5 className="font-semibold bg-slate-200 p-1">Rates Applied:</h5>
-              {invoiceData.rates.length > 0 ? (
+              {invoiceData.rates && invoiceData.rates.length > 0 ? (
                 <ul className="list-disc list-inside pl-4 pt-1">
                   {invoiceData.rates.map((rate) => (
                     <li

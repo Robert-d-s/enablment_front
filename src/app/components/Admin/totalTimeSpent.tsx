@@ -1,58 +1,33 @@
 "use client";
 
-import React, {
+import {
   useState,
   useEffect,
   memo,
   useCallback,
   useDeferredValue,
 } from "react";
-import { useQuery, useLazyQuery, gql } from "@apollo/client";
+import { useReactiveVar } from "@apollo/client";
 import { useAuthStore } from "@/app/lib/authStore";
 import { formatTimeFromMilliseconds } from "@/app/utils/timeUtils";
-import { useReactiveVar } from "@apollo/client";
 import { loggedInUserTeamsVersion } from "@/app/lib/apolloClient";
 import ErrorMessage from "@/app/components/Admin/ErrorMessage";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import ProjectSelector from "../ProjectSelector";
 import { DateRangePicker } from "./DateRangePicker";
-import { GET_MY_PROJECTS } from "@/app/graphql/fragments";
+import {
+  useGetMyProjectsQuery,
+  useGetTotalTimeSpentLazyQuery,
+} from "@/generated/graphql";
 
 interface MyProject {
   id: string;
   name: string;
-  teamName?: string;
+  teamName?: string | null;
   teamId: string;
   __typename?: "Project";
 }
-
-interface GetMyProjectsQueryData {
-  myProjects: MyProject[];
-}
-
-interface GetTotalTimeSpentQueryData {
-  getTotalTimeSpent: number | null;
-}
-
-const GET_TOTAL_TIME_SPENT = gql`
-  query GetTotalTimeSpent(
-    $userId: Float!
-    $projectId: String!
-    $startDate: String!
-    $endDate: String!
-  ) {
-    getTotalTimeSpent(
-      userId: $userId
-      projectId: $projectId
-      startDate: $startDate
-      endDate: $endDate
-    )
-  }
-`;
-
-// Re-export the shared query for backward compatibility
-export { GET_MY_PROJECTS };
 
 const getCurrentDate = () => new Date();
 
@@ -89,7 +64,7 @@ const TotalTimeSpent: React.FC = () => {
     loading: loadingUserProjects,
     error: errorUserProjects,
     refetch: refetchMyProjects,
-  } = useQuery<GetMyProjectsQueryData>(GET_MY_PROJECTS, {
+  } = useGetMyProjectsQuery({
     skip: !loggedInUserId,
     fetchPolicy: "cache-first",
     notifyOnNetworkStatusChange: true,
@@ -115,7 +90,7 @@ const TotalTimeSpent: React.FC = () => {
   const [
     fetchTotalTime,
     { loading: loadingTime, error: errorTime, data: timeData },
-  ] = useLazyQuery<GetTotalTimeSpentQueryData>(GET_TOTAL_TIME_SPENT, {
+  ] = useGetTotalTimeSpentLazyQuery({
     fetchPolicy: "cache-first",
     notifyOnNetworkStatusChange: true,
     onError: (error) => {
@@ -215,7 +190,11 @@ const TotalTimeSpent: React.FC = () => {
       ) : (
         <div className="w-full sm:w-64">
           <MemoProjectSelector
-            projects={userProjects}
+            projects={userProjects.map((project) => ({
+              id: project.id,
+              name: project.name,
+              teamName: project.teamName || undefined,
+            }))}
             selectedProject={deferredProject}
             onProjectChange={onProjectChange}
             className="w-full"
@@ -237,6 +216,7 @@ const TotalTimeSpent: React.FC = () => {
         displayError={displayError}
         error={errorTime || errorUserProjects || new Error(displayError)}
         onRetry={() =>
+          loggedInUserId &&
           fetchTotalTime({
             variables: {
               userId: loggedInUserId,

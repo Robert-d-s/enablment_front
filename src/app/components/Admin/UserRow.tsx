@@ -1,15 +1,48 @@
 "use client";
 
 import React, { useState, useCallback, useEffect } from "react";
-import { useMutation, gql, ApolloError } from "@apollo/client";
+import { ApolloError } from "@apollo/client";
 import { toast } from "react-toastify";
 import {
-  ADD_USER_TO_TEAM,
-  REMOVE_USER_FROM_TEAM,
-  UPDATE_USER_ROLE,
-} from "@/app/graphql/adminOperations";
+  useAddUserToTeamMutation,
+  useRemoveUserFromTeamMutation,
+  useUpdateUserRoleMutation,
+  UserRowDataFragmentDoc,
+  UserRole as GeneratedUserRole,
+} from "@/generated/graphql";
 import { loggedInUserTeamsVersion } from "@/app/lib/apolloClient";
 import UserRoleSelect, { UserRole } from "./UserRoleSelect";
+
+// Conversion functions between local and generated UserRole enums
+const toGeneratedUserRole = (localRole: UserRole): GeneratedUserRole => {
+  switch (localRole) {
+    case UserRole.ADMIN:
+      return GeneratedUserRole.Admin;
+    case UserRole.ENABLER:
+      return GeneratedUserRole.Enabler;
+    case UserRole.COLLABORATOR:
+      return GeneratedUserRole.Collaborator;
+    case UserRole.PENDING:
+      return GeneratedUserRole.Pending;
+    default:
+      return GeneratedUserRole.Pending;
+  }
+};
+
+const toLocalUserRole = (generatedRole: GeneratedUserRole): UserRole => {
+  switch (generatedRole) {
+    case GeneratedUserRole.Admin:
+      return UserRole.ADMIN;
+    case GeneratedUserRole.Enabler:
+      return UserRole.ENABLER;
+    case GeneratedUserRole.Collaborator:
+      return UserRole.COLLABORATOR;
+    case GeneratedUserRole.Pending:
+      return UserRole.PENDING;
+    default:
+      return UserRole.PENDING;
+  }
+};
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -23,19 +56,7 @@ import { TableRow, TableCell } from "@/components/ui/table";
 import { Loader2, Check, X, Plus } from "lucide-react";
 import { cn } from "@/app/lib/utils";
 
-const USER_ROW_FRAGMENT = gql`
-  fragment UserRowData on User {
-    id
-    email
-    role
-    teams {
-      id
-      name
-      __typename
-    }
-    __typename
-  }
-`;
+// Fragment is now imported from generated GraphQL
 
 export interface Team {
   id: string;
@@ -102,55 +123,8 @@ const UserRow: React.FC<UserRowProps> = React.memo<UserRowProps>(
       toast.error(`Error: ${errorMsg}`);
     };
 
-    const [addUserToTeamMutation, { loading: isAddingTeam }] = useMutation(
-      ADD_USER_TO_TEAM,
-      {
-        optimisticResponse: (variables: {
-          input: { teamId: string; userId: number };
-        }) => {
-          const teamIdToAdd = variables.input.teamId;
-          const userId = variables.input.userId;
-          const teamToAdd = allTeams.find((t) => t.id === teamIdToAdd);
-          console.log(
-            "Found teamToAdd in optimisticResponse:",
-            JSON.stringify(teamToAdd, null, 2)
-          );
-          if (!teamToAdd || !teamToAdd.name) {
-            console.warn(
-              "Optimistic Response: Could not find team",
-              teamIdToAdd,
-              "in allTeams prop."
-            );
-            return undefined;
-          }
-          const optimisticTeams = [
-            ...user.teams.map((t) => ({
-              __typename: "Team" as const,
-              id: t.id,
-              name: t.name,
-            })),
-            {
-              __typename: "Team" as const,
-              id: teamToAdd.id,
-              name: teamToAdd.name,
-            },
-          ];
-
-          const result = {
-            addUserToTeam: {
-              __typename: "User",
-              id: userId,
-              email: user.email,
-              role: user.role,
-              teams: optimisticTeams,
-            },
-          };
-          console.log(
-            "Optimistic Response Generated:",
-            JSON.stringify(result, null, 2)
-          );
-          return result;
-        },
+    const [addUserToTeamMutation, { loading: isAddingTeam }] =
+      useAddUserToTeamMutation({
         update: (cache, { data }) => {
           console.log(
             "Mutation Response Data in Update:",
@@ -179,7 +153,7 @@ const UserRow: React.FC<UserRowProps> = React.memo<UserRowProps>(
           try {
             cache.writeFragment({
               id: userIdCacheId,
-              fragment: USER_ROW_FRAGMENT,
+              fragment: UserRowDataFragmentDoc,
               data: data.addUserToTeam,
             });
             console.log(
@@ -203,11 +177,10 @@ const UserRow: React.FC<UserRowProps> = React.memo<UserRowProps>(
           toast.success("User added to team!");
         },
         onError: (error) => handleMutationError("adding user to team", error),
-      }
-    );
+      });
 
     const [removeUserFromTeamMutation, { loading: isRemovingTeam }] =
-      useMutation(REMOVE_USER_FROM_TEAM, {
+      useRemoveUserFromTeamMutation({
         optimisticResponse: (variables: {
           input: { teamId: string; userId: number };
         }) => {
@@ -222,10 +195,10 @@ const UserRow: React.FC<UserRowProps> = React.memo<UserRowProps>(
             }));
           const result = {
             removeUserFromTeam: {
-              __typename: "User",
+              __typename: "User" as const,
               id: userId,
               email: user.email,
-              role: user.role,
+              role: toGeneratedUserRole(user.role),
               teams: optimisticTeams,
             },
           };
@@ -261,7 +234,7 @@ const UserRow: React.FC<UserRowProps> = React.memo<UserRowProps>(
           try {
             cache.writeFragment({
               id: userIdCacheId,
-              fragment: USER_ROW_FRAGMENT,
+              fragment: UserRowDataFragmentDoc,
               data: data.removeUserFromTeam,
             });
             console.log(
@@ -287,16 +260,14 @@ const UserRow: React.FC<UserRowProps> = React.memo<UserRowProps>(
           setConfirmingRemoveTeamId(null);
         },
       });
-    const [updateUserRoleMutation, { loading: isChangingRole }] = useMutation(
-      UPDATE_USER_ROLE,
-      {
-        optimisticResponse: (variables: {
-          input: { userId: number; newRole: UserRole };
-        }) => {
+    const [updateUserRoleMutation, { loading: isChangingRole }] =
+      useUpdateUserRoleMutation({
+        optimisticResponse: (variables) => {
           const result = {
             updateUserRole: {
-              __typename: "User",
+              __typename: "User" as const,
               id: variables.input.userId,
+              email: user.email,
               role: variables.input.newRole,
             },
           };
@@ -331,7 +302,7 @@ const UserRow: React.FC<UserRowProps> = React.memo<UserRowProps>(
           // Read existing user data from cache
           const existingUser = cache.readFragment<User>({
             id: userIdCacheId,
-            fragment: USER_ROW_FRAGMENT,
+            fragment: UserRowDataFragmentDoc,
           });
 
           if (existingUser) {
@@ -343,7 +314,7 @@ const UserRow: React.FC<UserRowProps> = React.memo<UserRowProps>(
               // Only update the role, preserve all other user data
               cache.writeFragment({
                 id: userIdCacheId,
-                fragment: USER_ROW_FRAGMENT,
+                fragment: UserRowDataFragmentDoc,
                 data: {
                   ...existingUser,
                   role: data.updateUserRole.role,
@@ -376,9 +347,11 @@ const UserRow: React.FC<UserRowProps> = React.memo<UserRowProps>(
             );
 
             // Check if backend returned the correct role
-            if (backendRole !== localRole) {
+            if (toLocalUserRole(backendRole) !== localRole) {
               console.error(
-                `⚠️ BACKEND ROLE UPDATE ISSUE: Expected ${localRole}, but backend returned ${backendRole}`
+                `⚠️ BACKEND ROLE UPDATE ISSUE: Expected ${localRole}, but backend returned ${toLocalUserRole(
+                  backendRole
+                )}`
               );
               console.error(
                 `This indicates a backend authorization, validation, or persistence issue.`
@@ -389,16 +362,18 @@ const UserRow: React.FC<UserRowProps> = React.memo<UserRowProps>(
 
               // Show user-friendly error
               toast.error(
-                `Role update failed: Backend returned ${backendRole} instead of ${localRole}. Please check your permissions.`
+                `Role update failed: Backend returned ${toLocalUserRole(
+                  backendRole
+                )} instead of ${localRole}. Please check your permissions.`
               );
 
               // Reset to backend value
-              setLocalRole(backendRole);
+              setLocalRole(toLocalUserRole(backendRole));
               return;
             }
 
             // Update local role to match the server response
-            setLocalRole(data.updateUserRole.role);
+            setLocalRole(toLocalUserRole(data.updateUserRole.role));
             toast.success(
               `Role for ${user.email} updated to ${data.updateUserRole.role}!`
             );
@@ -410,8 +385,7 @@ const UserRow: React.FC<UserRowProps> = React.memo<UserRowProps>(
           // Reset local role to the original value on error
           setLocalRole(user.role);
         },
-      }
-    );
+      });
 
     const handleAddToTeam = useCallback(() => {
       if (!selectedTeamIdForRow) {
@@ -470,7 +444,9 @@ const UserRow: React.FC<UserRowProps> = React.memo<UserRowProps>(
         setLocalRole(newRole);
         console.log(`Setting localRole to ${newRole} for user ${user.id}`);
 
-        const mutationVariables = { input: { userId: user.id, newRole } };
+        const mutationVariables = {
+          input: { userId: user.id, newRole: toGeneratedUserRole(newRole) },
+        };
         console.log(
           "Sending mutation with variables:",
           JSON.stringify(mutationVariables, null, 2)

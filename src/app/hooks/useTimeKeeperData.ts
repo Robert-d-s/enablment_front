@@ -1,6 +1,5 @@
-import { useQuery } from "@apollo/client";
 import { useEffect, useState } from "react";
-import { GET_MY_PROJECTS } from "@/app/graphql/fragments";
+import { useGetMyProjectsQuery } from "@/generated/graphql";
 import { useAuthStore } from "@/app/lib/authStore";
 import { useReactiveVar } from "@apollo/client";
 import { loggedInUserTeamsVersion } from "@/app/lib/apolloClient";
@@ -8,13 +7,9 @@ import { loggedInUserTeamsVersion } from "@/app/lib/apolloClient";
 export interface MyProject {
   id: string;
   name: string;
-  teamName?: string;
+  teamName?: string | null;
   teamId: string;
   __typename?: "Project";
-}
-
-interface GetMyProjectsQueryData {
-  myProjects: MyProject[];
 }
 
 const useTimeKeeperData = (selectedProject: string | null) => {
@@ -27,7 +22,7 @@ const useTimeKeeperData = (selectedProject: string | null) => {
     loading: loadingMyProjects,
     error: errorMyProjects,
     refetch: refetchMyProjects,
-  } = useQuery<GetMyProjectsQueryData>(GET_MY_PROJECTS, {
+  } = useGetMyProjectsQuery({
     skip: !loggedInUserId,
     fetchPolicy: "cache-and-network",
     nextFetchPolicy: "cache-first",
