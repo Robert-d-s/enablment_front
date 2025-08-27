@@ -1,5 +1,3 @@
-"use client";
-
 import React from "react";
 import { ApolloError } from "@apollo/client";
 import { formatTimeFromMilliseconds } from "@/app/utils/timeUtils";
@@ -20,11 +18,14 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Hourglass, Loader2 } from "lucide-react";
-import type { Project, Rate } from "@/generated/graphql";
+import type {
+  RateFragment,
+  ProjectWithTeamFragment,
+} from "@/generated/graphql";
 
 interface ProjectRateSelectorsProps {
-  userProjects: Project[];
-  rates: Rate[];
+  userProjects: ProjectWithTeamFragment[];
+  rates: RateFragment[];
   totalTimeLoading: boolean;
   totalTimeError: ApolloError | undefined;
   totalTime: number;
