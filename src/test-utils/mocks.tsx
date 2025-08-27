@@ -154,6 +154,15 @@ export const mockIcons = {
   Loader2: ({ className }: { className?: string }) => (
     <div data-testid="loader-icon" className={className} />
   ),
+  RotateCcw: ({ className }: { className?: string }) => (
+    <div data-testid="rotate-ccw" className={className} />
+  ),
+  Send: ({ className }: { className?: string }) => (
+    <div data-testid="send" className={className} />
+  ),
+  LogIn: ({ className }: { className?: string }) => (
+    <div data-testid="login-icon" className={className} />
+  ),
 };
 
 // Mock Zustand store factory

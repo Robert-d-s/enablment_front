@@ -1,5 +1,6 @@
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useCallback } from "react";
 import { type GetIssuesQuery } from "@/generated/graphql";
+import { useIssuesFilterStore } from "@/app/lib/issuesFilterStore";
 
 // Use the generated Issue type
 type Issue = GetIssuesQuery["issues"]["issues"][0];
@@ -17,16 +18,15 @@ interface UseIssueFiltersReturn {
 }
 
 export const useIssueFilters = (issues?: Issue[]): UseIssueFiltersReturn => {
-  const [selectedAssignee, setSelectedAssignee] = useState<string | null>(null);
-  const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
+  const { selectedAssignee, selectedTeam, setSelectedAssignee, setSelectedTeam } = useIssuesFilterStore();
 
   const handleSelectAssignee = useCallback((assignee: string | null) => {
     setSelectedAssignee(assignee);
-  }, []);
+  }, [setSelectedAssignee]);
 
   const handleSelectTeam = useCallback((team: string | null) => {
     setSelectedTeam(team);
-  }, []);
+  }, [setSelectedTeam]);
 
   const uniqueTeams = useMemo(() => {
     if (!issues) return [];
