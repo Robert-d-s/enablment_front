@@ -53,27 +53,47 @@ const DBSyncPage: React.FC = () => {
   // GraphQL mutation for database sync
   const [syncDatabase] = useSyncDatabaseMutation({
     onCompleted: (data) => {
-      setSyncStatus("Database synchronization completed successfully!");
-      setSyncDetails((prev) => [
-        ...prev,
-        "Synchronization completed!",
-        `Timestamp: ${
-          data.synchronizeDatabase.timestamp || new Date().toISOString()
-        }`,
-      ]);
-      setShowSuccess(true);
+      const syncResponse = data.synchronizeDatabase;
+      
+      // Check the actual status from the backend response
+      if (syncResponse.status === "error") {
+        // Backend returned an error status - treat as failure
+        const backendErrorMessage = syncResponse.message || "Database synchronization failed";
+        setError(backendErrorMessage);
+        setSyncStatus("Database synchronization failed");
+        setSyncDetails((prev) => [
+          ...prev,
+          `Error: ${backendErrorMessage}`,
+          `Timestamp: ${syncResponse.timestamp || new Date().toISOString()}`,
+        ]);
+        setShowSuccess(false);
+        setIsSyncing(false);
+      } else {
+        // Backend returned success status
+        setSyncStatus("Database synchronization completed successfully!");
+        setSyncDetails((prev) => [
+          ...prev,
+          "Synchronization completed!",
+          `Message: ${syncResponse.message}`,
+          `Timestamp: ${syncResponse.timestamp || new Date().toISOString()}`,
+        ]);
+        setShowSuccess(true);
+        setError(null);
 
-      // Refetch data to show updated state
-      Promise.all([refetchTeams(), refetchProjects(), refetchIssues()]);
-      setIsSyncing(false);
+        // Refetch data to show updated state
+        Promise.all([refetchTeams(), refetchProjects(), refetchIssues()]);
+        setIsSyncing(false);
+      }
     },
     onError: (error) => {
+      // This handles GraphQL/network errors (not backend business logic errors)
       const errorMessage =
-        error.message || "An error occurred during synchronization";
+        error.message || "A network error occurred during synchronization";
 
       setError(errorMessage);
-      setSyncStatus("Database synchronization failed");
-      setSyncDetails((prev) => [...prev, `Error: ${errorMessage}`]);
+      setSyncStatus("Database synchronization failed - Network Error");
+      setSyncDetails((prev) => [...prev, `Network Error: ${errorMessage}`]);
+      setShowSuccess(false);
       setIsSyncing(false);
     },
   });
@@ -314,26 +334,43 @@ const DBSyncPage: React.FC = () => {
                       custom={index}
                       className="flex items-start gap-2"
                     >
-                      <div className="text-green-500 mt-1">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-4 w-4"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                          />
-                        </svg>
+                      <div className={`mt-1 ${detail.startsWith("Error") || detail.includes("Network Error") ? "text-red-500" : "text-green-500"}`}>
+                        {detail.startsWith("Error") || detail.includes("Network Error") ? (
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-4 w-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                          </svg>
+                        ) : (
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-4 w-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                          </svg>
+                        )}
                       </div>
                       <span
                         className={
-                          detail.startsWith("Error")
-                            ? "text-red-600"
+                          detail.startsWith("Error") || detail.includes("Network Error")
+                            ? "text-red-600 font-medium"
                             : "text-gray-700"
                         }
                       >
