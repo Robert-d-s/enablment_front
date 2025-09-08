@@ -16,6 +16,7 @@ const nextConfig: NextConfig = {
   // Enable performance optimizations
   poweredByHeader: false,
   compress: true,
+  output: "standalone", // Enable for Docker containerization
 
   images: {
     remotePatterns: [

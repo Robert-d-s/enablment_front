@@ -3,5 +3,6 @@
     "file:///Users/rds/enablment_front/.vscode/codegen-config.schema.json": [
       "/Users/rds/enablment_front/graphql-codegen.config.yml"
     ]
-  }
+  },
+  "kiroAgent.configureMCP": "Disabled"
 }
