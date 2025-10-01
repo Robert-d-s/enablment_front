@@ -73,11 +73,9 @@ const ClientColab: React.FC<ServiceTableProps> = ({ onContactClick }) => {
       {/* Arrow tab */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="bg-white/95 backdrop-blur-sm shadow-lg hover:shadow-xl rounded-l-xl p-3 transition-all duration-300 cursor-pointer group border-r-0 flex flex-col items-center justify-center h-24"
+        className="bg-white/95 backdrop-blur-sm shadow-lg hover:shadow-xl rounded-l-xl p-3 transition-all duration-300 cursor-pointer group border-r-0 flex flex-col items-center justify-center h-20"
       >
-        <span className="text-sm font-semibold mb-1 transform -rotate-90 whitespace-nowrap text-gray-800">
-          Cases
-        </span>
+        <span className="text-sm font-semibold mb-1 text-gray-800">Cases</span>
         <div
           className={`transform transition-transform duration-300 ${
             isExpanded ? "rotate-180" : "rotate-0"

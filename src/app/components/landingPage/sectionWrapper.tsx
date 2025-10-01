@@ -21,7 +21,7 @@ const SectionWrapper: React.FC<SectionProps> = ({
   // For Home section with video, make it fullscreen without borders
   if (id === "Home" && videoSrc) {
     return (
-      <div className="w-full h-screen relative">
+      <div className="w-full h-[75vh] relative">
         <video
           className="video w-full h-full object-cover absolute inset-0"
           autoPlay

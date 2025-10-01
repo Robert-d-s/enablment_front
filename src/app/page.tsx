@@ -39,7 +39,7 @@ const Home: NextPage = () => {
     <>
       <BackgroundBeams />
       <div className="relative z-10">
-        <div className="relative overflow-hidden min-h-screen">
+        <div className="relative overflow-hidden">
           <NavBar />
 
           {/* Contact form overlay */}
@@ -53,7 +53,7 @@ const Home: NextPage = () => {
           </AnimatePresence>
 
           {/* Full-screen section content */}
-          <div className="relative w-full min-h-screen pt-16">
+          <div className="relative w-full pt-16">
             <AnimatePresence mode="wait">
               {sections.map((section) => {
                 if (section === "Contact") {
@@ -82,7 +82,7 @@ const Home: NextPage = () => {
             <AnimatePresence>
               {activeSection === "Home" && (
                 <motion.div
-                  className="absolute top-1/2 right-0 transform -translate-y-1/2 z-30"
+                  className="absolute top-20 right-0 z-30"
                   initial={{ opacity: 0, x: 50 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 50 }}
