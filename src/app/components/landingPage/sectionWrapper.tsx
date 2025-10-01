@@ -38,9 +38,9 @@ const SectionWrapper: React.FC<SectionProps> = ({
       ) : id === "Services" ? (
         <ServicesSection />
       ) : videoSrc ? (
-        <div className="w-full h-full">
+        <div className="w-full h-full relative min-h-[400px] md:min-h-[500px] lg:min-h-[600px]">
           <video
-            className="video w-full h-full overflow-hidden rounded-tl-3xl rounded-tr-3xl object-cover"
+            className="video w-full h-full overflow-hidden rounded-tl-3xl rounded-tr-3xl object-cover absolute inset-0"
             autoPlay
             loop
             muted
@@ -49,8 +49,8 @@ const SectionWrapper: React.FC<SectionProps> = ({
             <source src={videoSrc} type="video/mp4" />
             Your browser does not support the video tag.
           </video>
-          <div className="flex overlay-text lg:bottom-48 p-4 lg:relative md:flex ">
-            <h2 className="lg:text-4xl font-bold text-white p-4 bg-black bg-opacity-50 rounded-lg sm:text-lg">
+          <div className="absolute inset-0 flex items-center justify-center md:justify-start md:items-end p-4 md:p-8 lg:p-12">
+            <h2 className="text-xl md:text-2xl lg:text-4xl font-bold text-white p-4 md:p-6 bg-black bg-opacity-60 rounded-lg text-center md:text-left max-w-2xl">
               We enable Collaborators
               <br /> to create delightful technical solutions
             </h2>
