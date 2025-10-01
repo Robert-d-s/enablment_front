@@ -35,7 +35,7 @@ const ContactForm: React.FC<ContactFormProps> = ({
   };
 
   const formContent = (
-    <div className="bg-white flex gap-4 rounded-lg shadow-lg p-8 m-4 lg:w-10/12 max-h-full overflow-y-auto contact-form-container">
+    <div className="bg-white flex gap-4 rounded-lg shadow-lg p-8 m-4 w-full max-w-6xl max-h-full overflow-y-auto contact-form-container mx-auto">
       <div>
         <video
           width="100%"
@@ -211,7 +211,7 @@ const ContactForm: React.FC<ContactFormProps> = ({
   // Use as a modal overlay with animation
   return (
     <motion.div
-      className={`fixed inset-0 flex justify-center items-center z-40 ${className}`}
+      className={`fixed inset-0 flex justify-center items-center z-40 p-4 ${className}`}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -221,7 +221,7 @@ const ContactForm: React.FC<ContactFormProps> = ({
         className="absolute inset-0 bg-black bg-opacity-50"
         onClick={onClose}
       ></div>
-      <div className="z-50">{formContent}</div>
+      <div className="z-50 w-full max-w-6xl">{formContent}</div>
     </motion.div>
   );
 };

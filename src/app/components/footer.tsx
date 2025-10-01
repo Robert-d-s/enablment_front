@@ -20,22 +20,22 @@ const Footer: React.FC = () => {
           <div className="flex-1 flex flex-col items-center gap-4">
             <div className="flex gap-4 items-center">
               <div className="flex gap-1 items-center">
-                <span className="text-black">(+45) 22 92 67 80</span>
                 <Image
                   src="/icons/phone.svg"
                   alt="Call"
                   width={20}
                   height={20}
                 />
+                <span className="text-black">(+45) 22 92 67 80</span>
               </div>
               <div className="flex gap-1 items-center">
-                <span className="text-black">gd@enablment.com</span>
                 <Image
                   src="/icons/mail.svg"
                   alt="Email"
                   width={20}
                   height={20}
                 />
+                <span className="text-black">gd@enablment.com</span>
               </div>
             </div>
 
