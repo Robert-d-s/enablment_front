@@ -18,6 +18,30 @@ const SectionWrapper: React.FC<SectionProps> = ({
   color,
   videoSrc,
 }) => {
+  // For Home section with video, make it fullscreen without borders
+  if (id === "Home" && videoSrc) {
+    return (
+      <div className="w-full h-screen relative">
+        <video
+          className="video w-full h-full object-cover absolute inset-0"
+          autoPlay
+          loop
+          muted
+          playsInline
+        >
+          <source src={videoSrc} type="video/mp4" />
+          Your browser does not support the video tag.
+        </video>
+        <div className="absolute inset-0 flex items-end justify-center md:items-center md:justify-start p-4 md:p-8 lg:p-12">
+          <h2 className="text-lg md:text-xl lg:text-2xl font-bold text-white p-4 md:p-6 bg-black bg-opacity-50 rounded-xl text-center md:text-left max-w-2xl backdrop-blur-sm">
+            We enable Collaborators
+            <br /> to create delightful technical solutions
+          </h2>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className={`section border-2 border-green-600 rounded-tl-3xl rounded-tr-3xl shadow-lg ${color} responsive-section`}
@@ -37,25 +61,6 @@ const SectionWrapper: React.FC<SectionProps> = ({
         <AboutSection />
       ) : id === "Services" ? (
         <ServicesSection />
-      ) : videoSrc ? (
-        <div className="w-full h-full relative min-h-[400px] md:min-h-[500px] lg:min-h-[600px]">
-          <video
-            className="video w-full h-full overflow-hidden rounded-tl-3xl rounded-tr-3xl object-cover absolute inset-0"
-            autoPlay
-            loop
-            muted
-            playsInline
-          >
-            <source src={videoSrc} type="video/mp4" />
-            Your browser does not support the video tag.
-          </video>
-          <div className="absolute inset-0 flex items-center justify-center md:justify-start md:items-end p-4 md:p-8 lg:p-12">
-            <h2 className="text-xl md:text-2xl lg:text-4xl font-bold text-white p-4 md:p-6 bg-black bg-opacity-60 rounded-lg text-center md:text-left max-w-2xl">
-              We enable Collaborators
-              <br /> to create delightful technical solutions
-            </h2>
-          </div>
-        </div>
       ) : (
         <>
           <h2 className="text-2xl font-bold mb-4">{content}</h2>

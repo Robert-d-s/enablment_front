@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 
 // Define the TypeScript type for the table data
 type ClientServiceData = {
@@ -36,46 +36,56 @@ const ClientColab: React.FC<ServiceTableProps> = ({ onContactClick }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   return (
-    <div className="flex flex-col mx-2 z-10 w-full">
-      <button
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="flex items-center justify-between text-lg md:text-xl lg:text-2xl font-semibold mb-2 bg-white shadow-lg hover:shadow-xl rounded-lg p-3 md:p-4 transition-all duration-300 cursor-pointer group"
-      >
-        <span className="text-left">Our Happy Collaborators</span>
-        {isExpanded ? (
-          <ChevronUp className="w-5 h-5 md:w-6 md:h-6 text-green-700 group-hover:text-green-600 transition-colors flex-shrink-0 ml-2" />
-        ) : (
-          <ChevronDown className="w-5 h-5 md:w-6 md:h-6 text-green-700 group-hover:text-green-600 transition-colors flex-shrink-0 ml-2" />
-        )}
-      </button>
-
+    <div className="flex items-center">
+      {/* Expandable content panel */}
       <div
-        className={`overflow-hidden transition-all duration-500 ease-in-out ${
-          isExpanded ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0"
+        className={`overflow-hidden transition-all duration-500 ease-in-out bg-white/95 backdrop-blur-sm shadow-lg rounded-l-xl ${
+          isExpanded ? "w-80 opacity-100" : "w-0 opacity-0"
         }`}
       >
-        <div className="space-y-2 pb-2">
-          {tableData.map((item, index) => (
-            <div key={index} className="w-full">
-              <div className="bg-white shadow hover:shadow-md rounded-lg p-2 md:p-3 transition-shadow duration-200">
-                <h3 className="text-sm md:text-base font-semibold text-gray-800">{item.client}</h3>
-                <p className="text-gray-600 font-roboto text-xs md:text-sm">Year: {item.year}</p>
-                <p className="text-gray-600 font-roboto text-xs md:text-sm">
-                  Services: {item.services}
-                </p>
+        <div className="p-4 w-80">
+          <div className="space-y-3 max-h-96 overflow-y-auto">
+            {tableData.map((item, index) => (
+              <div key={index} className="w-full">
+                <div className="bg-white shadow hover:shadow-md rounded-lg p-3 transition-shadow duration-200">
+                  <h3 className="text-sm font-semibold text-gray-800">
+                    {item.client}
+                  </h3>
+                  <p className="text-gray-600 text-xs">Year: {item.year}</p>
+                  <p className="text-gray-600 text-xs">
+                    Services: {item.services}
+                  </p>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-        <div className="flex mt-3">
-          <button
-            className="bg-green-700 hover:bg-green-600 text-white font-bold py-2 md:py-3 px-4 md:px-6 rounded-full transition-colors duration-300 w-full shadow-md hover:shadow-lg"
-            onClick={onContactClick}
-          >
-            Shall we collaborate?
-          </button>
+            ))}
+          </div>
+          <div className="mt-4">
+            <button
+              className="bg-green-700 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-full transition-colors duration-300 w-full shadow-md hover:shadow-lg text-sm"
+              onClick={onContactClick}
+            >
+              Shall we collaborate?
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* Arrow tab */}
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="bg-white/95 backdrop-blur-sm shadow-lg hover:shadow-xl rounded-l-xl p-3 transition-all duration-300 cursor-pointer group border-r-0 flex flex-col items-center justify-center h-24"
+      >
+        <span className="text-sm font-semibold mb-1 transform -rotate-90 whitespace-nowrap text-gray-800">
+          Cases
+        </span>
+        <div
+          className={`transform transition-transform duration-300 ${
+            isExpanded ? "rotate-180" : "rotate-0"
+          }`}
+        >
+          <ChevronDown className="w-4 h-4 text-green-700 group-hover:text-green-600" />
+        </div>
+      </button>
     </div>
   );
 };

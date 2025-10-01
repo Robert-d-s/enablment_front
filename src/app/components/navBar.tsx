@@ -144,7 +144,7 @@ const NavBar: React.FC = () => {
   };
   return (
     <nav
-      className="relative z-50 w-full bg-white/85 backdrop-blur-lg"
+      className="fixed top-0 left-0 right-0 z-50 w-full bg-white/95 backdrop-blur-lg lg:bg-transparent lg:backdrop-blur-none"
       style={{ minHeight: "64px" }}
     >
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-2 px-4 py-3 md:gap-4 lg:gap-8 lg:px-10">

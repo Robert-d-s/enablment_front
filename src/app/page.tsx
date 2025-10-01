@@ -39,8 +39,10 @@ const Home: NextPage = () => {
     <>
       <BackgroundBeams />
       <div className="relative z-10">
-        <div className="relative overflow-hidden" style={{ minHeight: "100vh" }}>
-          <NavBar /> {/* Contact form overlay */}
+        <div className="relative overflow-hidden min-h-screen">
+          <NavBar />
+
+          {/* Contact form overlay */}
           <AnimatePresence>
             {isContactActive && (
               <ContactForm
@@ -49,54 +51,51 @@ const Home: NextPage = () => {
               />
             )}
           </AnimatePresence>
-          <div className="grid grid-cols-1 md:grid-cols-12 pt-6 gap-2 md:gap-0" style={{ minHeight: "60vh" }}>
-            {/* Client collaboration component for Home section - Take 3 columns on the left */}
-            <div className="col-span-1 md:col-span-3 px-2 md:px-0">
-              <AnimatePresence>
-                {activeSection === "Home" && (
-                  <motion.div
-                    className="flex justify-center items-start client-table"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <ClientColab
-                      onContactClick={() =>
-                        navigateToSection("Contact", sections)
-                      }
+
+          {/* Full-screen section content */}
+          <div className="relative w-full min-h-screen pt-16">
+            <AnimatePresence mode="wait">
+              {sections.map((section) => {
+                if (section === "Contact") {
+                  return null;
+                }
+                let videoSrc;
+                if (section === "Home") {
+                  videoSrc = "/video/hero_vid.mp4";
+                }
+
+                // Only render active section
+                return (
+                  activeSection === section && (
+                    <SectionAnimation
+                      key={section}
+                      section={section}
+                      navigationDirection={navigationDirection}
+                      videoSrc={videoSrc}
                     />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+                  )
+                );
+              })}
+            </AnimatePresence>
 
-            {/* Main section content - Take 9 columns on the right */}
-            <div className="col-span-1 md:col-span-9 relative px-2 md:px-0">
-              <AnimatePresence mode="wait">
-                {sections.map((section) => {
-                  if (section === "Contact") {
-                    return null;
-                  }
-                  let videoSrc;
-                  if (section === "Home") {
-                    videoSrc = "/video/hero_vid.mp4";
-                  }
-
-                  // Only render active section
-                  return (
-                    activeSection === section && (
-                      <SectionAnimation
-                        key={section}
-                        section={section}
-                        navigationDirection={navigationDirection}
-                        videoSrc={videoSrc}
-                      />
-                    )
-                  );
-                })}
-              </AnimatePresence>
-            </div>
+            {/* ClientColab expandable compartment - only show on Home section */}
+            <AnimatePresence>
+              {activeSection === "Home" && (
+                <motion.div
+                  className="absolute top-1/2 right-0 transform -translate-y-1/2 z-30"
+                  initial={{ opacity: 0, x: 50 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 50 }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
+                >
+                  <ClientColab
+                    onContactClick={() =>
+                      navigateToSection("Contact", sections)
+                    }
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
         <Footer />
