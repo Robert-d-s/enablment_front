@@ -21,7 +21,7 @@ const SectionWrapper: React.FC<SectionProps> = ({
   // For Home section with video, make it fullscreen without borders
   if (id === "Home" && videoSrc) {
     return (
-      <div className="w-full h-[75vh] relative">
+      <div className="w-full h-[70vh] relative">
         <video
           className="video w-full h-full object-cover absolute inset-0"
           autoPlay
@@ -32,8 +32,8 @@ const SectionWrapper: React.FC<SectionProps> = ({
           <source src={videoSrc} type="video/mp4" />
           Your browser does not support the video tag.
         </video>
-        <div className="absolute inset-0 flex items-end justify-center md:items-center md:justify-start p-4 md:p-8 lg:p-12">
-          <h2 className="text-lg md:text-xl lg:text-2xl font-bold text-white p-4 md:p-6 bg-black bg-opacity-50 rounded-xl text-center md:text-left max-w-2xl backdrop-blur-sm">
+        <div className="absolute inset-0 flex items-end justify-start p-4 md:p-8 lg:p-12">
+          <h2 className="text-lg md:text-xl lg:text-2xl font-bold text-white p-4 md:p-6 bg-black bg-opacity-50 rounded-xl text-left max-w-2xl backdrop-blur-sm">
             We enable Collaborators
             <br /> to create delightful technical solutions
           </h2>

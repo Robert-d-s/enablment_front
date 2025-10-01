@@ -4,7 +4,7 @@ import Image from "next/image";
 
 const Footer: React.FC = () => {
   return (
-    <div className="bg-gray-100 text-sm text-gray-600 py-6 px-4">
+    <div className="text-sm text-gray-600 py-6 px-4">
       <div className="max-w-6xl mx-auto">
         {/* Main content - centered layout */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">

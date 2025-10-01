@@ -82,7 +82,7 @@ const Home: NextPage = () => {
             <AnimatePresence>
               {activeSection === "Home" && (
                 <motion.div
-                  className="absolute top-20 right-0 z-30"
+                  className="absolute top-4 right-0 z-30"
                   initial={{ opacity: 0, x: 50 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 50 }}
