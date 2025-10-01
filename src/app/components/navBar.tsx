@@ -21,9 +21,9 @@ const NavBar: React.FC = () => {
 
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth >= 1024) {
-        setMenuOpen(true);
-      } else {
+      // On desktop, we don't use the mobile menu state at all
+      // On mobile, ensure menu starts closed
+      if (window.innerWidth < 1024) {
         setMenuOpen(false);
       }
     };
@@ -92,14 +92,9 @@ const NavBar: React.FC = () => {
   const getMobileMenuItemClasses = (section: string) => {
     const isActive = activeSection === section;
     const isHovered = hoveredSection === section;
-    const isContact = section === "Contact";
 
     const baseClasses =
       "group relative flex w-full items-center justify-between gap-4 rounded-2xl px-5 py-3 text-base font-medium text-slate-900 transition-colors duration-200 ease-out shadow-sm backdrop-blur-lg bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white";
-
-    if (isContact) {
-      return `${baseClasses} border border-transparent bg-emerald-600 text-white shadow-lg shadow-emerald-200/60 hover:bg-emerald-500`;
-    }
 
     if (isActive) {
       return `${baseClasses} border border-emerald-200 bg-emerald-50 text-emerald-700`;
@@ -152,20 +147,20 @@ const NavBar: React.FC = () => {
       className="relative z-50 w-full bg-white/85 backdrop-blur-lg"
       style={{ minHeight: "64px" }}
     >
-      <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-3 lg:gap-8 lg:px-10">
+      <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-2 px-4 py-3 md:gap-4 lg:gap-8 lg:px-10">
         <div className="flex shrink-0 items-center">
           <Image
             src={logo}
             alt="Enablement logo"
             priority
-            className="h-8 w-auto max-w-[150px] md:h-9 md:max-w-[190px] lg:h-10 lg:max-w-[220px]"
-            sizes="(max-width: 768px) 150px, (max-width: 1024px) 190px, 220px"
+            className="h-6 w-auto max-w-[120px] md:h-7 md:max-w-[140px] lg:h-8 lg:max-w-[160px]"
+            sizes="(max-width: 768px) 120px, (max-width: 1024px) 140px, 160px"
           />
         </div>
-        <div className="flex flex-1 items-center justify-end gap-3">
+        <div className="flex flex-1 items-center justify-end gap-2 md:gap-3">
           {/* Burger Icon – visible on mobile only */}
           <motion.button
-            className="relative z-50 flex h-10 w-10 flex-col items-center justify-center gap-1.5 lg:hidden"
+            className="relative z-50 flex h-9 w-9 flex-col items-center justify-center gap-1.5 lg:hidden"
             onClick={() => setMenuOpen(!isMenuOpen)}
             aria-label="Toggle menu"
           >
@@ -215,7 +210,7 @@ const NavBar: React.FC = () => {
             variants={menuVariants}
             initial="closed"
             animate={isMenuOpen ? "opened" : "closed"}
-            className="menu-container fixed top-24 left-4 right-4 mx-auto flex-col items-stretch rounded-3xl border border-white/20 bg-white/95 p-6 shadow-[0_20px_40px_rgba(15,118,110,0.15)] lg:hidden z-40 gap-3"
+            className="menu-container fixed top-20 left-4 right-4 mx-auto flex-col items-stretch rounded-3xl border border-white/20 bg-white/95 p-6 shadow-[0_20px_40px_rgba(15,118,110,0.15)] lg:hidden z-40 gap-3"
           >
             {sections.map((section) => {
               const isActive = activeSection === section;
@@ -236,9 +231,7 @@ const NavBar: React.FC = () => {
                 >
                   <span
                     className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border transition-all duration-200 ${
-                      section === "Contact"
-                        ? "border-transparent bg-emerald-500 text-white shadow-inner shadow-emerald-700/30"
-                        : isActive
+                      isActive
                         ? "border-emerald-500 bg-emerald-500/10 text-emerald-600"
                         : isHovered
                         ? "border-emerald-300 bg-emerald-100/40 text-emerald-500"
@@ -246,17 +239,9 @@ const NavBar: React.FC = () => {
                     }`}
                     aria-hidden="true"
                   >
-                    <span className="text-sm font-semibold">
-                      {section === "Contact" ? "GO" : "•"}
-                    </span>
+                    <span className="text-sm font-semibold">{"•"}</span>
                   </span>
-                  <span
-                    className={`flex-1 text-left uppercase tracking-[0.15em] ${
-                      section === "Contact"
-                        ? "font-semibold text-white"
-                        : "font-medium text-slate-900"
-                    }`}
-                  >
+                  <span className="flex-1 text-left uppercase tracking-[0.15em] font-medium text-slate-900">
                     {section}
                   </span>
                 </motion.button>
